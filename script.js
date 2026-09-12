@@ -699,12 +699,12 @@ const worksController = (function works() {
   gsap.set(chars, { color: "#ffffff" });
   gsap.to(chars, {
   color: "#141918",
-  stagger: { each: 0.012, from: "start" },
+  stagger: { each: 0.02, from: "start" },
   ease: "none",
   scrollTrigger: {
     trigger: wrap,
-    start: "top 85%",
-    end: "top 35%",
+    start: "top 90%",
+    end: "top -50%",
     scrub: 0.6,
   },
 });
@@ -821,7 +821,7 @@ const worksController = (function works() {
 
   const HEADING_OUT_START = 0.42;
   const HEADING_OUT_END = 0.5;
-  const CAPTION_THRESHOLDS = [0.5, 0.68, 0.86];
+  const CAPTION_THRESHOLDS = [0.55, 0.55, 0.55];
   const shown = captions.map(() => false);
 
   function buildTimeline() {
@@ -905,8 +905,9 @@ const worksController = (function works() {
     defaults: { ease: "power2.out" },
   });
 
+  // cta-headline's reveal lives in the shared lineReveal() module below
+  // (masked per-line slide instead of a plain fade) — see that IIFE.
   tl.from(".cta-rect", { opacity: 0, scale: 0.6, stagger: 0.15, duration: 1 })
-    .from(".cta-headline", { opacity: 0, y: 24, scale: 0.95, duration: 0.9 }, "-=0.6")
     .from(".cta-sub", { opacity: 0, y: 14, duration: 0.6 }, "-=0.5")
     .from(".cta-bar", { opacity: 0, y: 14, duration: 0.6 }, "-=0.4");
 })();
@@ -925,6 +926,7 @@ const worksController = (function works() {
     { el: document.querySelector(".about-headline"), start: "top 70%" },
     { el: document.querySelector(".services-headline"), start: "top 75%" },
     { el: document.querySelector(".approach-headline"), start: "top 70%" },
+    { el: document.querySelector(".cta-headline"), start: "top 65%" },
   ].filter((t) => t.el);
 
   targets.forEach(({ el, start }) => {

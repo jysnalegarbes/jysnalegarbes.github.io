@@ -880,6 +880,8 @@ a, button, .curzr-hover {
   color: var(--black);
 }
 
+.services-eyebrow .eyebrow-mark { color: var(--green); }
+
 .services-headline {
   position: relative;
   z-index: 2;
@@ -911,16 +913,25 @@ a, button, .curzr-hover {
   will-change: transform, filter, opacity;
 }
 
-/* Equal 3-column row, no stagger — all three cards start at the same
-   position and the same height, matching the person's updated reference
-   layout (this replaces an earlier staggered/asymmetric arrangement). */
+/* V-shaped stagger: the two outer cards (Freelancers, Creatives) sit
+   lower, the middle card (Independent Professionals) stays at the top —
+   per the person's reference screenshot. Achieved via margin-top within
+   each card's own grid cell, not absolute positioning, so row height
+   still auto-sizes safely regardless of copy length (see gotcha #5). */
 .service-card-freelancers,
-.service-card-independent,
 .service-card-creatives {
+  grid-row: 1;
+  width: auto;
+  margin: 40px 0 0;
+  align-self: start;
+}
+
+.service-card-independent {
   grid-column: auto;
   grid-row: 1;
   width: auto;
   margin: 0;
+  align-self: start;
 }
 
 .service-media {
@@ -1295,7 +1306,9 @@ a, button, .curzr-hover {
 @media (max-width: 700px) {
   .services { padding: 100px 24px 90px; }
   .services-headline { font-size: 32px; margin-bottom: 44px; }
-  .services-grid { grid-template-columns: 1fr; gap: 56px; }
+  .services-grid { grid-template-columns: 1fr !important; gap: 56px; }
+  .service-card-freelancers,
+  .service-card-creatives { margin: 0; }
   .service-card-creatives { grid-column: auto; width: 100%; margin: 0; }
   .service-card-freelancers .service-media,
   .service-card-independent .service-media,
@@ -1303,7 +1316,7 @@ a, button, .curzr-hover {
   .service-copy { padding-top: 20px; }
   .service-rule { width: 100%; }
   .services-bottom-copy { height: auto; min-height: 0; margin-top: 80px; padding: 24px 0; }
-  .color-reveal-base { font-size: 32px; }
+  .color-reveal-base { font-size: 48px; }
   .color-reveal-heading { margin-bottom: 32px; }
 
   .storytelling { height: 240vh; }
@@ -1402,21 +1415,15 @@ a, button, .curzr-hover {
 
 .footer-socials-top a:hover { color: var(--black); }
 
-.footer-socials-top img {
-  width: 16px;
-  height: 16px;
-}
-
 .footer-name {
   display: flex;
   flex-direction: column;
   font-family: var(--font-display);
-  font-size: clamp(64px, 12vw, 200px);
+  font-size: 200px;
   font-weight: 400;
   line-height: 0.95;
   margin: auto 0;
   padding-bottom: 0.12em;
-  overflow: hidden;
 }
 
 /* Full-width lines so text-align actually reads as "flush left" / "flush
@@ -1449,9 +1456,11 @@ a, button, .curzr-hover {
 
 @media (max-width: 1024px) {
   .footer { padding: 40px 40px 30px; }
+  .footer-name { font-size: 120px; }
 }
 
 @media (max-width: 600px) {
+  .footer-name { font-size: 64px; }
   .footer-socials-top {
     flex-direction: column;
     align-items: flex-end;
