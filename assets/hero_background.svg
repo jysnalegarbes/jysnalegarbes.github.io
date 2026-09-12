@@ -1,0 +1,41 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_690_3286)">
+<rect width="1920" height="1080" fill="#C8D0D0"/>
+<rect width="1920" height="1080" transform="matrix(1 0 0 -1 0 1080)" fill="url(#paint0_radial_690_3286)"/>
+<g filter="url(#filter0_n_690_3286)">
+<rect width="1920" height="1080" transform="matrix(1 0 0 -1 0 1080)" fill="url(#paint1_radial_690_3286)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_n_690_3286" x="0" y="0" width="1920" height="1080" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feTurbulence type="fractalNoise" baseFrequency="2 2" stitchTiles="stitch" numOctaves="3" result="noise" seed="4583" />
+<feComponentTransfer in="noise" result="coloredNoise1">
+<feFuncR type="linear" slope="2" intercept="-0.5" />
+<feFuncG type="linear" slope="2" intercept="-0.5" />
+<feFuncB type="linear" slope="2" intercept="-0.5" />
+<feFuncA type="discrete" tableValues="1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "/>
+</feComponentTransfer>
+<feComposite operator="in" in2="shape" in="coloredNoise1" result="noise1Clipped" />
+<feComponentTransfer in="noise1Clipped" result="color1">
+<feFuncA type="table" tableValues="0 0.2" />
+</feComponentTransfer>
+<feMerge result="effect1_noise_690_3286">
+<feMergeNode in="shape" />
+<feMergeNode in="color1" />
+</feMerge>
+</filter>
+<radialGradient id="paint0_radial_690_3286" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(960 540) rotate(90) scale(578.5 1028.44)">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="#C8D0D0"/>
+</radialGradient>
+<radialGradient id="paint1_radial_690_3286" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1178.5 402) rotate(140.432) scale(1064.38 955.733)">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="#C8D0D0"/>
+</radialGradient>
+<clipPath id="clip0_690_3286">
+<rect width="1920" height="1080" fill="white"/>
+</clipPath>
+</defs>
+</svg>

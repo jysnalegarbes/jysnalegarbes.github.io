@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jayson Alegarbes — UI/UX &amp; Digital Designer</title>
+<meta name="description" content="Jayson Alegarbes is a UI/UX &amp; Digital Designer based in the Philippines, designing digital experiences with clarity, consistency, and purpose.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Archivo:wght@300;400;500;700&family=Eagle+Lake&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- GLOBAL CUSTOM CURSOR (Curzr "Big Circle" style) -->
+<div class="curzr-big-circle" id="siteCursor" hidden>
+  <div class="circle"></div>
+  <div class="dot"></div>
+</div>
+<div class="cursor-label" id="cursorLabel"></div>
+
+<!-- Logo mark lives OUTSIDE the nav entirely on purpose — it must never be
+     nested inside anything carrying mix-blend-mode, or it gets swept into
+     that blend regardless of its own isolation settings. See the comment
+     on .nav-wrapper in style.css for the full explanation. -->
+<a href="#top" class="logo-mark-fixed curzr-hover" id="logoMarkFixed" aria-label="Jayson Alegarbes — home">
+  <img src="assets/logo/logo-mark.svg" alt="">
+</a>
+
+<!-- NAV -->
+<header class="nav-wrapper" id="navWrapper">
+  <a href="#top" class="nav-logo curzr-hover">
+    <img src="assets/logo/logo-name.svg" alt="Jayson Alegarbes" class="logo-name" width="150" height="34">
+  </a>
+
+  <nav class="nav-links" id="navLinks">
+    <a href="#about" class="curzr-hover">About</a>
+    <a href="#work" class="curzr-hover">Work</a>
+    <a href="#services" class="curzr-hover">Services</a>
+  </nav>
+
+  <button class="burger curzr-hover" id="burger" aria-label="Toggle navigation">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<main>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="top">
+    <img src="assets/hero_background.webp" alt="" class="hero-bg" aria-hidden="true">
+
+    <div class="hero-container">
+
+      <div class="orbit-system" id="orbitSystem">
+        <svg viewBox="0 0 600 600" class="orbit-svg" overflow="visible">
+          <defs>
+            <radialGradient id="sphereGradient" cx="30%" cy="30%" r="70%">
+              <stop offset="0%" stop-color="#f5f5f5" />
+              <stop offset="40%" stop-color="#d6d6d6" />
+              <stop offset="70%" stop-color="#a8a8a8" />
+              <stop offset="100%" stop-color="#716558" />
+            </radialGradient>
+            <linearGradient id="orbitStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#716558" />
+              <stop offset="100%" stop-color="#D7C0A7" />
+            </linearGradient>
+          </defs>
+
+          <ellipse cx="300" cy="300" rx="260" ry="200" class="outer-ring" />
+          <circle cx="300" cy="300" r="160" class="inner-ring" />
+          <circle cx="300" cy="300" r="110" class="inner-ring" />
+          <circle cx="300" cy="300" r="60" class="inner-ring" />
+          <line x1="0" y1="300" x2="600" y2="300" class="axis-line" />
+          <line x1="300" y1="0" x2="300" y2="600" class="axis-line" />
+
+          <g class="orbit-rotate-left">
+            <circle cx="140" cy="300" r="10" fill="url(#sphereGradient)" stroke="url(#orbitStroke)" stroke-width="0.8" />
+          </g>
+          <g class="orbit-rotate-right">
+            <circle cx="460" cy="300" r="10" fill="url(#sphereGradient)" stroke="url(#orbitStroke)" stroke-width="0.8" />
+          </g>
+          <circle cx="300" cy="80" r="8" fill="url(#sphereGradient)" />
+          <circle cx="300" cy="520" r="8" fill="url(#sphereGradient)" />
+        </svg>
+      </div>
+
+      <div class="hero-left">
+        <div class="hero-top-group">
+          <h1 class="hero-title">
+            <span class="title-line">UI/UX</span>
+            <span class="hero-sparkle" aria-hidden="true">✦</span>
+            <span class="title-line">VISUAL DESIGNER</span>
+          </h1>
+        </div>
+
+        <div class="hero-bottom-row">
+          <div class="hero-socials">
+            <div class="socials-row">
+              <a href="https://behance.net/jysnalegarbes" target="_blank" rel="noreferrer" class="social-icon curzr-hover" aria-label="Behance">
+                <img src="assets/icon - behance.svg" alt="" width="18" height="18">
+              </a>
+              <a href="https://linkedin.com/in/alegarbesjayson" target="_blank" rel="noreferrer" class="social-icon curzr-hover" aria-label="LinkedIn">
+                <img src="assets/icon - linkedin.svg" alt="" width="18" height="18">
+              </a>
+              <a href="#" target="_blank" rel="noreferrer" class="social-icon curzr-hover" aria-label="Instagram">
+                <img src="assets/icon - ig.svg" alt="" width="18" height="18">
+              </a>
+              <a href="mailto:alegarbes.jayson@gmail.com" class="social-icon curzr-hover" aria-label="Email">
+                <img src="assets/icon - gmail.svg" alt="" width="18" height="18">
+              </a>
+            </div>
+          </div>
+
+          <div class="hero-ctas">
+            <a href="mailto:alegarbes.jayson@gmail.com" class="cta-primary curzr-hover">→ Work With Me</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-portrait" id="heroPortrait">
+        <img src="assets/hero_portraits/img_hero 1.webp" alt="Jayson Alegarbes" id="heroPortraitImg">
+      </div>
+
+      <div class="hero-right">
+        <p class="philosophy">
+          <span>WEBSITE DESIGN</span>
+          <span>UI/UX DESIGN</span>
+          <span>VISUAL SYSTEMS</span>
+        </p>
+        <div class="hero-decor" aria-hidden="true">
+          <img src="assets/hero-decor.svg" alt="">
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="about" id="about">
+    <img src="assets/about_background.webp" alt="" class="about-bg" aria-hidden="true">
+    <img src="assets/about-decor.svg" alt="" class="about-decor" id="aboutDecor" aria-hidden="true">
+
+    <div class="about-container">
+      <div class="about-left">
+        <p class="about-intro">Hi! Nice to meet you</p>
+        <p class="about-paragraph">I'm Jayson, a UI/UX and visual designer based in the Philippines.</p>
+        <p class="about-paragraph">I design websites, interfaces, and visual experiences that turn ideas into something clear, engaging, and easy to understand.</p>
+        <p class="about-paragraph">My work brings together thoughtful structure and intentional visual design — creating digital experiences that feel purposeful, consistent, and distinctly my own.</p>
+      </div>
+
+      <div class="about-right">
+        <h2 class="about-headline">
+          <span class="headline-line">I design with</span>
+          <span class="headline-line"><span class="italic">structure, clarity,</span></span>
+          <span class="headline-line">and <span class="italic">purpose.</span></span>
+        </h2>
+      </div>
+    </div>
+
+    <div class="about-photos">
+      <div class="about-photo about-photo-hiking">
+        <img src="assets/img - hiking.webp" alt="Hiking with friends">
+      </div>
+      <div class="about-photo about-photo-coastline">
+        <img src="assets/img - coastline.webp" alt="Coastline at sunset">
+      </div>
+      <div class="about-photo about-photo-terrarium">
+        <img src="assets/img - terrarium.webp" alt="Terrarium">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SELECTED WORKS ============ -->
+  <section class="works" id="work">
+    <div class="works-columns" id="worksColumns">
+      <div class="works-col"></div>
+      <div class="works-col"></div>
+      <div class="works-col"></div>
+    </div>
+
+    <a href="#" class="works-image-link curzr-hover" data-cursor-label="View Project" aria-label="View project"></a>
+
+    <div class="works-overlay">
+      <div class="works-label-row">
+        <span class="works-label">✧ Selected Works</span>
+        <div class="works-label-line"></div>
+      </div>
+
+      <div class="works-center" id="worksCenter">
+        <h3 class="works-title" id="worksTitle"></h3>
+        <div class="works-tags" id="worksTags"></div>
+      </div>
+
+      <a href="#" class="works-view-link curzr-hover">⊙ View Project</a>
+
+      <div class="works-nav">
+        <button class="works-arrow works-arrow-up curzr-hover" id="worksPrev" aria-label="Previous project">↑</button>
+        <div class="works-dots" id="worksDots"></div>
+        <button class="works-arrow works-arrow-down curzr-hover" id="worksNext" aria-label="Next project">↓</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MY APPROACH ============ -->
+  <section class="approach" id="approach">
+    <h2 class="approach-headline">
+      <span class="headline-line">Where <span class="italic">structure</span></span>
+      <span class="headline-line">meets visual <span class="italic">clarity.</span></span>
+    </h2>
+
+    <div class="approach-rows" id="approachRows">
+      <div class="approach-row" data-title="Structure" data-image="assets/Approach/digital_experiences.png">
+        <span class="approach-num">◇ 01</span>
+        <span class="approach-row-title">Structure</span>
+        <span class="approach-row-desc">Turning your content, experience, and ideas into a website that&rsquo;s clear and easy to navigate.</span>
+      </div>
+      <div class="approach-row" data-title="Visual Direction" data-image="assets/Approach/visual_systems.png">
+        <span class="approach-num">◇ 02</span>
+        <span class="approach-row-title">Visual Direction</span>
+        <span class="approach-row-desc">Creating a visual language that feels intentional, distinctive, and aligned with how you want to be perceived.</span>
+      </div>
+      <div class="approach-row" data-title="Digital Experience" data-image="assets/Approach/marketing_assets.png">
+        <span class="approach-num">◇ 03</span>
+        <span class="approach-row-title">Digital Experience</span>
+        <span class="approach-row-desc">Bringing everything together through thoughtful interaction, responsive design, and a polished user experience.</span>
+      </div>
+    </div>
+
+    <div class="approach-preview" id="approachPreview">
+      <div class="approach-preview-inner">
+        <img src="" alt="" class="approach-preview-img" id="approachPreviewImg">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PORTFOLIO WEBSITE SERVICES ============ -->
+  <section class="services" id="services">
+    <div class="services-top">
+      <span class="services-eyebrow">✦ Services ✦</span>
+    </div>
+
+    <h2 class="services-headline">
+      <span class="headline-line">Portfolio websites</span>
+      <span class="headline-line">designed <span class="italic">around you.</span></span>
+    </h2>
+
+    <div class="services-grid" id="servicesGrid">
+      <article class="service-card service-card-freelancers curzr-hover" data-cursor-label="Explore">
+        <div class="service-media">
+          <img src="assets/services/img - freelancers.webp" alt="Freelancer portfolio website displayed on a laptop">
+        </div>
+        <div class="service-copy">
+          <div class="service-meta">
+            <span class="service-num"><span class="diamond">◇</span> 01</span>
+            <span class="service-rule" aria-hidden="true"></span>
+          </div>
+          <h3 class="service-title">Freelancers</h3>
+          <p class="service-desc">For freelancers who want to showcase their work, services, and experience professionally.</p>
+        </div>
+      </article>
+
+      <article class="service-card service-card-independent curzr-hover" data-cursor-label="Explore">
+        <div class="service-media">
+          <img src="assets/services/img - professionals.webp" alt="Independent professional portfolio website displayed on a laptop">
+        </div>
+        <div class="service-copy">
+          <div class="service-meta">
+            <span class="service-num"><span class="diamond">◇</span> 02</span>
+            <span class="service-rule" aria-hidden="true"></span>
+          </div>
+          <h3 class="service-title">Independent Professionals</h3>
+          <p class="service-desc">For specialists who want to build a more credible presence and create better opportunities.</p>
+        </div>
+      </article>
+
+      <article class="service-card service-card-creatives curzr-hover" data-cursor-label="Explore">
+        <div class="service-media">
+          <img src="assets/services/img - creatives.webp" alt="Creative professional portfolio website displayed on a laptop">
+        </div>
+        <div class="service-copy">
+          <div class="service-meta">
+            <span class="service-num"><span class="diamond">◇</span> 03</span>
+            <span class="service-rule" aria-hidden="true"></span>
+          </div>
+          <h3 class="service-title">Creatives</h3>
+          <p class="service-desc">For designers, creators, and visual professionals whose work deserves a more expressive presentation.</p>
+        </div>
+      </article>
+    </div>
+
+    <div class="services-bottom-copy">
+      <div class="color-reveal-heading" id="servicesBottomHeading">
+        <h3 class="color-reveal-base">
+          <span class="headline-line">Let&rsquo;s build a <span class="italic">portfolio website</span> that</span>
+          <span class="headline-line">truly represents you.</span>
+        </h3>
+      </div>
+
+      <div class="services-bottom-row">
+        <p class="services-bottom-sub">A professional website built to present your work, experience, and services with clarity — without looking like everyone else&rsquo;s template.</p>
+        <a href="mailto:alegarbes.jayson@gmail.com" class="services-bottom-link curzr-hover">→ Start a Project</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCROLL-SCRUB STORYTELLING ============ -->
+  <section class="storytelling" id="storytelling">
+    <div class="story-pin" id="storyPin">
+      <!-- No autoplay/controls on purpose — GSAP drives currentTime
+           directly from scroll position instead of letting the video play
+           on its own. muted+playsinline are required for browsers to
+           allow programmatic control at all. -->
+      <video
+        class="storytelling-video"
+        id="storytellingVideo"
+        src="assets/storytelling/storytelling-scrub.mp4"
+        muted
+        playsinline
+        preload="auto"
+      ></video>
+
+      <div class="storytelling-vignette" aria-hidden="true"></div>
+
+      <h2 class="storytelling-heading" id="storytellingHeading">
+        <span class="headline-line">A website <span class="italic">should do</span></span>
+        <span class="headline-line">more than look good.</span>
+      </h2>
+
+      <div class="story-caption story-caption-1" id="storyCaption1">
+        <span class="story-caption-marker">✦</span>
+        <div class="story-caption-copy">
+          <span class="story-caption-lines">
+            <span class="caption-line">Look like you</span>
+          </span>
+          <p class="story-caption-desc">A visual direction built around your work, personality, and professional goals.</p>
+        </div>
+      </div>
+
+      <div class="story-caption story-caption-2" id="storyCaption2">
+        <span class="story-caption-marker">✦</span>
+        <div class="story-caption-copy">
+          <span class="story-caption-lines">
+            <span class="caption-line">Make your work easy</span>
+            <span class="caption-line">to understand</span>
+          </span>
+          <p class="story-caption-desc">Clear structure that helps visitors quickly understand who you are, what you do, and what you offer.</p>
+        </div>
+      </div>
+
+      <div class="story-caption story-caption-3" id="storyCaption3">
+        <span class="story-caption-marker">✦</span>
+        <div class="story-caption-copy">
+          <span class="story-caption-lines">
+            <span class="caption-line">Create better opportunities</span>
+          </span>
+          <p class="story-caption-desc">Presenting your work with confidence and creating a stronger first impression with the people who matter.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CTA ============ -->
+  <section class="cta" id="contact">
+    <img src="assets/cta_background.webp" alt="" class="cta-bg" aria-hidden="true">
+
+    <div class="cta-frames" aria-hidden="true">
+      <span class="cta-rect cta-rect1"></span>
+      <span class="cta-rect cta-rect2"></span>
+      <span class="cta-rect cta-rect3"></span>
+    </div>
+
+    <div class="cta-content">
+      <h2 class="cta-headline">Let&rsquo;s create <br>something <span class="italic">worth showing off.</span></h2>
+
+      <div class="cta-bar">
+        <span class="cta-sub">Open to freelance projects, collaborations, and new opportunities.</span>
+        <a href="mailto:alegarbes.jayson@gmail.com" class="cta-link curzr-hover">→ Get in Touch</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer" id="footer">
+  <div class="footer-socials-top">
+    <a href="https://behance.net/jysnalegarbes" target="_blank" rel="noreferrer" class="curzr-hover">
+      <img src="assets/icon - behance.svg" alt="" width="16" height="16"> Behance
+    </a>
+    <a href="https://linkedin.com/in/alegarbesjayson" target="_blank" rel="noreferrer" class="curzr-hover">
+      <img src="assets/icon - linkedin.svg" alt="" width="16" height="16"> LinkedIn
+    </a>
+    <a href="#" class="curzr-hover">
+      <img src="assets/icon - ig.svg" alt="" width="16" height="16"> Instagram
+    </a>
+    <a href="mailto:alegarbes.jayson@gmail.com" class="curzr-hover">
+      <img src="assets/icon - gmail.svg" alt="" width="16" height="16"> Email
+    </a>
+  </div>
+
+  <h2 class="footer-name" id="footerName">
+    <span class="footer-name-line footer-name-left" id="footerNameLeft"><span class="footer-name-first">J</span><span class="footer-name-rest">ayson</span></span>
+    <span class="footer-name-line footer-name-right" id="footerNameRight"><span class="footer-name-first">A</span><span class="footer-name-rest">legarbes</span></span>
+  </h2>
+
+  <div class="footer-bottom">
+    <p>© 2026 Jayson Alegarbes. All Rights Reserved.</p>
+    <button class="footer-top curzr-hover" id="backToTop" aria-label="Back to top">↑</button>
+  </div>
+</footer>
+
+<!-- ============ SCRIPTS ============ -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollToPlugin.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
