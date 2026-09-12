@@ -693,12 +693,21 @@ const worksController = (function works() {
 
   if (prefersReduced) {
     gsap.set(chars, { opacity: 1 });
+    gsap.set(chars, {
+      color: (i, target) => (target.closest(".italic, .highlight-green") ? "#0fb12a" : "#141918"),
+    });
     return;
   }
 
   gsap.set(chars, { color: "#ffffff" });
   gsap.to(chars, {
-  color: "#141918",
+  // Per-character target color: "portfolio website" (.italic) and "you."
+  // (.highlight-green) reveal to green instead of black. GSAP accepts a
+  // function here, evaluated once per target, so this stays one single
+  // synchronized sweep across every character (same stagger, same
+  // scrollTrigger) rather than needing separate tweens per color group,
+  // which would desync the left-to-right reveal order.
+  color: (i, target) => (target.closest(".italic, .highlight-green") ? "#0FB12A" : "#7B7F7B"),
   stagger: { each: 0.02, from: "start" },
   ease: "none",
   scrollTrigger: {

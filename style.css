@@ -967,7 +967,7 @@ a, button, .curzr-hover {
 .service-meta {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
   width: 100%;
   margin-bottom: 18px;
 }
@@ -983,7 +983,7 @@ a, button, .curzr-hover {
 
 /* The diamond glyph is wrapped separately from the number so it can be
    colored on its own without also turning the "01"/"02"/"03" green. */
-.service-num .diamond { color: var(--black); }
+.service-num .diamond { color: var(--green); }
 
 .service-rule {
   width: 100%;
@@ -1062,6 +1062,7 @@ a, button, .curzr-hover {
 }
 
 .color-reveal-base .italic { color: var(--black); }
+.color-reveal-base .highlight-green { color: var(--green); }
 
 .char-reveal {
   display: inline;
@@ -1439,7 +1440,7 @@ a, button, .curzr-hover {
   display: flex;
   flex-direction: column;
   font-family: var(--font-display);
-  font-size: 200px;
+  font-size: 300px;
   font-weight: 400;
   line-height: 0.95;
   margin: auto 0;
@@ -1476,11 +1477,11 @@ a, button, .curzr-hover {
 
 @media (max-width: 1024px) {
   .footer { padding: 40px 40px 30px; }
-  .footer-name { font-size: 120px; }
+  .footer-name { font-size: 150px; }
 }
 
 @media (max-width: 600px) {
-  .footer-name { font-size: 64px; }
+  .footer-name { font-size: 80px; }
   .footer-socials-top {
     flex-direction: column;
     align-items: flex-end;
