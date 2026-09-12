@@ -704,7 +704,7 @@ const worksController = (function works() {
   scrollTrigger: {
     trigger: wrap,
     start: "top 90%",
-    end: "top -50%",
+    end: "top 5%",
     scrub: 0.6,
   },
 });

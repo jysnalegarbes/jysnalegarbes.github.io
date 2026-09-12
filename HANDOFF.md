@@ -79,28 +79,37 @@ placeholder-only project for a long time; that's no longer the case.
 
 ## Known gotcha — mobile Services grid, verify on a real phone
 
-The person reported the Services cards showing side-by-side (2 columns)
-on their phone instead of stacked. Investigated thoroughly:
+**Update: root cause found and fixed.** The original `!important` patch
+from the previous round was treating a symptom, not the cause, and
+turned out to be insufficient — the person confirmed via real screenshots
+(Chrome DevTools at 768px and 425px) that this was a genuine, visible
+**overlap bug**, not just a wrong-column-count issue.
 
-- Confirmed via direct CSSOM inspection that the `@media (max-width:
-  700px) { .services-grid { grid-template-columns: 1fr; } }` rule exists,
-  is correctly written, and its media condition does match at a real
-  phone's width (390px tested).
-- Despite that, a local headless-browser test tool in this project's dev
-  environment (a stripped-down `chrome-headless-shell` binary) rendered 3
-  unequal columns instead of 1 — and **still did, even after adding
-  `!important`** to that rule, which should be unbeatable in a normal
-  cascade if the issue were really a specificity/ordering problem.
-- That strongly suggests the failure is a limitation of that specific
-  testing binary's CSS Grid handling under an emulated/small viewport,
-  not a real bug in the site's code — but this was **not confirmed on an
-  actual phone/real browser**, only reasoned from the evidence available.
+**Actual root cause:** the desktop "V-stagger" layout pins all three
+cards to `grid-row: 1` in an unscoped rule (applies at every screen
+size, not just desktop). At the ≤1100px breakpoint, the layout switches
+to 2 columns with Creatives meant to drop to a new row below — but
+nothing ever told it to actually move to `grid-row: 2`, so it stayed
+pinned to row 1 and rendered directly on top of Freelancers and
+Independent Professionals. The ≤700px single-column breakpoint had the
+same underlying problem, which is why cards weren't cleanly stacking
+there either — three items all fighting over the same row rather than
+flowing into their own rows.
 
-**Action needed:** check the live site on a real phone after this update.
-If it's still 2-column there, that's real signal this reasoning was wrong
-and needs a fresh look — don't assume the `!important` fix is sufficient
-without that confirmation. If it's correctly stacked, the `!important` can
-likely be removed later as unneeded (though it's harmless to leave).
+**Fix:** both the ≤1100px and ≤700px blocks now explicitly reset
+`grid-row: auto` on all three cards, undoing the desktop row-pinning
+before applying their own layout. The `!important` hack from the
+previous round was removed — it's not needed once the actual cause is
+fixed, and leaving stray `!important`s around makes future debugging
+harder, not easier.
+
+**Verified via headless browser at the exact reported widths** (768px,
+425px, 390px) plus 900px and 1440px for good measure — zero bounding-box
+overlap between any of the three cards at any tested width, correct
+single-column stack under 700px, correct 2-then-1 layout in the tablet
+range, correct V-stagger preserved on desktop. Still worth a real-phone
+confirmation after deploy, same as always, but this is a real, understood
+fix now — not a guess.
 
 ## Testing method used this round
 

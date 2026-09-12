@@ -983,7 +983,7 @@ a, button, .curzr-hover {
 
 /* The diamond glyph is wrapped separately from the number so it can be
    colored on its own without also turning the "01"/"02"/"03" green. */
-.service-num .diamond { color: var(--green); }
+.service-num .diamond { color: var(--black); }
 
 .service-rule {
   width: 100%;
@@ -1289,6 +1289,18 @@ a, button, .curzr-hover {
     row-gap: 72px;
   }
 
+  /* All three cards were pinned to grid-row: 1 for the desktop 3-column
+     layout (unscoped rule above). At this breakpoint there are only 2
+     columns, so without resetting the row, Creatives (told to span full
+     width here) stayed on row 1 and rendered directly on top of the other
+     two instead of dropping below them — this is what caused the real
+     overlap bug at tablet widths. */
+  .service-card-freelancers,
+  .service-card-independent,
+  .service-card-creatives {
+    grid-row: auto;
+  }
+
   .service-card-creatives {
     grid-column: 1 / -1;
     width: min(70%, 760px);
@@ -1306,10 +1318,18 @@ a, button, .curzr-hover {
 @media (max-width: 700px) {
   .services { padding: 100px 24px 90px; }
   .services-headline { font-size: 32px; margin-bottom: 44px; }
-  .services-grid { grid-template-columns: 1fr !important; gap: 56px; }
+  .services-grid { grid-template-columns: 1fr; gap: 56px; }
+  /* Same fix as the 1100px breakpoint above, plus resetting the width/
+     margin the desktop stagger set — at a single column, every card
+     should just be a plain full-width block stacked in DOM order. */
   .service-card-freelancers,
-  .service-card-creatives { margin: 0; }
-  .service-card-creatives { grid-column: auto; width: 100%; margin: 0; }
+  .service-card-independent,
+  .service-card-creatives {
+    grid-column: auto;
+    grid-row: auto;
+    width: 100%;
+    margin: 0;
+  }
   .service-card-freelancers .service-media,
   .service-card-independent .service-media,
   .service-card-creatives .service-media { aspect-ratio: 4 / 3; }
