@@ -1,12 +1,10 @@
-/* =========================
-   TOKENS & RESET
-========================= */
+/* TOKENS & RESET */
 :root {
   --green: #0fb12a;
   --black: #141918;
   --brown: #716558;
   --gray: #7b7f7b;
-  --white: #d7dede;
+  --white: #f8f9f9;
   --bg-hero: #c8d0d0;
   --bg-section: #d3ddda;
 
@@ -31,7 +29,7 @@ html {
 html, body {
   max-width: 100vw;
   overflow-x: hidden;
-  background: var(--bg-hero);
+  background: var(--white);
   color: var(--black);
 }
 
@@ -57,10 +55,18 @@ img { max-width: 100%; display: block; }
 
 :focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
 
-/* =========================
-   GLOBAL CUSTOM CURSOR (Curzr "Big Circle")
-   Active across the whole site — see script.js
-========================= */
+/* GSAP auto-generates a wrapping "pin-spacer" div for any pinned element
+   (e.g. .works-fixed-overlay, #storyPin) to reserve its layout space —
+   this spacer doesn't set pointer-events itself, and its invisible
+   bounding box was silently blocking hover/click on whatever sits
+   underneath it (found via document.elementFromPoint: this is exactly
+   why Works' "View Project" cursor label worked on slides 2/3 but not
+   slide 1, where the spacer's box happens to overlap). The actual pinned
+   content already sets pointer-events:auto on its own clickable children
+   independently, so this doesn't affect their interactivity. */
+.pin-spacer { pointer-events: none; }
+
+/* GLOBAL CUSTOM CURSOR (Curzr "Big Circle") — see script.js */
 body {
   cursor: none;
 }
@@ -144,9 +150,7 @@ a, button, .curzr-hover {
   body, a, button, .curzr-hover { cursor: auto; }
 }
 
-/* =========================
-   NAV
-========================= */
+/* NAV */
 .logo-mark-fixed {
   position: fixed;
   top: 24px;
@@ -174,17 +178,10 @@ a, button, .curzr-hover {
   justify-content: space-between;
   padding: 24px 80px;
   transition: padding 0.4s var(--ease-out-2);
-  /* Everything inside nav-wrapper blends as ONE group against the real page.
-     This is correct for .nav-logo (the wordmark) and .nav-links — but a
-     child's own `isolation`/`mix-blend-mode: normal` does NOT exempt it
-     from an ancestor's mix-blend-mode; the ancestor flattens its whole
-     subtree first, then blends that flattened image as a unit. There's no
-     way to carve a "hole" out of that from the inside. That's why the logo
-     mark kept getting affected even with isolation on it — it was still
-     part of this subtree. The only real fix is to make it a true sibling
-     that's never nested in here at all, which is why it now lives outside
-     this element entirely (see .logo-mark-fixed above), positioned to
-     visually sit in the same spot. */
+  /* A child's own isolation/mix-blend-mode:normal can't exempt it from
+     this ancestor's blend — the whole subtree gets flattened first. The
+     logo mark had to move outside this element entirely to escape it
+     (see .logo-mark-fixed above). */
   mix-blend-mode: difference;
 }
 
@@ -214,7 +211,7 @@ a, button, .curzr-hover {
   text-transform: uppercase;
 }
 
-.nav-links a { color: #fff; position: relative; }
+.nav-links a { color: var(--white); position: relative; }
 
 .nav-links a::after {
   content: "";
@@ -223,7 +220,7 @@ a, button, .curzr-hover {
   bottom: -4px;
   width: 0;
   height: 1px;
-  background: #fff;
+  background: var(--white);
   transition: width 0.35s var(--ease-out-2);
 }
 
@@ -239,7 +236,7 @@ a, button, .curzr-hover {
 .burger span {
   width: 26px;
   height: 2px;
-  background: #fff;
+  background: var(--white);
   border-radius: 2px;
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
@@ -273,9 +270,7 @@ a, button, .curzr-hover {
   .nav-links.open { transform: translateX(0); }
 }
 
-/* =========================
-   HERO
-========================= */
+/* HERO */
 .hero {
   position: sticky;
   top: 0;
@@ -394,6 +389,27 @@ a, button, .curzr-hover {
 
 .social-icon img { width: 16px; height: 16px; }
 
+/* Magnetic pull hit-zone: negative margin + equal padding expands the
+   area that triggers the pull without changing the element's visual
+   size or footprint in the layout (padding grows the box, the matching
+   negative margin pulls it back). Icons use a small buffer since they
+   only have 14px of gap between them — the reference's original 100px
+   would make adjacent icons' zones overlap and fight each other. The
+   CTA button has room to spare, so it gets a bigger, more noticeable
+   pull radius. See magneticButtons() in script.js. */
+.magnetic {
+  display: inline-block;
+  margin: -8px;
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.magnetic-cta {
+  margin: -24px;
+  padding: 24px;
+  border-radius: 999px;
+}
+
 .social-icon:hover { background: var(--black); transform: translateY(-3px) scale(1.06); }
 .social-icon:hover img { filter: brightness(0) invert(1); }
 
@@ -413,7 +429,7 @@ a, button, .curzr-hover {
 .cta-primary { background: var(--green); color: var(--black); }
 .cta-secondary { border: 1px solid var(--brown); color: var(--black); }
 .cta-primary:hover, .cta-secondary:hover { transform: translateY(-3px); }
-.cta-secondary:hover { background: var(--black); color: #fff; border-color: var(--black); }
+.cta-secondary:hover { background: var(--black); color: var(--white); border-color: var(--black); }
 
 .hero-portrait {
   position: relative;
@@ -467,13 +483,11 @@ a, button, .curzr-hover {
   .orbit-system { display: none; }
 }
 
-/* =========================
-   ABOUT
-========================= */
+/* ABOUT */
 .about {
   position: relative;
   height: 100vh;
-  background: #f7f8f7;
+  background: var(--white);
   padding: 92px 6vw 40px;
   display: flex;
   flex-direction: column;
@@ -481,16 +495,6 @@ a, button, .curzr-hover {
   gap: 64px;
   z-index: 2;
   overflow: hidden;
-}
-
-.about-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: 0;
-  pointer-events: none;
 }
 
 .about-decor {
@@ -561,7 +565,7 @@ a, button, .curzr-hover {
 
 @media (max-width: 1024px) {
   .about { height: auto; min-height: 100vh; padding: 120px 40px 60px; }
-  .about-decor { opacity: 0.5; }
+  .about-decor { opacity: 0.25; }
   .about-container { grid-template-columns: 1fr; gap: 32px; }
   .about-photos { flex-wrap: wrap; }
   .about-photo-hiking, .about-photo-coastline, .about-photo-terrarium { margin-top: 0; }
@@ -573,81 +577,113 @@ a, button, .curzr-hover {
   .about { padding: 100px 24px 48px; }
   .about-intro { margin-bottom: 30px; }
   .about-paragraph { margin-left: 0; }
-  .about-decor { opacity: 0.5; }
+  .about-decor { opacity: 0.15; }
   .about-photos { flex-direction: column; }
   .about-photo-hiking, .about-photo-coastline, .about-photo-terrarium { width: 100%; height: 220px; }
 }
 
-/* =========================
-   SELECTED WORKS
-   Full-bleed 3-column slider (adapted from the codepen "up/down" mechanic).
-   Each project image is split across 3 columns via background-position so it
-   reads as one photo; go(dir) slides columns up/down in a checkerboard.
-========================= */
+/* SELECTED WORKS
+   Continuous-scroll parallax (adapted from a GSAP "parallax with wiping
+   titles" reference), not pinned. Each project is its own 100vh <li> in
+   normal document flow — no more checkerboard column-swap, no snap.
+   Background is sized taller than its frame so it has room to travel
+   during the parallax without exposing gaps. See worksParallax() in
+   script.js. Removed the old arrow/dot nav — it was built for jumping
+   between pinned discrete slides, which doesn't have a clean equivalent
+   once this is just normal continuous scroll. */
 .works {
   position: relative;
-  height: 100vh;
   background: var(--black);
+  margin-top: 40px;
   z-index: 3;
-  overflow: hidden;
 }
 
-.works-columns {
+.works-slides {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.works-slide {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  /* Matches the About section's background — visible briefly as the
+     margin around the first slide's clip-path entrance reveal (see
+     worksParallax() in script.js), so the transition from About into
+     Works starts on the same white rather than jumping straight to the
+     section's own black before the image has expanded to cover it. */
+  background: var(--white);
+}
+
+.works-slide-bg {
   position: absolute;
-  inset: 0;
-  display: flex;
+  left: 0;
+  /* Double-height, centered: with equal 100vh slides the parallax formula
+     can translate this by up to half the viewport height in either
+     direction. 50% overhang top and bottom is the minimum that covers
+     that full range without ever exposing empty space at an edge —
+     verified by computing the actual translation values, not guessed. */
+  top: -50%;
+  width: 100%;
+  height: 200%;
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
   z-index: 0;
 }
 
-.works-col {
-  position: relative;
-  flex: 1;
-  height: 100vh;
-  overflow: hidden;
-}
-
-.works-col-inner {
+/* Real element, not ::after — a pseudo-element always paints after all
+   real children regardless of source order, which would put this on top
+   of the overlay text instead of just above the image. */
+.works-slide-scrim {
   position: absolute;
   inset: 0;
-  width: 300%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-/* darken image slightly so overlay text stays legible, per mockup */
-.works-columns::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(0deg, rgba(20, 25, 24, 0.55), rgba(20, 25, 24, 0.05) 45%, rgba(20, 25, 24, 0.15));
-  pointer-events: none;
   z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(0deg, rgba(20, 25, 24, 0.55), rgba(20, 25, 24, 0.05) 45%, rgba(20, 25, 24, 0.15));
 }
 
-/* Whole-image click target — sits above the photo, below the overlay's real
-   interactive controls. No z-index needed: works-columns, this link, and
-   works-overlay are already in the right paint order via DOM order alone —
-   giving this a z-index would create its own stacking context and isolate
-   .works-title's blend from the actual image behind it (same issue the nav
-   had). */
 .works-image-link {
   position: absolute;
   inset: 0;
+  z-index: 2;
 }
+
+/* Pinned across the whole section (not per-slide) — sticky within
+   .works's own scroll range, so the label stays at the top and the
+   View Project link stays at the bottom the entire time you're
+   scrolling through the works slides, then releases naturally once
+   .works itself scrolls past. */
+/* Pinned across the whole section via ScrollTrigger (see worksParallax()
+   in script.js), not native CSS position:sticky — the site's global
+   `overflow-x: hidden` on html/body (see near the top of this file)
+   silently breaks native sticky for any descendant, everywhere on the
+   page, not just here. ScrollTrigger's pin is JS-driven (position:fixed
+   applied directly, plus a manufactured spacer) and is immune to that. */
+.works-fixed-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 10;
+  padding: 60px 80px;
+  pointer-events: none;
+}
+
+.works-fixed-overlay a { pointer-events: auto; }
 
 .works-overlay {
   position: relative;
+  z-index: 3;
   height: 100%;
   padding: 60px 80px;
   pointer-events: none;
 }
 
-.works-overlay a,
-.works-overlay button {
-  pointer-events: auto;
-}
+.works-overlay a { pointer-events: auto; }
 
 .works-label-row {
   display: flex;
@@ -655,108 +691,111 @@ a, button, .curzr-hover {
   gap: 20px;
 }
 
-.works-label { font-family: var(--font-label); font-size: 13px; letter-spacing: 2px; white-space: nowrap; color: #fff; }
-.works-label-line { flex: 1; height: 1px; background: rgba(255, 255, 255, 0.4); }
+.works-label { font-family: var(--font-label); font-size: 13px; letter-spacing: 2px; white-space: nowrap; color: var(--white); }
+.works-label-line { flex: 1; height: 1px; background: rgba(248, 249, 249, 0.4); }
 
-/* Centered title + tags block */
+/* Centered title + tags block — this is what gets the "wiping" parallax
+   motion (moves at ~2x the background's rate, opposite direction). */
+/* Title (left) / center image / tags (right) — all three sit inside this
+   one block, so they all move together with the same "wiping" parallax
+   motion applied to .works-center as a whole (see worksParallax() in
+   script.js) rather than needing separate per-element animations. */
 .works-center {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  max-width: 80%;
+  justify-content: space-between;
+  gap: 40px;
+  width: min(92%, 1400px);
+  will-change: transform;
+}
+
+.works-info-left {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .works-title {
   font-family: var(--font-display);
-  font-size: clamp(36px, 4.6vw, 72px);
+  font-size: clamp(32px, 3.6vw, 58px);
   font-weight: 400;
   line-height: 1.15;
   color: #d7dede;
   mix-blend-mode: difference;
-  white-space: nowrap;
-  clip-path: inset(0 0 0 0);
 }
 
 .works-title em { font-style: italic; }
 
-.works-tags {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
-  font-size: 15px;
-  letter-spacing: 0.5px;
-  color: #fff;
-  font-weight: 700;
+.works-center-image {
+  flex: 0 0 auto;
+  width: min(26vw, 380px);
+  aspect-ratio: 1;
+  border-radius: 24px;
+  overflow: hidden;
 }
 
-.works-tags span::before { content: "✦ "; }
+.works-center-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
+.works-tags {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  color: var(--white);
+  font-weight: 700;
+  text-align: right;
+}
+
+.works-tags span::after { content: " ✦"; }
+
+/* Desktop: hidden — the pinned label + hovering any project image
+   already communicates "clickable." Shown again on mobile, where
+   there's no hover to rely on (see the max-width: 600px breakpoint). */
 .works-view-link {
   position: absolute;
   left: 80px;
   bottom: 60px;
   font-size: 13px; letter-spacing: 2px; text-transform: uppercase; color: #d7dede;
   mix-blend-mode: difference;
-  display: inline-flex; gap: 8px; transition: letter-spacing 0.3s ease, opacity 0.3s ease;
+  display: none;
+  gap: 8px; transition: letter-spacing 0.3s ease, opacity 0.3s ease;
 }
 .works-view-link:hover { letter-spacing: 3px; opacity: 0.7; }
 
-.works-nav {
-  position: absolute;
-  right: 80px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.works-arrow {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  border: none;
-  color: #fff;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s ease, color 0.3s ease;
-}
-.works-arrow:hover { background: #fff; color: var(--black); }
-
-.works-dots { display: flex; flex-direction: column; gap: 8px; }
-.works-dots span { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.4); transition: background 0.3s ease; }
-.works-dots span.active { background: var(--green); }
-
 @media (max-width: 1024px) {
-  .works-overlay { padding: 100px 40px 40px; }
-  .works-nav { right: 40px; }
+  .works-overlay, .works-fixed-overlay { padding: 100px 40px 40px; }
   .works-view-link { left: 40px; bottom: 40px; }
-  .works-center { max-width: 90%; }
-  .works-title { white-space: normal; }
+  .works-center {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 88%;
+  }
+  .works-info-left { text-align: center; }
+  .works-center-image { width: min(60vw, 320px); }
+  .works-tags { align-items: center; text-align: center; }
 }
 
 @media (max-width: 600px) {
-  .works-overlay { padding: 90px 24px 24px; }
-  .works-nav { right: 20px; gap: 10px; }
-  .works-arrow { width: 38px; height: 38px; font-size: 14px; }
-  .works-view-link { left: 24px; bottom: 24px; }
-  .works-tags { flex-direction: column; gap: 6px; }
+  .works-overlay, .works-fixed-overlay { padding: 90px 24px 24px; }
+  .works-view-link { left: 24px; bottom: 24px; display: inline-flex; }
+  .works-center-image { width: min(70vw, 260px); }
+  .works-tags { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 12px 20px; }
 }
 
-/* =========================
-   MY APPROACH
-========================= */
+/* MY APPROACH */
 .approach {
   position: relative;
   height: 100vh;
@@ -781,7 +820,7 @@ a, button, .curzr-hover {
   grid-template-columns: 80px auto 1fr;
   align-items: center;
   column-gap: 48px;
-  padding: 26px 0;
+  padding: 40px 0;
   border-bottom: 1px solid rgba(20,25,24,0.15);
   transition: transform 0.4s var(--ease-out-2);
   cursor: pointer;
@@ -802,11 +841,8 @@ a, button, .curzr-hover {
   text-align: left;
 }
 
-/* Hover-reveal box, styling matches the devales codepen reference the
-   person supplied: a fixed box that follows the cursor, starting hidden
-   (opacity 0, scale 0.8) and settling in (opacity 1, scale 1) on enter.
-   The image itself separately scales from 1.4 down to 1 on enter, giving
-   a subtle "settling into focus" feel rather than a static swap. */
+/* Fixed box follows the cursor: hidden → opacity 1/scale 1 on enter,
+   image separately de-zooms from 1.4 to 1 (devales codepen reference). */
 .approach-preview {
   position: fixed;
   top: 0;
@@ -850,16 +886,13 @@ a, button, .curzr-hover {
   .approach-row-title { font-size: 22px; }
 }
 
-/* =========================
-   PORTFOLIO WEBSITE SERVICES
-   Editorial staggered layout. Cards use CSS Grid with natural row-sizing
-   rather than absolute positioning + a hand-tuned fixed container height —
-   grid rows auto-size to their tallest item, so a card overlapping the one
-   below it is structurally impossible, no pixel math to keep re-tuning.
-========================= */
+/* PORTFOLIO WEBSITE SERVICES
+   CSS Grid with natural row-sizing, not absolute positioning — rows
+   auto-size to their tallest item, so cards can't overlap regardless of
+   copy length. */
 .services {
   position: relative;
-  background: #ffffff;
+  background: var(--white);
   padding: 110px 6vw 80px;
   display: flex;
   flex-direction: column;
@@ -913,11 +946,8 @@ a, button, .curzr-hover {
   will-change: transform, filter, opacity;
 }
 
-/* V-shaped stagger: the two outer cards (Freelancers, Creatives) sit
-   lower, the middle card (Independent Professionals) stays at the top —
-   per the person's reference screenshot. Achieved via margin-top within
-   each card's own grid cell, not absolute positioning, so row height
-   still auto-sizes safely regardless of copy length (see gotcha #5). */
+/* V-stagger: outer cards sit lower, middle card stays at top. Via
+   margin-top within each grid cell, not absolute positioning. */
 .service-card-freelancers,
 .service-card-creatives {
   grid-row: 1;
@@ -1022,43 +1052,26 @@ a, button, .curzr-hover {
   justify-content: center;
 }
 
-/* Per-character opacity reveal: each character is split into its own
-   <span class="char-reveal"> at runtime (wrapCharsForReveal, top of
-   script.js) — including characters inside the nested .italic span, so
-   its distinct black color is preserved per-character rather than
-   flattened. The whole heading starts at 50% opacity; as the section
-   scrolls through view, each character's opacity is scrubbed to 100%,
-   staggered left-to-right so the reveal visibly sweeps from the first
-   letter to the last as you scroll — not a spatial color-swap wipe like
-   the previous version, a literal opacity-per-character stagger. See
-   script.js for the scrub logic; adapted from a GSAP "text reveal on
-   scroll" codepen reference the person supplied. */
+/* Each character is split into its own .char-reveal span at runtime
+   (wrapCharsForReveal). Starts at low opacity; a scroll-scrubbed sweep
+   raises each character to full color left-to-right. See script.js. */
 .color-reveal-heading {
   position: relative;
-  /* This is also the "gap between headline and subheadline" spacing from
-     an earlier round, now living here since the heading is a full-width
-     block above the sub-copy row rather than sharing a column with it. */
   margin-bottom: 120px;
 }
 
 .color-reveal-base {
   font-family: var(--font-display);
-  /* Reduced from an earlier flat 100px to 86px — verified empirically
-     (rendered and measured, not guessed) that 100px forces "Let's build
-     a portfolio website that" to still wrap internally into 2 visual
-     lines within this container even with the explicit line break after
-     it, defeating the intended clean 2-line layout. 90px was the exact
-     tipping point where it fits on one line; 86px keeps a small safety
-     margin for font-rendering differences across systems. */
+  /* 86px, not a rounder number — 90px+ wraps "Let's build a portfolio
+     website that" into 2 lines within this container, breaking the
+     intended 2-line layout. Verified by rendering, not guessed. */
   font-size: 86px;
   line-height: 1.12;
   font-weight: 400;
   margin: 0;
   color: var(--white);
-  /* No width constraint here on purpose — at this font size the heading
-     needs close to the section's full width to wrap into just two lines
-     ("...that" / "truly represents you.") instead of breaking awkwardly
-     into several short lines. */
+  /* No width constraint — needs close to full section width to wrap
+     into exactly 2 lines instead of several short ones. */
 }
 
 .color-reveal-base .italic { color: var(--black); }
@@ -1098,10 +1111,7 @@ a, button, .curzr-hover {
 
 .services-bottom-link:hover { transform: translateX(4px); letter-spacing: 1.5px; }
 
-/* Produx-inspired focus behavior:
-   default = everything sharp;
-   while a service is hovered = siblings softly blur/dim, hovered card
-   remains crisp and lifts slightly. */
+/* Hover focus: siblings blur/dim, hovered card stays crisp and lifts. */
 .services-grid.hovering .service-card:not(.active) {
   opacity: 0.42;
   filter: blur(7px);
@@ -1117,24 +1127,62 @@ a, button, .curzr-hover {
   overflow: hidden;
 }
 
-/* =========================
-   SCROLL-SCRUB STORYTELLING
-   Video-scrubbed: a pinned ScrollTrigger sets the <video>'s currentTime
-   directly from scroll progress instead of tweening SVG shapes — see
-   script.js. Uses the double-wrapper pin structure from an earlier round
-   (outer .storytelling at 300vh provides the scroll runway, inner
-   #storyPin at 100vh is the actual pin target) rather than pinning the
-   section directly — the person specifically asked to bring this version
-   of the mechanic back for comparison. CTA (sitting right after it in the
-   DOM) still rises and overlaps as the pin releases, same "liked" effect
-   as before — this remains a pin-release, not a layered parallax effect,
-   regardless of which of the two wrapper structures is in use.
-========================= */
+/* SCROLL-SCRUB STORYTELLING
+   Double-wrapper pin: outer .storytelling (300vh) provides scroll runway,
+   inner #storyPin (100vh) is the actual pin target — see script.js. CTA
+   rising to cover it on release is a pin-release effect, not parallax. */
 .storytelling {
   position: relative;
   height: 300vh;
-  background: var(--black);
+  /* --story-bg is animated via JS (tied to scroll progress, unlike the
+     star field below which is deliberately independent of it) — a
+     custom property lets GSAP tween a real color smoothly rather than
+     cross-fading two flat backgrounds. */
+  --story-bg: #141918;
+  background: var(--story-bg);
   z-index: 4;
+}
+
+/* Star field: pure CSS animation, no scroll-linked JS driving it at all —
+   this keeps twinkling/drifting continuously regardless of scroll
+   position or whether the section is even pinned, per explicit request.
+   Stars themselves are generated once in JS (position/size/timing need
+   randomizing), but nothing about their motion depends on scroll. */
+.storytelling-stars {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  animation: story-star-drift 45s linear infinite alternate;
+}
+
+.story-star {
+  position: absolute;
+  background: var(--white);
+  border-radius: 50%;
+  animation:
+    story-star-twinkle ease-in-out infinite,
+    story-star-float ease-in-out infinite alternate;
+}
+
+@keyframes story-star-drift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(-4%, 4%); }
+}
+
+@keyframes story-star-twinkle {
+  0%, 100% { opacity: var(--star-min, 0.15); }
+  50% { opacity: var(--star-max, 0.85); }
+}
+
+/* Per-star drift — each star gets its own small, randomized end point
+   (--star-x/--star-y, set in JS) and duration, so the field reads as
+   many independently-floating stars rather than one uniform sheet
+   moving together. */
+@keyframes story-star-float {
+  from { translate: 0 0; }
+  to { translate: var(--star-x, 12px) var(--star-y, -12px); }
 }
 
 .story-pin {
@@ -1145,32 +1193,23 @@ a, button, .curzr-hover {
   z-index: 1;
 }
 
-.storytelling-video {
+.storytelling-illustration {
   position: absolute;
   inset: 0;
   z-index: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 180px;
   pointer-events: none;
 }
 
-/* Subtle vignette so heading/captions stay legible regardless of what's
-   playing underneath at any given scroll position — the video's actual
-   content varies moment to moment and GSAP has no awareness of it. */
-.storytelling-vignette {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(0, 0, 0, 0.45),
-    rgba(0, 0, 0, 0.1) 30%,
-    rgba(0, 0, 0, 0.1) 70%,
-    rgba(0, 0, 0, 0.55)
-  );
+.storytelling-illustration svg {
+  width: min(70vw, 900px);
+  height: auto;
 }
+
+.wf-dot { fill: none; }
 
 .storytelling-heading {
   position: absolute;
@@ -1200,6 +1239,21 @@ a, button, .curzr-hover {
   pointer-events: none;
 }
 
+/* Small blurred preview swatch inside each caption's marker box — a
+   Produx-inspired detail: a soft out-of-focus color sample gives each
+   caption a tactile "anchor" instead of floating as plain text. */
+.story-caption-swatch {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: blur(6px);
+  transform: scale(1.3);
+}
+
+.story-caption-1 .story-caption-swatch { background: radial-gradient(circle at 30% 30%, #e8c9a0, #a86b3f); }
+.story-caption-2 .story-caption-swatch { background: radial-gradient(circle at 60% 40%, #9aa3a1, #4a5250); }
+.story-caption-3 .story-caption-swatch { background: radial-gradient(circle at 40% 60%, #6fe08a, #0fb12a); }
+
 .story-caption-copy { max-width: 340px; }
 
 .story-caption-lines {
@@ -1224,6 +1278,7 @@ a, button, .curzr-hover {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border: 1px solid rgba(215, 222, 222, 0.3);
   background: rgba(20, 25, 24, 0.3);
   backdrop-filter: blur(6px);
@@ -1236,15 +1291,8 @@ a, button, .curzr-hover {
 .story-caption-2 { top: 44%; left: 8%; }
 .story-caption-3 { bottom: 14%; right: 10%; }
 
-/* =========================
-   REVEAL-ON-SCROLL UTILITY: MASKED LINE SLIDE
-   Shared by section headlines (About/Services/Approach/CTA) and the
-   Storytelling captions. Each line is wrapped at runtime (see script.js,
-   wrapLinesForReveal()) in a .line-mask (overflow hidden) containing a
-   .line-inner that GSAP translates from below into place — a masked
-   slide-reveal per line, not a plain fade. Works identically whether the
-   line class is .headline-line or .caption-line.
-========================= */
+/* Shared masked line-slide reveal (wrapLinesForReveal, script.js) — used
+   by section headlines and the Storytelling captions. */
 .headline-line,
 .caption-line {
   display: block;
@@ -1352,9 +1400,7 @@ a, button, .curzr-hover {
   .story-caption-3 { bottom: 8%; right: 6%; }
 }
 
-/* =========================
-   CTA
-========================= */
+/* CTA */
 .cta {
   position: relative;
   height: 100vh;
@@ -1405,9 +1451,7 @@ a, button, .curzr-hover {
   .cta-rect3 { width: 92vw; aspect-ratio: 1 / 1.25; }
 }
 
-/* =========================
-   FOOTER
-========================= */
+/* FOOTER */
 .footer {
   position: relative;
   background: #eef1f0;
