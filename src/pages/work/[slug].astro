@@ -1,0 +1,210 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { Image } from 'astro:assets';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CaseIntro from '../../components/CaseIntro.astro';
+
+export const getStaticPaths = (async () => {
+  const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+    (a, b) => a.data.order - b.data.order,
+  );
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, next: projects[(i + 1) % projects.length] },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  next: CollectionEntry<'projects'>;
+}
+
+const { project, next } = Astro.props;
+const { title, summary, gallery } = project.data;
+const showNext = next.id !== project.id;
+---
+
+<BaseLayout title={`${title} — Jayson Alegarbes`} description={summary} current="work">
+  <!--
+    Arriving from a liquid morph (Work card or a next-project link): the
+    image already sits where the cover is, so hold back everything else
+    before first paint and let the intro bring it in
+    (see scripts/case-transition.ts).
+  -->
+  <script is:inline define:vars={{ slug: project.id }}>
+    (function () {
+      try {
+        var raw = sessionStorage.getItem('case-arrival');
+        sessionStorage.removeItem('case-arrival');
+        var a = raw && JSON.parse(raw);
+        if (a && a.slug === slug && Date.now() - a.t < 8000) {
+          document.documentElement.classList.add('case-arriving');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
+  <CaseIntro project={project}>
+    {
+      gallery.map(({ image, alt }) => (
+        <figure>
+          <Image src={image} alt={alt} widths={[480, 800, 1200, 1600]} sizes="(min-width: 1024px) 55vw, 90vw" />
+        </figure>
+      ))
+    }
+  </CaseIntro>
+
+  {
+    showNext && (
+      <section class="next" aria-labelledby="next-title">
+        <p class="next__label label">Next Project</p>
+        <a class="next__link" href={`/work/${next.id}/`} data-next-link>
+          <h2 class="next__title" id="next-title">
+            {next.data.title}
+          </h2>
+          <div class="next__media" data-next-media>
+            <Image
+              src={next.data.cover}
+              alt={next.data.coverAlt}
+              widths={[480, 800, 1200, 1600, 2000]}
+              sizes="(min-width: 1024px) 70vw, 90vw"
+            />
+          </div>
+          <p class="next__category">{next.data.category}</p>
+        </a>
+      </section>
+    )
+  }
+
+  {
+    showNext && (
+      <div class="case-ghost" aria-hidden="true" inert>
+        <div data-case-ghost={next.id} hidden>
+          <CaseIntro project={next} ghost />
+        </div>
+      </div>
+    )
+  }
+</BaseLayout>
+
+<script>
+  import { mountNextCase, playCaseIntro, resetOnRestore } from '../../scripts/case-transition';
+  import { mountPinnedOutro, mountTitleMorph } from '../../scripts/case-title';
+
+  playCaseIntro();
+  mountNextCase();
+  resetOnRestore();
+
+  // Sticky opening (desktop): pin the title and meta at their resting
+  // tops, measured with sticky off so a mid-page reload reads them right
+  const page = document.querySelector<HTMLElement>('main > .case');
+  const pins = page && {
+    title: page.querySelector<HTMLElement>('[data-case-title]'),
+    meta: page.querySelector<HTMLElement>('[data-case-meta]'),
+  };
+  const measurePins = () => {
+    if (!page || !pins) return;
+    (['title', 'meta'] as const).forEach((key) => {
+      const el = pins[key];
+      if (!el) return;
+      el.style.position = 'static';
+      page.style.setProperty(`--sticky-${key}`, `${el.getBoundingClientRect().top + window.scrollY}px`);
+      el.style.position = '';
+    });
+  };
+  measurePins();
+  document.fonts.ready.then(measurePins);
+  window.addEventListener('resize', measurePins);
+
+  // Big title melts into a small one once the page scrolls (desktop)
+  if (page) {
+    mountTitleMorph(page);
+    // ...and the pinned title + meta melt away as "Next project" comes in
+    mountPinnedOutro(page);
+  }
+</script>
+
+<style>
+  /* Arrival: only the cover (and header) show until the intro runs */
+  :global(html.case-arriving) :global(main > .case .case__title-big),
+  :global(html.case-arriving) :global(main > .case [data-case-meta] > *),
+  :global(html.case-arriving) :global(main > .case .case__media > :not([data-case-cover])),
+  :global(html.case-arriving) .next {
+    opacity: 0;
+  }
+
+  /* Next case's measuring copy, laid out at the top of the page, never seen */
+  .case-ghost {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* Next project */
+  .next {
+    display: grid;
+    gap: calc(12 * var(--px));
+    padding: calc(80 * var(--px)) var(--gutter) calc(120 * var(--px));
+  }
+
+  .next__title {
+    font-weight: 700;
+    font-size: calc(40 * var(--px));
+    text-transform: uppercase;
+  }
+
+  .next__link {
+    display: block;
+  }
+
+  .next__media {
+    aspect-ratio: 736 / 488;
+    margin-top: calc(24 * var(--px));
+    overflow: hidden;
+  }
+
+  .next__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .next__category {
+    margin-top: calc(24 * var(--px));
+  }
+
+  @media (min-width: 1024px) {
+    .next__title {
+      font-size: calc(110 * var(--px));
+      white-space: nowrap;
+    }
+
+    .next {
+      grid-template-columns: calc(456 * var(--px)) 1fr;
+      align-items: start;
+      gap: 0;
+      min-height: 100svh;
+      padding-top: calc(227 * var(--px));
+    }
+
+    .next__label {
+      grid-row: 1;
+      margin-top: calc(68 * var(--px));
+    }
+
+    .next__link {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .next__media {
+      aspect-ratio: auto;
+      height: calc(488 * var(--px));
+      margin-top: calc(77 * var(--px));
+    }
+  }
+</style>

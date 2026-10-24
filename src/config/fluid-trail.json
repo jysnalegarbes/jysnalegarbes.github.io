@@ -1,0 +1,19 @@
+{
+  "tint": "#141918",
+  "config": {
+    "mode": 1,
+    "curl": 4,
+    "densityDissipation": 2.05,
+    "velocityDissipation": 1.05,
+    "pressure": 1,
+    "pressureIterations": 22,
+    "splatRadius": 0.24,
+    "splatForce": 500,
+    "shading": false,
+    "simResolution": 96,
+    "dyeResolution": 1024,
+    "intensity": 0.85,
+    "inkEdge": 0.35,
+    "inkSoftness": 0.01
+  }
+}

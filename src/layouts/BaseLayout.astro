@@ -1,0 +1,39 @@
+---
+import '@fontsource-variable/archivo';
+import '@fontsource-variable/playfair-display';
+import '@fontsource-variable/playfair-display/wght-italic.css';
+import '../styles/global.css';
+import SiteHeader, { type NavKey } from '../components/SiteHeader.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  current?: NavKey;
+  pageClass?: string;
+}
+
+const {
+  title,
+  description = 'Jayson Alegarbes — independent UI/UX and visual designer based in Davao City, Philippines.',
+  current,
+  pageClass,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="icon" type="image/svg+xml" href="/images/brand/logo-mark.svg" />
+    <title>{title}</title>
+  </head>
+  <body class={pageClass}>
+    <SiteHeader current={current} />
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.astro/
+_figma/
+.DS_Store
+
+# Claude working notes (handoffs): local only
+.claude/

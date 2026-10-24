@@ -1,0 +1,120 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const items = (await getCollection('in-progress', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+---
+
+<BaseLayout title="In Progress — Jayson Alegarbes" current="in-progress">
+  <section class="ip">
+    <div class="ip__intro">
+      <h1 class="ip__title"><span class="serif-italic">in</span> PROGRESS</h1>
+      <div class="ip__text">
+        <p>
+          A space for ideas that are still finding their shape.<br />Experiments, visual explorations, unfinished
+          thoughts, and things I simply wanted to try.
+        </p>
+        <p>— Not everything here needs to become a finished project.</p>
+      </div>
+    </div>
+
+    <ul class="ip__grid">
+      {
+        items.map(({ data }) => (
+          <li class="ip-card">
+            {data.image ? (
+              <Image src={data.image} alt={data.alt} widths={[300, 700]} sizes="(min-width: 1024px) 18vw, 30vw" />
+            ) : (
+              <span class="visually-hidden">{data.title}</span>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .ip {
+    --card-w: 126;
+    --card-h: 142;
+    --col-gap: 7;
+    --row-gap: 178;
+    --stagger: 37.5;
+    padding: calc(141 * var(--px)) var(--gutter) calc(120 * var(--px));
+  }
+
+  .ip__title {
+    font-weight: 700;
+    font-size: calc(44 * var(--px));
+    white-space: nowrap;
+  }
+
+  .ip__text {
+    font-size: var(--fs-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 1lh;
+    max-width: calc(432 * var(--px));
+    margin-top: calc(57 * var(--px));
+  }
+
+  .ip__grid {
+    display: grid;
+    grid-template-columns: repeat(3, calc(var(--card-w) * var(--px)));
+    align-items: start;
+    column-gap: calc(var(--col-gap) * var(--px));
+    row-gap: calc(var(--row-gap) * var(--px));
+    margin-top: calc(168 * var(--px));
+  }
+
+  /* First row steps up from left to right */
+  .ip-card:nth-child(1) {
+    margin-top: calc(var(--stagger) * 2 * var(--px));
+  }
+
+  .ip-card:nth-child(2) {
+    margin-top: calc(var(--stagger) * var(--px));
+  }
+
+  .ip-card {
+    height: calc(var(--card-h) * var(--px));
+    overflow: hidden;
+    background: var(--brown);
+  }
+
+  .ip-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (min-width: 1024px) {
+    .ip {
+      --card-w: 344;
+      --card-h: 389;
+      --col-gap: 19;
+      --row-gap: 98;
+      --stagger: 102.5;
+      display: grid;
+      grid-template-columns: calc(531 * var(--px)) auto;
+      align-items: start;
+      padding-top: calc(186 * var(--px));
+    }
+
+    .ip__title {
+      font-size: calc(110 * var(--px));
+    }
+
+    .ip__text {
+      margin-top: calc(141 * var(--px));
+    }
+
+    .ip__grid {
+      margin-top: calc(27 * var(--px));
+    }
+  }
+</style>

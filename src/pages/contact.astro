@@ -1,0 +1,174 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const email = 'jysn.alegarbes@gmail.com';
+
+// Placeholder URLs until the real profiles are confirmed
+const socials = [
+  { label: 'Behance', href: '#', icon: '/images/icons/behance.svg' },
+  { label: 'LinkedIn', href: '#', icon: '/images/icons/linkedin.svg' },
+  { label: 'Instagram', href: '#', icon: '/images/icons/instagram.svg' },
+];
+---
+
+<BaseLayout title="Contact — Jayson Alegarbes" current="contact">
+  <section class="contact">
+    <div class="contact__hero">
+      <p class="contact__lead">Let’s make something good.</p>
+      <h1 class="contact__title">
+        GOT <span class="serif-italic">a project</span><br class="mobile-only" /> IN MIND?
+      </h1>
+    </div>
+
+    <p class="contact__name desktop-only" aria-hidden="true">Jayson Alegarbes</p>
+
+    <div class="contact__foot">
+      <div class="contact__col">
+        <p class="label">Say something</p>
+        <a class="contact__email" href={`mailto:${email}`}>{email}</a>
+      </div>
+      <div class="contact__col">
+        <p class="label">Elsewhere</p>
+        <ul class="contact__socials">
+          {
+            socials.map(({ label, href, icon }) => (
+              <li>
+                <a href={href} aria-label={label} target="_blank" rel="noopener noreferrer">
+                  <img src={icon} width="50" height="50" alt="" />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <p class="contact__sign">Still making things © 2026</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .contact {
+    position: relative;
+    min-height: max(100svh, calc(760 * var(--px)));
+    font-weight: 700;
+  }
+
+  .contact__hero {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(9 * var(--px));
+    text-align: center;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+
+  .contact__lead {
+    font-weight: 400;
+    font-size: calc(22 * var(--px));
+  }
+
+  .contact__title {
+    font-size: calc(60 * var(--px));
+  }
+
+  .contact__foot {
+    font-size: var(--fs-sm);
+    position: absolute;
+    right: var(--gutter);
+    bottom: calc(24 * var(--px));
+    left: var(--gutter);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(54 * var(--px));
+    text-align: center;
+  }
+
+  .contact__col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(12 * var(--px));
+  }
+
+  .contact__socials {
+    display: flex;
+    gap: calc(8 * var(--px));
+  }
+
+  .contact__socials img {
+    width: calc(40 * var(--px));
+    height: calc(40 * var(--px));
+  }
+
+  .contact__email:hover,
+  .contact__socials a:hover {
+    opacity: 0.7;
+  }
+
+  .contact__sign {
+    margin-top: calc(10 * var(--px));
+  }
+
+  @media (min-width: 1024px) {
+    .contact {
+      min-height: max(100svh, calc(900 * var(--px)));
+    }
+
+    .contact__hero {
+      top: calc(50% - 65.5 * var(--px));
+      gap: calc(4 * var(--px));
+    }
+
+    .contact__lead {
+      font-size: calc(40 * var(--px));
+    }
+
+    .contact__title {
+      font-size: calc(110 * var(--px));
+    }
+
+    /* Present in the frame at the background colour: reserved for an upcoming effect */
+    .contact__name {
+      position: absolute;
+      top: calc(50% + 192 * var(--px));
+      left: 50%;
+      font-weight: 800;
+      font-size: calc(164 * var(--px));
+      color: var(--bg);
+      text-transform: uppercase;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .contact__foot {
+      bottom: calc(60 * var(--px));
+      display: grid;
+      grid-template-columns: calc(828 * var(--px)) 1fr auto;
+      align-items: end;
+      gap: 0;
+      text-align: left;
+    }
+
+    .contact__col {
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0;
+      min-height: calc(105 * var(--px));
+    }
+
+    .contact__socials img {
+      width: calc(50 * var(--px));
+      height: calc(50 * var(--px));
+    }
+
+    .contact__sign {
+      margin: 0;
+    }
+  }
+</style>

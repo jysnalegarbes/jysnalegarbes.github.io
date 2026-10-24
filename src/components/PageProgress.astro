@@ -1,0 +1,140 @@
+---
+/*
+  Page length indicator ("Folio"): an editorial page number for the current
+  chapter, its name, and a hairline with the share of the page read.
+  page-progress.ts writes --p (0..1 down the page) and --active (chapter
+  index); the number and name roll to the current chapter. Blends like the
+  header (difference) until the page goes dark, then uses the dark-frame
+  colours unblended.
+*/
+interface Props {
+  chapters: string[];
+}
+
+const { chapters } = Astro.props;
+const num = (i: number) => String(i).padStart(2, '0');
+---
+
+<div class="folio" data-pp aria-hidden="true">
+  <div class="folio__head">
+    <span class="folio__roll folio__num">
+      <span class="folio__list">{chapters.map((_, i) => <span>{num(i)}</span>)}</span>
+    </span>
+    <span class="folio__total">/ {num(chapters.length - 1)}</span>
+  </div>
+  <span class="folio__roll folio__label">
+    <span class="folio__list">{chapters.map((c) => <span>{c}</span>)}</span>
+  </span>
+  <div class="folio__foot">
+    <span class="folio__bar"><span class="folio__fill"></span></span>
+    <span class="folio__pct" data-pp-pct>00</span>
+  </div>
+</div>
+
+<style>
+  .folio {
+    --ink: #cdcfd0;
+    --muted: #66696d;
+    --row: 1.25em;
+    position: fixed;
+    right: var(--gutter);
+    bottom: calc(var(--gutter) * 0.7);
+    z-index: 19;
+    width: 132px;
+    color: var(--ink);
+    font-size: 12px;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    mix-blend-mode: difference;
+  }
+
+  /* Over the dark text sections: the header's dark-frame colours, unblended */
+  :global(body.is-header-dark) .folio {
+    --ink: var(--white);
+    --muted: var(--gray);
+    mix-blend-mode: normal;
+  }
+
+  .folio__head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  /* Rolling text: a one-row window over the list, slid to the current chapter */
+  .folio__roll {
+    display: block;
+    height: var(--row);
+    overflow: hidden;
+  }
+
+  .folio__list {
+    display: flex;
+    flex-direction: column;
+    translate: 0 calc(var(--active, 0) * var(--row) * -1);
+    transition: translate 0.8s cubic-bezier(0.625, 0.05, 0, 1);
+  }
+
+  .folio__list > span {
+    height: var(--row);
+    white-space: nowrap;
+  }
+
+  .folio__num {
+    --row: 1.1em;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+
+  .folio__total {
+    color: var(--muted);
+  }
+
+  .folio__label {
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .folio__foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .folio__bar {
+    position: relative;
+    flex: 1;
+    height: 1px;
+    background: color-mix(in srgb, currentColor 22%, transparent);
+  }
+
+  .folio__fill {
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    transform-origin: left;
+    scale: var(--p, 0) 1;
+  }
+
+  .folio__pct::after {
+    content: '%';
+    color: var(--muted);
+  }
+
+  @media (min-width: 1024px) {
+    .folio {
+      font-size: max(12px, calc(14 * var(--px)));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .folio__list {
+      transition: none;
+    }
+  }
+</style>

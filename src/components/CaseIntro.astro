@@ -1,0 +1,213 @@
+---
+/*
+  Case study opening: title, meta and cover, with the rest of the media
+  (gallery) slotted in after the cover. Shared by the case study page and
+  by pages that link into a case study with the liquid morph (Work, and a
+  case's next-project link), which render a hidden `ghost` copy to measure
+  exactly where the cover will land.
+*/
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  project: CollectionEntry<'projects'>;
+  /** Measuring copy for a page transition: hidden, its image never loads */
+  ghost?: boolean;
+}
+
+const { project, ghost = false } = Astro.props;
+const { title, summary, scope, year, tools, cover, coverAlt } = project.data;
+const Heading = ghost ? 'p' : 'h1';
+---
+
+<article class="case" data-case={project.id}>
+  <Heading class="case__title" data-case-title>
+    <span class="case__title-big">{title}</span>
+    {/* Small version the title melts into once the page scrolls (case-title.ts) */}
+    <span class="case__title-mini" aria-hidden="true">{title}</span>
+  </Heading>
+
+  <div class="case__body">
+    <dl class="case__meta" data-case-meta>
+      <div class="case__about">
+        <dt class="label">About</dt>
+        <dd>{summary}</dd>
+      </div>
+      <div class="case__row">
+        <dt class="label">Scope</dt>
+        <dd class="case__scope">
+          {scope.map((item) => <span>{item}</span>)}
+        </dd>
+      </div>
+      <div class="case__row">
+        <dt class="label">Year</dt>
+        <dd>{year}</dd>
+      </div>
+      <div class="case__row">
+        <dt class="label">Tools</dt>
+        <dd>{tools}</dd>
+      </div>
+    </dl>
+
+    <div class="case__media">
+      <figure class="case__cover" data-case-cover>
+        {/* The ghost's copy never loads (it stays display: none); the page
+            transition reads its srcset to preload the exact file */}
+        <Image
+          src={cover}
+          alt={ghost ? '' : coverAlt}
+          widths={[480, 800, 1200, 1600]}
+          sizes="(min-width: 1024px) 55vw, 90vw"
+          loading={ghost ? 'lazy' : 'eager'}
+          fetchpriority={ghost ? 'auto' : 'high'}
+          decoding={ghost ? 'async' : 'sync'}
+        />
+      </figure>
+      <slot />
+    </div>
+  </div>
+</article>
+
+<style>
+  .case {
+    padding: calc(141 * var(--px)) var(--gutter) calc(80 * var(--px));
+  }
+
+  .case__title {
+    font-weight: 700;
+    font-size: calc(40 * var(--px));
+    text-transform: uppercase;
+  }
+
+  .case__title-big {
+    display: block;
+    transform-origin: 0 0;
+  }
+
+  .case__title-mini {
+    display: none;
+  }
+
+  .case__body {
+    display: flex;
+    flex-direction: column;
+    gap: calc(81 * var(--px));
+    margin-top: calc(24 * var(--px));
+  }
+
+  .case__meta {
+    font-size: var(--fs-sm);
+    display: flex;
+    flex-direction: column;
+    gap: calc(28 * var(--px));
+    width: min(100%, calc(379 * var(--px)));
+    font-weight: 700;
+  }
+
+  .case__about {
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+  }
+
+  .case__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .case__scope {
+    display: flex;
+    flex-direction: column;
+    gap: calc(10 * var(--px));
+  }
+
+  .case__media {
+    display: flex;
+    flex-direction: column;
+    gap: calc(40 * var(--px));
+  }
+
+  /* Global: gallery figures are slotted in from the page */
+  .case__media :global(img) {
+    width: 100%;
+    height: auto;
+  }
+
+  .case__cover {
+    aspect-ratio: 736 / 488;
+    overflow: hidden;
+  }
+
+  .case__cover img {
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (min-width: 1024px) {
+    /* The bottom spacing lives in the media column instead of the article
+       (same look), so the pinned meta stays pinned until "Next project"
+       arrives and has melted away (case-title.ts) */
+    .case {
+      padding-top: calc(190 * var(--px));
+      padding-bottom: 0;
+    }
+
+    /*
+      Sticky opening: the title and the meta stay exactly where they rest
+      while the media column scrolls, until the case study ends. Their pin
+      offsets are their resting tops, measured by the case page
+      (--sticky-title / --sticky-meta); the media slides over the title.
+    */
+    .case__title {
+      position: sticky;
+      top: var(--sticky-title, calc(190 * var(--px)));
+      font-size: calc(110 * var(--px));
+      white-space: nowrap;
+    }
+
+    .case__media {
+      position: relative;
+      z-index: 1;
+      padding-bottom: calc(160 * var(--px));
+    }
+
+    /* Placed level with the first nav link by case-title.ts (--mini-y) */
+    .case__title-mini {
+      position: absolute;
+      top: var(--mini-y, 0px);
+      left: 0;
+      display: block;
+      font-size: calc(24 * var(--px));
+      opacity: 0;
+      transform-origin: 0 0;
+      pointer-events: none;
+    }
+
+    .case__body {
+      display: grid;
+      grid-template-columns: calc(456 * var(--px)) calc(1040 * var(--px));
+      align-items: start;
+      gap: 0;
+      margin-top: calc(62 * var(--px));
+    }
+
+    .case__meta {
+      position: sticky;
+      top: var(--sticky-meta, calc(300 * var(--px)));
+      gap: calc(60 * var(--px));
+      margin-top: calc(-8 * var(--px));
+    }
+
+    .case__about {
+      gap: calc(40 * var(--px));
+    }
+
+    .case__media {
+      gap: calc(80 * var(--px));
+    }
+
+    .case__cover {
+      aspect-ratio: 1040 / 616;
+    }
+  }
+</style>

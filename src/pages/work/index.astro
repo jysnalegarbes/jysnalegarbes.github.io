@@ -1,0 +1,404 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CaseIntro from '../../components/CaseIntro.astro';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const first = projects[0];
+const num = (i: number) => String(i + 1).padStart(2, '0');
+---
+
+<BaseLayout title="Work — Jayson Alegarbes" current="work">
+  <section class="work" data-work-stage>
+    <h1 class="visually-hidden">Selected work</h1>
+
+    <div class="work__scroller" data-work-scroller>
+      <ol class="work__track">
+        {
+          projects.map((project, i) => (
+            <li
+              class:list={['work-item', { 'is-active': i === 0, 'is-current': i === 0 }]}
+              data-work-item
+              data-index={num(i)}
+              data-year={project.data.year}
+              data-title={project.data.title}
+              data-category={project.data.category}
+            >
+              <a
+                href={`/work/${project.id}/`}
+                class="work-item__link"
+                draggable="false"
+                aria-label={`${num(i)} ${project.data.title}, ${project.data.category}, ${project.data.year}`}
+              >
+                <div class="work-item__head" aria-hidden="true">
+                  <span class="work-item__index serif-italic" data-field-src="index">{num(i)}</span>
+                  <span class="work-item__year" data-field-src="year">{project.data.year}</span>
+                </div>
+                <div class="work-item__media" data-work-media>
+                  <Image
+                    src={project.data.cover}
+                    alt={project.data.coverAlt}
+                    widths={[480, 800, 1200, 1600]}
+                    sizes="(min-width: 1024px) 39vw, 90vw"
+                    loading={i < 2 ? 'eager' : 'lazy'}
+                    draggable="false"
+                  />
+                </div>
+                <div class="work-item__caption" aria-hidden="true">
+                  <h2 class="work-item__title" data-field-src="title">{project.data.title}</h2>
+                  <p class="work-item__category" data-field-src="category">{project.data.category}</p>
+                </div>
+              </a>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+
+    <!-- Main-slot details: fixed in place, roll to the project that settles there -->
+    {
+      first && (
+        <div class="work__details" data-work-details aria-hidden="true">
+          <span class="work-detail work-item__index serif-italic" data-field="index">
+            <span class="work-detail__text">{num(0)}</span>
+          </span>
+          <span class="work-detail work-item__year" data-field="year" data-align-end>
+            <span class="work-detail__text">{first.data.year}</span>
+          </span>
+          <span class="work-detail work-item__title" data-field="title">
+            <span class="work-detail__text">{first.data.title}</span>
+          </span>
+          <span class="work-detail work-item__category" data-field="category" data-align-end>
+            <span class="work-detail__text">{first.data.category}</span>
+          </span>
+        </div>
+      )
+    }
+
+    <canvas class="work__gl" data-work-gl aria-hidden="true"></canvas>
+
+    <p class="work__intro">
+      A selection of digital experiences,<br />visual identities, and interfaces I've designed.
+    </p>
+  </section>
+
+  <!--
+    Measuring copies of each case study's opening (never shown): the card
+    morph reads where the cover will land from these.
+  -->
+  <div class="case-ghosts" aria-hidden="true" inert>
+    {
+      projects.map((project) => (
+        <div data-case-ghost={project.id} hidden>
+          <CaseIntro project={project} ghost />
+        </div>
+      ))
+    }
+  </div>
+</BaseLayout>
+
+<script>
+  import { mountWorkGallery, type WorkGallery } from '../../scripts/work-gallery';
+  import type { WorkGl } from '../../scripts/work-gl';
+  import { openCase, resetOnRestore } from '../../scripts/case-transition';
+
+  const root = document.querySelector<HTMLElement>('[data-work-stage]');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let glLayer: WorkGl | null = null;
+  let gallery: WorkGallery | null = null;
+
+  if (root) {
+    resetOnRestore();
+    gallery = mountWorkGallery(root, {
+      reducedMotion,
+      onFrame: (frame) => glLayer?.render(frame),
+      // Liquid-morph the opened card into the case cover (WebGL only;
+      // otherwise the link just navigates)
+      onOpen: (index, link) => !!glLayer && !!gallery && openCase({ gallery, gl: glLayer, root, index, link }),
+    });
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-work-gl]');
+
+    // Flag ripple (WebGL); reduced motion keeps the plain images
+    const g = gallery;
+    if (g && canvas && !reducedMotion) {
+      import('../../scripts/work-gl').then(({ mountWorkGl }) => {
+        try {
+          glLayer = mountWorkGl(canvas, g.images, {
+            onReady: (i) => g.medias[i].classList.add('is-gl'),
+          });
+        } catch (err) {
+          console.warn('Work WebGL disabled:', err);
+          glLayer = null;
+        }
+        if (glLayer) g.wake();
+      });
+    }
+  }
+</script>
+
+<style>
+  .work {
+    --active-w: 392;
+    --active-h: 260;
+    --item-w: 279;
+    --item-h: 233;
+    --step: 350;
+    --gap: 24;
+    position: relative;
+    min-height: 100svh;
+    padding-top: calc(157 * var(--px));
+    padding-bottom: calc(80 * var(--px));
+  }
+
+  .work__scroller {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .work__scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .work__track {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--gap) * var(--px));
+    width: max-content;
+    padding-inline: var(--gutter);
+  }
+
+  .work-item {
+    width: calc(var(--item-w) * var(--px));
+    margin-top: calc(var(--step) * var(--px));
+  }
+
+  .work-item.is-active {
+    width: calc(var(--active-w) * var(--px));
+    margin-top: 0;
+  }
+
+  /* Mobile snapshot: the next project peeks in, overlapping the active column */
+  .work-item.is-active + .work-item {
+    margin-left: calc(-83 * var(--px));
+  }
+
+  .work-item__link {
+    display: block;
+  }
+
+  .work-item__head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: calc(10 * var(--px));
+    margin-bottom: calc(24 * var(--px));
+    opacity: 0;
+  }
+
+  .work-item__index {
+    font-size: calc(80 * var(--px));
+    line-height: 0.95;
+  }
+
+  .work-item__year {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  .work-item__media {
+    height: calc(var(--item-h) * var(--px));
+    overflow: hidden;
+  }
+
+  .is-active .work-item__media {
+    height: calc(var(--active-h) * var(--px));
+  }
+
+  .work-item__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .work-item__caption {
+    font-size: var(--fs-sm);
+    display: flex;
+    justify-content: space-between;
+    gap: calc(10 * var(--px));
+    margin-top: calc(24 * var(--px));
+    font-weight: 700;
+    opacity: 0;
+  }
+
+  .work-item__category {
+    color: var(--gray);
+    text-align: right;
+  }
+
+  .is-active .work-item__head,
+  .is-active .work-item__caption {
+    opacity: 1;
+  }
+
+  .work__intro {
+    font-size: var(--fs-sm);
+    position: absolute;
+    bottom: calc(24 * var(--px));
+    left: var(--gutter);
+  }
+
+  /*
+    Live gallery (JS): one fixed screen. Cards are placed absolutely by
+    work-gallery.ts along the measured rest slots; the per-card head and
+    caption give way to the fixed main-slot details.
+  */
+  .work__details,
+  .work__gl {
+    display: none;
+  }
+
+  .work:global(.is-live) {
+    height: 100svh;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  :global(html:has(.work.is-live)) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  .work:global(.is-live) .work__scroller {
+    overflow: visible;
+  }
+
+  .work:global(.is-live) .work-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: auto;
+    /* Beats the staggered rest margins below */
+    margin: 0 !important;
+    will-change: transform;
+  }
+
+  .work:global(.is-live) .work-item__head,
+  .work:global(.is-live) .work-item__caption {
+    display: none;
+  }
+
+  .work:global(.is-live) .work-item:not(:global(.is-current)) .work-item__link {
+    cursor: pointer;
+  }
+
+  .work:global(.is-dragging) .work-item__link {
+    cursor: grabbing !important;
+  }
+
+  .work-item__media:global(.is-gl) img {
+    opacity: 0;
+  }
+
+  .work__gl {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .work:global(.is-live) .work__gl {
+    display: block;
+  }
+
+  .work:global(.is-live) .work__details {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .work-detail {
+    position: absolute;
+    display: grid;
+    white-space: nowrap;
+  }
+
+  .work-detail[data-align-end] {
+    translate: -100% 0;
+    justify-items: end;
+  }
+
+  /* Global: the swap creates these spans at runtime, without Astro's scope
+     attribute. Both copies share one cell so they cross-fade in place. */
+  .work-detail :global(.work-detail__text) {
+    grid-area: 1 / 1;
+  }
+
+  .work-detail.work-item__title,
+  .work-detail.work-item__category {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  /* Case study measuring copies: laid out like the real page, never seen */
+  .case-ghosts {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  @media (min-width: 1024px) {
+    .work {
+      --active-w: 736;
+      --active-h: 488;
+      --item-w: 432;
+      --item-h: 360;
+      --step: 128;
+      /* The first two cards sit higher than Figma's 182 so the project
+         number lines up with the first nav link and the caption clears
+         the page intro; cards 3+ keep their Figma position. */
+      --lift: 28;
+      padding-top: calc((182 - var(--lift)) * var(--px));
+      padding-bottom: calc(140 * var(--px));
+    }
+
+    .work-item.is-active + .work-item {
+      margin-left: 0;
+    }
+
+    .work-item.is-active + .work-item ~ .work-item {
+      margin-top: calc((256 + var(--lift)) * var(--px));
+    }
+
+    .work-item__head {
+      height: calc(114 * var(--px));
+      padding-block: calc(10 * var(--px));
+      margin-bottom: 0;
+    }
+
+    .work__intro {
+      bottom: calc(60 * var(--px));
+    }
+
+    /* Project name at 30px; the category sits on its baseline */
+    .work-item__caption {
+      align-items: baseline;
+    }
+
+    .work-item__title,
+    .work-detail.work-item__title {
+      font-size: calc(30 * var(--px));
+    }
+  }
+</style>
