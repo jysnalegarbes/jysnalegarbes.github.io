@@ -22,4 +22,10 @@ options:
   - name: "Shutter Strips"
     status: review
     note: "Seven strips open in turn from the top and bottom, then the gaps close."
+  - name: "Ripple"
+    status: review
+    note: "The home hero's intro wave, driven by scroll speed: it wobbles in perspective with an RGB split while you scroll and settles flat when you stop."
+  - name: "Ink Develop"
+    status: review
+    note: "Starts as a grainy two-tone ink print in the site's black and off-white; the tones come in as it grows, like a print developing."
 ---

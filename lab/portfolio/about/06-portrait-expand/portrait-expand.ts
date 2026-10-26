@@ -7,15 +7,21 @@
     2 Lens Settle    starts zoomed in and soft, settles and sharpens (CSS)
     3 Lens Warp      bulges with scroll speed, faint RGB split at the edges
     4 Shutter Strips vertical strips open one after another, gaps close
-  1, 3 and 4 draw the portrait on a stage-sized canvas (so edges can bleed
-  past the box) and hide the <img> while they run.
+    5 Ripple         the home hero's intro wave, driven by scroll speed: it
+                     wobbles in perspective while you scroll, settles flat
+    6 Ink Develop    starts as a grainy two-tone ink print; the tones come in
+                     as it grows, like a print developing
+  All but 2 draw the portrait on a stage-sized canvas (so edges can bleed
+  past the box) and hide the <img> while they run. 3 and 5 keep drawing for
+  a moment after the scroll stops, so they ease back flat.
 
   Library copy: ?pfx=N picks the mode; the switcher shows unless ?embed.
 */
 import { linkProgram } from '../../../../src/scripts/liquid-morph';
 
-export type PortraitMode = 0 | 1 | 2 | 3 | 4;
-export const MODE_NAMES = ['None', 'Ink Edge', 'Lens Settle', 'Lens Warp', 'Shutter Strips'];
+export type PortraitMode = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export const MODE_NAMES = ['None', 'Ink Edge', 'Lens Settle', 'Lens Warp', 'Shutter Strips', 'Ripple', 'Ink Develop'];
+const LAST_MODE = MODE_NAMES.length - 1;
 
 // Tunables
 const SETTLE_ZOOM = 0.3; // 2: extra scale at the start
@@ -23,6 +29,9 @@ const SETTLE_BLUR = 0.006; // 2: blur at the start, as a fraction of the box wid
 const WARP_BASE = 0.3; // 3: warp while scrolling slowly
 const WARP_SPEED = 3; // 3: progress/s that adds the full extra warp
 const STRIPS = 7; // 4
+const RIPPLE_SPEED = 1.2; // 5: progress/s for the full wave
+const RIPPLE_GRID = 32; // 5: mesh subdivisions per side
+const SETTLE = 0.3; // 3, 5: s for the speed to die down once the scroll stops
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 
@@ -111,7 +120,7 @@ const fragment = /* glsl */ `
       col.ga = cover(0.5 + s).ga;
       col.b = cover(0.5 + s - split).b;
       col *= a;
-    } else {
+    } else if (mode < 4.5) {
       // 4 Shutter Strips: alternate strips open from the top and the bottom
       float n = ${STRIPS.toFixed(1)};
       float i = floor(clamp(uv.x, 0.0, 0.9999) * n);
@@ -126,10 +135,75 @@ const fragment = /* glsl */ `
       vec2 o = abs(c * rect.zw) - rect.zw * 0.5;
       float a = clamp(min(min(ax, ay), -max(o.x, o.y)) + 0.5, 0.0, 1.0);
       col = cover(uv + vec2(0.0, down * (1.0 - r) * 0.18)) * a;
+    } else {
+      // 6 Ink Develop: two-tone ink print, then posterised, then full tones
+      vec4 src = cover(uv);
+      float l = dot(src.rgb, vec3(0.299, 0.587, 0.114));
+      float grain = 0.07 * snoise(px / 2.2 + u * 7.0) + 0.05 * snoise(px / 9.0);
+      float dev = 1.0 - amt;
+      float n = mix(2.0, 10.0, pow(dev, 1.5));
+      float q = clamp(floor((l + grain) * n) / (n - 1.0), 0.0, 1.0);
+      vec3 tone = mix(vec3(0.078, 0.098, 0.094), vec3(0.843, 0.871, 0.871), q);
+      vec2 o = abs(c * rect.zw) - rect.zw * 0.5;
+      float a = clamp(0.5 - max(o.x, o.y), 0.0, 1.0);
+      col = vec4(mix(tone, src.rgb, smoothstep(0.55, 1.0, dev)), 1.0) * a;
     }
     gl_FragColor = col;
   }
 `;
+
+// 5 Ripple: the home hero's intro wave (portrait-fx.ts) on a subdivided
+// plane, seen from a camera centred on the stage, 50 units away
+const rippleVertex = /* glsl */ `
+  attribute vec2 aUv; // plane uv, top-left origin
+  uniform vec4 rect;
+  uniform vec2 view;  // stage, CSS px
+  uniform float amp;
+  uniform float phase;
+  varying vec2 vUv;
+  varying float vWave;
+  void main() {
+    vUv = aUv;
+    float z = sin((aUv.y - 0.5) * 6.0 + phase) * amp * 3.5;
+    vWave = z;
+    vec2 p = rect.xy + aUv * rect.zw;
+    vec2 centre = view * 0.5;
+    p = centre + (p - centre) * (50.0 / (50.0 - z));
+    vec2 ndc = p / view * 2.0 - 1.0;
+    gl_Position = vec4(ndc.x, -ndc.y, 0.0, 1.0);
+  }
+`;
+
+const rippleFragment = /* glsl */ `
+  precision highp float;
+  uniform sampler2D tex;
+  uniform vec4 rect;
+  uniform float aspect;
+  varying vec2 vUv;
+  varying float vWave;
+  vec3 cover(vec2 uv) {
+    float box = rect.z / rect.w;
+    vec2 s = box > aspect ? vec2(1.0, aspect / box) : vec2(box / aspect, 1.0);
+    return texture2D(tex, 0.5 + (clamp(uv, 0.0, 1.0) - 0.5) * s).rgb;
+  }
+  void main() {
+    float w = vWave;
+    vec3 base = cover(vUv);
+    vec3 split = vec3(cover(vUv + w * 0.04).r, cover(vUv + w * 0.01).g, cover(vUv - w * 0.03).b);
+    gl_FragColor = vec4(mix(base, split, 0.35), 1.0);
+  }
+`;
+
+function gridTriangles(n: number) {
+  const out: number[] = [];
+  for (let y = 0; y < n; y++) {
+    for (let x = 0; x < n; x++) {
+      const [x0, x1, y0, y1] = [x / n, (x + 1) / n, y / n, (y + 1) / n];
+      out.push(x0, y0, x1, y0, x0, y1, x0, y1, x1, y0, x1, y1);
+    }
+  }
+  return new Float32Array(out);
+}
 
 interface Box {
   w: number;
@@ -146,10 +220,10 @@ export interface PortraitExpand {
 
 function initialMode(): PortraitMode {
   const q = Number(new URLSearchParams(location.search).get('pfx'));
-  if (q >= 0 && q <= 4 && location.search.includes('pfx')) return q as PortraitMode;
+  if (q >= 0 && q <= LAST_MODE && location.search.includes('pfx')) return q as PortraitMode;
   try {
     const s = Number(localStorage.getItem('about-pfx'));
-    if (s >= 0 && s <= 4) return s as PortraitMode;
+    if (s >= 0 && s <= LAST_MODE) return s as PortraitMode;
   } catch {}
   return 1;
 }
@@ -177,9 +251,11 @@ export function mountPortraitExpand(
 
   const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false });
   let prog: ReturnType<typeof linkProgram> | null = null;
+  let ripple: ReturnType<typeof linkProgram> | null = null;
   if (gl) {
     try {
       prog = linkProgram(gl, vertex, fragment, ['tex', 'res', 'dpr', 'rect', 'aspect', 'mode', 'amt', 'u', 'warp']);
+      ripple = linkProgram(gl, rippleVertex, rippleFragment, ['tex', 'rect', 'view', 'aspect', 'amp', 'phase']);
     } catch (err) {
       console.warn('[portrait-expand]', err);
     }
@@ -187,12 +263,15 @@ export function mountPortraitExpand(
   let ready = false;
   let aspect = 1;
 
+  const quad = gl?.createBuffer() ?? null;
+  const grid = gl?.createBuffer() ?? null;
+  const gridVerts = gridTriangles(RIPPLE_GRID);
+
   if (gl && prog) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
-    gl.useProgram(prog.program);
-    gl.enableVertexAttribArray(prog.aUv);
-    gl.vertexAttribPointer(prog.aUv, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, grid);
+    gl.bufferData(gl.ARRAY_BUFFER, gridVerts, gl.STATIC_DRAW);
     gl.clearColor(0, 0, 0, 0);
 
     // Power-of-two copy so the texture can mipmap (the box starts tiny)
@@ -222,6 +301,10 @@ export function mountPortraitExpand(
   let speed = 0;
   let lastU = -1;
   let lastT = 0;
+  let lastBox: Box = { w: 0, h: 0, cx: 0, cy: 0 };
+  let phase = 0;
+  let drawnAt = 0;
+  let settleRaf = 0;
 
   function clearCss() {
     img!.style.transform = '';
@@ -244,35 +327,81 @@ export function mountPortraitExpand(
       }
       lastU = u;
       lastT = now;
-
-      // 1 → 0 over the growth, held near 1 at first
-      const amt = 1 - u * u * (3 - 2 * u);
-      const active = amt > 0.002 && box.w > 0.5;
-
-      if (mode === 2 && active) {
-        img!.style.transform = `scale(${1 + SETTLE_ZOOM * amt})`;
-        img!.style.filter = amt > 0.02 ? `blur(${(SETTLE_BLUR * box.w * amt).toFixed(2)}px)` : '';
-      } else clearCss();
-
-      const gpu = (mode === 1 || mode === 3 || mode === 4) && active && ready && gl && prog;
-      canvas.style.visibility = gpu ? 'visible' : 'hidden';
-      img!.style.opacity = gpu ? '0' : '';
-      if (!gpu) return;
-
-      const { u: un } = prog!;
-      gl!.clear(gl!.COLOR_BUFFER_BIT);
-      gl!.uniform1i(un.tex, 0);
-      gl!.uniform2f(un.res, canvas.width, canvas.height);
-      gl!.uniform1f(un.dpr, dpr);
-      gl!.uniform4f(un.rect, box.cx - box.w / 2, box.cy - box.h / 2, box.w, box.h);
-      gl!.uniform1f(un.aspect, aspect);
-      gl!.uniform1f(un.mode, mode);
-      gl!.uniform1f(un.amt, amt);
-      gl!.uniform1f(un.u, u);
-      gl!.uniform1f(un.warp, amt * clamp(WARP_BASE + (1 - WARP_BASE) * (speed / WARP_SPEED)));
-      gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
+      lastBox = box;
+      draw();
+      if (settles() && !settleRaf) settleRaf = requestAnimationFrame(settle);
     },
   };
+
+  // 1 → 0 over the growth, held near 1 at first
+  const amount = (u: number) => 1 - u * u * (3 - 2 * u);
+  const settles = () => (mode === 3 || mode === 5) && speed > 0.01 && amount(lastU) > 0.002;
+
+  // After the scroll stops, let the speed die down and keep drawing
+  function settle(now: number) {
+    const dt = Math.min(0.1, (now - lastT) / 1000);
+    if (now - lastT > 50) speed *= Math.exp(-dt / SETTLE);
+    if (speed < 0.01) speed = 0;
+    draw();
+    settleRaf = settles() ? requestAnimationFrame(settle) : 0;
+  }
+
+  function draw() {
+    const now = performance.now();
+    phase += Math.min(0.1, (now - drawnAt) / 1000) * 10;
+    drawnAt = now;
+    const u = Math.max(0, lastU);
+    const box = lastBox;
+    const amt = amount(u);
+    const active = amt > 0.002 && box.w > 0.5;
+
+    if (mode === 2 && active) {
+      img!.style.transform = `scale(${1 + SETTLE_ZOOM * amt})`;
+      img!.style.filter = amt > 0.02 ? `blur(${(SETTLE_BLUR * box.w * amt).toFixed(2)}px)` : '';
+    } else clearCss();
+
+    const gpu = mode !== 0 && mode !== 2 && active && ready && gl && prog && ripple;
+    canvas.style.visibility = gpu ? 'visible' : 'hidden';
+    img!.style.opacity = gpu ? '0' : '';
+    if (!gpu) return;
+
+    const g = gl!;
+    const x = box.cx - box.w / 2;
+    const y = box.cy - box.h / 2;
+    g.clear(g.COLOR_BUFFER_BIT);
+
+    if (mode === 5) {
+      const { program, u: un, aUv } = ripple!;
+      g.useProgram(program);
+      g.bindBuffer(g.ARRAY_BUFFER, grid);
+      g.enableVertexAttribArray(aUv);
+      g.vertexAttribPointer(aUv, 2, g.FLOAT, false, 0, 0);
+      g.uniform1i(un.tex, 0);
+      g.uniform4f(un.rect, x, y, box.w, box.h);
+      g.uniform2f(un.view, canvas.width / dpr, canvas.height / dpr);
+      g.uniform1f(un.aspect, aspect);
+      g.uniform1f(un.amp, amt * clamp(speed / RIPPLE_SPEED));
+      g.uniform1f(un.phase, phase);
+      g.drawArrays(g.TRIANGLES, 0, gridVerts.length / 2);
+      return;
+    }
+
+    const { program, u: un, aUv } = prog!;
+    g.useProgram(program);
+    g.bindBuffer(g.ARRAY_BUFFER, quad);
+    g.enableVertexAttribArray(aUv);
+    g.vertexAttribPointer(aUv, 2, g.FLOAT, false, 0, 0);
+    g.uniform1i(un.tex, 0);
+    g.uniform2f(un.res, canvas.width, canvas.height);
+    g.uniform1f(un.dpr, dpr);
+    g.uniform4f(un.rect, x, y, box.w, box.h);
+    g.uniform1f(un.aspect, aspect);
+    g.uniform1f(un.mode, mode);
+    g.uniform1f(un.amt, amt);
+    g.uniform1f(un.u, u);
+    g.uniform1f(un.warp, amt * clamp(WARP_BASE + (1 - WARP_BASE) * (speed / WARP_SPEED)));
+    g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
+  }
 
   if (!new URLSearchParams(location.search).has('embed')) mountSwitcher();
 
