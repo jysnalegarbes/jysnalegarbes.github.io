@@ -1,0 +1,80 @@
+---
+/*
+  Demo: nav hover options (lab/portfolio/home/03-nav-hover). The library's
+  frozen header with only the menu showing, enlarged. ?pfx=1..4: gooey
+  cross-fade, letter flip, letter roll, star spin. Full page: hover the
+  links. Embedded: the links take turns.
+*/
+import LabDemo from '../../../layouts/LabDemo.astro';
+import SiteHeader from '../../../../lab/portfolio/home/03-nav-hover/SiteHeader.astro';
+---
+
+<LabDemo title="Nav hover">
+  <script is:inline>
+    // The frozen nav-hover.ts picks its option from ?nav=; hand it ?pfx
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var pfx = Number(q.get('pfx'));
+      if (pfx >= 1 && pfx <= 4 && q.get('nav') !== String(pfx)) {
+        q.set('nav', String(pfx));
+        history.replaceState(null, '', location.pathname + '?' + q.toString());
+      }
+      document.documentElement.classList.add('nav-demo');
+    })();
+  </script>
+  <SiteHeader />
+</LabDemo>
+
+<script>
+  import { autoplayLoop } from '../../../scripts/lab-demo';
+
+  // Embedded: each link takes a 1.6s turn in the on state. The class drives
+  // the CSS; the mouse events drive option 1's goo pulse, sent before the
+  // class goes on and after it comes off (the pulse skips active links).
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]')];
+  links.forEach((l) => l.classList.remove('is-active'));
+  const TURN = 1.6;
+  let current = -1;
+
+  autoplayLoop(TURN * links.length, (t) => {
+    const next = Math.floor(t / TURN) % links.length;
+    const on = t % TURN < TURN * 0.6;
+    const want = on ? next : -1;
+    if (want === current) return;
+    if (current >= 0) {
+      links[current].classList.remove('is-active');
+      links[current].dispatchEvent(new MouseEvent('mouseleave'));
+    }
+    if (want >= 0) {
+      links[want].dispatchEvent(new MouseEvent('mouseenter'));
+      links[want].classList.add('is-active');
+    }
+    current = want;
+  });
+</script>
+
+<style is:global>
+  /* Menu only, centred and enlarged */
+  html.nav-demo body {
+    min-height: 100svh;
+    background: var(--bg);
+  }
+
+  html.nav-demo .site-header {
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  html.nav-demo .badge,
+  html.nav-demo .brand,
+  html.nav-demo .menu__title {
+    display: none !important;
+  }
+
+  html.nav-demo .menu {
+    zoom: 3;
+  }
+</style>

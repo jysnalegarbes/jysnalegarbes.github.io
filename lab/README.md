@@ -37,7 +37,7 @@ options:
 
 A round with `demo` gets a live card per option. The demo page is drawn at 1440×900 and scaled into the card, and it's mounted only while on screen. Demo pages use `src/layouts/LabDemo.astro` (no site header). Scroll-driven demos call `autoplayScroll()` from `src/scripts/lab-demo.ts`, so they play themselves when embedded.
 
-A demo imports the round's frozen copies in `lab/`, never the live `src/` versions, so it keeps working after the site's own code moves on. Shared helpers (for example `liquid-morph.ts`) are imported from `src/`.
+A demo imports the round's frozen copies in `lab/`, never the live `src/` versions, so it keeps working after the site's own code moves on. Shared helpers (for example `liquid-morph.ts`) are imported from `src/`. Page markup and styles that several of a page's demos share are frozen once at page level, for example `lab/portfolio/home/HomeMarkup.astro` and `home-demo.css`.
 
 Rounds without `demo` show their options as a list with code only. Rebuilding a preview means writing its demo page against the snapshot.
 

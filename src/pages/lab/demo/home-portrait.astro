@@ -1,0 +1,73 @@
+---
+/*
+  Demo: home portrait hover options (lab/portfolio/home/01-portrait-hover).
+  The home hero with the library's frozen portrait-fx; ?pfx=1 slider dent,
+  ?pfx=2 lens blur. Full page: move the mouse over the portrait (hold the
+  button for the dent's grow). Embedded: a virtual cursor plays it.
+*/
+import LabDemo from '../../../layouts/LabDemo.astro';
+import HomeMarkup from '../../../../lab/portfolio/home/HomeMarkup.astro';
+import '../../../../lab/portfolio/home/home-demo.css';
+---
+
+<LabDemo title="Portrait hover">
+  <HomeMarkup />
+</LabDemo>
+
+<script>
+  import { mountPortraitFx, defaultPortraitFx, type PortraitEffect } from '../../../../lab/portfolio/home/01-portrait-hover/portrait-fx';
+  import { autoplayLoop } from '../../../scripts/lab-demo';
+
+  const pfx = Number(new URLSearchParams(location.search).get('pfx'));
+  const effect = (pfx === 2 ? 2 : 1) as PortraitEffect;
+  const figure = document.querySelector<HTMLElement>('[data-portrait]');
+
+  if (figure) {
+    mountPortraitFx(figure, effect, { ...defaultPortraitFx });
+
+    // Embedded: a virtual cursor sweeps in, circles the face, presses
+    // (the dent grows), then leaves past the portrait.
+    let inside = false;
+    let down = false;
+    const LOOP = 7;
+    const ease = (k: number) => k * k * (3 - 2 * k);
+
+    autoplayLoop(LOOP, (t) => {
+      const r = figure.getBoundingClientRect();
+      const cx = r.left + r.width * 0.5;
+      const cy = r.top + r.height * 0.35;
+      let x: number;
+      let y: number;
+      if (t < 1) {
+        // in from the left
+        const k = ease(t);
+        x = r.left - r.width * 1.2 + (cx - (r.left - r.width * 1.2)) * k;
+        y = cy + r.height * 0.3 * (1 - k);
+      } else if (t < 4.5) {
+        // two loops around the face
+        const a = ((t - 1) / 3.5) * Math.PI * 4;
+        x = cx + Math.sin(a) * r.width * 0.28;
+        y = cy + (1 - Math.cos(a)) * r.height * 0.18;
+      } else if (t < 5.7) {
+        x = cx;
+        y = cy;
+      } else {
+        // out to the right
+        const k = ease((t - 5.7) / 1.3);
+        x = cx + (r.right + r.width * 1.2 - cx) * k;
+        y = cy - r.height * 0.2 * k;
+      }
+
+      const over = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+      if (over && !inside) figure.dispatchEvent(new PointerEvent('pointerenter', { clientX: x, clientY: y }));
+      if (!over && inside) figure.dispatchEvent(new PointerEvent('pointerleave', { clientX: x, clientY: y }));
+      inside = over;
+      window.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y }));
+
+      const press = t >= 4.6 && t < 5.6;
+      if (press && !down && inside) figure.dispatchEvent(new PointerEvent('pointerdown', { clientX: x, clientY: y }));
+      if (!press && down) window.dispatchEvent(new PointerEvent('pointerup', { clientX: x, clientY: y }));
+      down = press && inside;
+    });
+  }
+</script>

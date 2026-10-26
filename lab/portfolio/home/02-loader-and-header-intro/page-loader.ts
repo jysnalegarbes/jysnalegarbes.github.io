@@ -147,19 +147,25 @@ export function introHeader(kind: HeaderIntro, fluid: FluidTrail | null, baseDis
   // 3: ink drops
   gsap.set(leaves, { opacity: 0 });
   reveal();
-  if (fluid) fluid.update({ densityDissipation: 2.4 });
+  if (fluid) {
+    fluid.clampInk(); // the burst's erase would otherwise cancel the drops
+    fluid.update({ densityDissipation: 3.5 });
+  }
+  const DROP_AMOUNT = 2;
+  const INK_EDGE = 0.35; // matches config.inkEdge: where ink becomes visible
+  const aspect = window.innerWidth / window.innerHeight;
   leaves.forEach((el, i) => {
     gsap.delayedCall(i * 0.09, () => {
       const r = el.getBoundingClientRect();
       const x = (r.left + r.width / 2) / window.innerWidth;
       const y = 1 - (r.top + r.height / 2) / window.innerHeight;
-      // Drop size follows the leaf's height, in splat-radius units
-      const size = Math.max(r.height, 18) / window.innerHeight;
+      // Visible drop radius ≈ just over half the leaf's longest side.
+      // The splat is exp(-d²/(radius·aspect)) · amount, visible above the
+      // ink edge, so solve for the radius that puts the edge there.
+      const visible = (0.55 * Math.max(r.width, r.height, 18)) / window.innerHeight;
       fluid?.splatAt(x, y, {
-        amount: 2.2,
-        radius: size * size * 2.2,
-        dx: (Math.random() - 0.5) * 300,
-        dy: -200,
+        amount: DROP_AMOUNT,
+        radius: (visible * visible) / (aspect * Math.log(DROP_AMOUNT / INK_EDGE)),
       });
       gsap.to(el, { opacity: 1, duration: 0.2, ease: 'power1.out' });
     });

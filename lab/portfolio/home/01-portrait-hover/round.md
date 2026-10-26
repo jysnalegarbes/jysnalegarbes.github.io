@@ -5,6 +5,7 @@ page: Home
 order: 1
 date: 2026-10-17
 summary: "WebGL treatment for the home hero portrait under the cursor."
+demo: home-portrait
 files:
   - portrait-fx.ts
   - index.astro

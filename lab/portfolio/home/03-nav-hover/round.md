@@ -5,6 +5,7 @@ page: Home
 order: 3
 date: 2026-10-17
 summary: "Hover and active states for the menu links."
+demo: home-nav
 files:
   - nav-hover.ts
   - SiteHeader.astro

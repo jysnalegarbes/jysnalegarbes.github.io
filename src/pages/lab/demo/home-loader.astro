@@ -1,0 +1,95 @@
+---
+/*
+  Demo: home loader and header intro options
+  (lab/portfolio/home/02-loader-and-header-intro). The home page with the
+  library's frozen loader, fluid engine (with the wash's veil) and header.
+  ?pfx=1..4: loaders (ink burst, ink wash, flipbook, curtain), each with the
+  gooey header intro; ?pfx=5..7: header intros (gooey, masked rise, ink
+  drops) after the ink burst. Full page: reload to replay. Embedded: it
+  replays itself.
+*/
+import LabDemo from '../../../layouts/LabDemo.astro';
+import HomeMarkup from '../../../../lab/portfolio/home/HomeMarkup.astro';
+import SiteHeader from '../../../../lab/portfolio/home/03-nav-hover/SiteHeader.astro';
+import '../../../../lab/portfolio/home/home-demo.css';
+---
+
+<LabDemo title="Loader and header intro">
+  <script is:inline>
+    (function () {
+      var pfx = Number(new URLSearchParams(location.search).get('pfx')) || 1;
+      var root = document.documentElement;
+      document.body.classList.add('has-ink');
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      root.classList.add('is-loading', 'header-pending');
+      root.dataset.loaderOption = String(pfx <= 4 ? pfx : 1);
+      root.dataset.headerIntro = String(pfx >= 5 ? pfx - 4 : 1);
+    })();
+  </script>
+  <SiteHeader />
+  <canvas class="fluid fluid--invert" data-fluid aria-hidden="true"></canvas>
+  <canvas class="fluid fluid--tint" data-fluid-tint aria-hidden="true"></canvas>
+  <div class="loader" data-loader aria-hidden="true">
+    <div class="loader__cover" data-loader-cover><span class="loader__drip" data-loader-drip></span></div>
+    <p class="loader__count serif-italic"><span data-loader-count>00</span></p>
+  </div>
+  <HomeMarkup />
+</LabDemo>
+
+<script>
+  import { mountFluidTrail } from '../../../../lab/portfolio/home/02-loader-and-header-intro/fluid-trail';
+  import { runLoader, type HeaderIntro, type LoaderOption } from '../../../../lab/portfolio/home/02-loader-and-header-intro/page-loader';
+  import { mountPortraitFx } from '../../../scripts/portrait-fx';
+  import { replayAfter } from '../../../scripts/lab-demo';
+
+  const root = document.documentElement;
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-fluid]');
+  const tintCanvas = document.querySelector<HTMLCanvasElement>('[data-fluid-tint]');
+  const portrait = document.querySelector<HTMLElement>('[data-portrait]');
+  const frameImg = portrait?.querySelector<HTMLImageElement>('[data-portrait-frame]');
+  const heroImg = portrait?.querySelector<HTMLImageElement>('.home__hero');
+
+  // The fluid settings Jayson approved that day (src/config/fluid-trail.json then)
+  const baseDissipation = 2.05;
+  const fluid =
+    canvas && tintCanvas
+      ? mountFluidTrail({
+          canvas,
+          tintCanvas,
+          tint: '#141918',
+          config: {
+            mode: 1,
+            curl: 4,
+            densityDissipation: baseDissipation,
+            velocityDissipation: 1.05,
+            pressure: 1,
+            pressureIterations: 22,
+            splatRadius: 0.24,
+            splatForce: 500,
+            shading: false,
+            simResolution: 96,
+            dyeResolution: 1024,
+            intensity: 0.85,
+            inkEdge: 0.35,
+            inkSoftness: 0.01,
+          },
+        })
+      : null;
+
+  const portraitFx = portrait ? mountPortraitFx(portrait, { dentDepth: 1, dentRadius: 0.08, rgbSplit: 0.12 }) : null;
+
+  if (root.classList.contains('is-loading') && portrait && frameImg && heroImg) {
+    const done = runLoader({
+      option: Number(root.dataset.loaderOption) as LoaderOption,
+      headerIntro: Number(root.dataset.headerIntro) as HeaderIntro,
+      fluid,
+      portraitFx,
+      portrait,
+      frameImg,
+      heroImg,
+      frames: JSON.parse(portrait.dataset.frames ?? '[]'),
+      baseDissipation,
+    });
+    replayAfter(done, 3.5);
+  }
+</script>

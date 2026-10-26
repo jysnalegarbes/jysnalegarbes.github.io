@@ -1,0 +1,44 @@
+---
+/*
+  The home hero as it was during the 2026-10-17 option rounds (title,
+  portrait with its hover frames, footer), shared by the home demos in
+  src/pages/lab/demo/. Styles: home-demo.css next to this file.
+*/
+import { Image, getImage } from 'astro:assets';
+import hero from '../../../src/assets/home/hero.png';
+
+const portraitModules = import.meta.glob<{ default: ImageMetadata }>('../../../src/assets/home/portraits/*.webp', {
+  eager: true,
+});
+const portraitFrames = await Promise.all(
+  Object.keys(portraitModules)
+    .sort()
+    .map(async (key) => (await getImage({ src: portraitModules[key].default, format: 'webp' })).src),
+);
+---
+
+<section class="home">
+  <h1 class="home__title">
+    <span class="home__uiux">UI/UX</span>
+    <span class="home__visual">visual</span>
+    <span class="home__designer serif-italic">designer</span>
+  </h1>
+
+  <figure class="home__portrait" data-portrait data-frames={JSON.stringify(portraitFrames)}>
+    <Image
+      class="home__hero"
+      src={hero}
+      alt="Jayson Alegarbes sitting on a studio floor in sunglasses and suspenders"
+      widths={[560, 800, 1024]}
+      sizes="41vw"
+      loading="eager"
+    />
+    <img class="home__frame" data-portrait-frame alt="" hidden />
+  </figure>
+
+  <div class="home__foot">
+    <p class="home__copy">© 2026</p>
+    <p class="home__based">Independent designer<br />based in Davao City, Philippines.</p>
+    <p class="home__love">I love creating digital experiences<br />that feel good to use.</p>
+  </div>
+</section>
