@@ -10,9 +10,9 @@
   1, 3 and 4 draw the portrait on a stage-sized canvas (so edges can bleed
   past the box) and hide the <img> while they run.
 
-  DEMO: a switcher (dev server only) picks the mode; ?pfx=N works too.
+  Library copy: ?pfx=N picks the mode; the switcher shows unless ?embed.
 */
-import { linkProgram } from './liquid-morph';
+import { linkProgram } from '../../../../src/scripts/liquid-morph';
 
 export type PortraitMode = 0 | 1 | 2 | 3 | 4;
 export const MODE_NAMES = ['None', 'Ink Edge', 'Lens Settle', 'Lens Warp', 'Shutter Strips'];
@@ -274,7 +274,7 @@ export function mountPortraitExpand(
     },
   };
 
-  if (import.meta.env.DEV) mountSwitcher();
+  if (!new URLSearchParams(location.search).has('embed')) mountSwitcher();
 
   function mountSwitcher() {
     const bar = document.createElement('div');

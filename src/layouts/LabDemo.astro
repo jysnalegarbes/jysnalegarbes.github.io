@@ -1,0 +1,60 @@
+---
+/*
+  Bare page for an effects-library demo (/lab/demo/*): the site's fonts and
+  tokens, no header. Shown full screen from the library's "Open", and as a
+  scaled live preview inside its cards (?embed).
+*/
+import '@fontsource-variable/archivo';
+import '@fontsource-variable/playfair-display';
+import '@fontsource-variable/playfair-display/wght-italic.css';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="lab-demo">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" type="image/svg+xml" href="/images/brand/logo-mark.svg" />
+    <title>{title} — Lab</title>
+    <script is:inline>
+      if (new URLSearchParams(location.search).has('embed')) document.documentElement.classList.add('is-embed');
+    </script>
+  </head>
+  <body>
+    <a class="lab-demo__back" href="/lab/">← Library</a>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  .lab-demo.is-embed {
+    scrollbar-width: none;
+  }
+
+  .lab-demo.is-embed::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lab-demo__back {
+    position: fixed;
+    top: var(--gutter);
+    left: var(--gutter);
+    z-index: 100;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    mix-blend-mode: difference;
+    color: var(--white);
+  }
+
+  .is-embed .lab-demo__back {
+    display: none;
+  }
+</style>

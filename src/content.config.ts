@@ -38,4 +38,29 @@ const inProgress = defineCollection({
     }),
 });
 
-export const collections = { projects, 'in-progress': inProgress };
+// Effects library (/lab/): one round.md per option round in lab/<project>/<page>/<round>/,
+// next to the code it describes. `files` are relative to that folder; `demo` names a
+// page in src/pages/lab/demo/ that takes ?pfx=<option number>.
+const lab = defineCollection({
+  loader: glob({ pattern: '**/round.md', base: './lab' }),
+  schema: z.object({
+    title: z.string(),
+    project: z.string(),
+    page: z.string(),
+    order: z.number(),
+    date: z.coerce.date(),
+    summary: z.string(),
+    demo: z.string().optional(),
+    files: z.array(z.string()).default([]),
+    options: z.array(
+      z.object({
+        name: z.string(),
+        status: z.enum(['chosen', 'rejected', 'review']),
+        note: z.string(),
+        credit: z.string().optional(),
+      }),
+    ),
+  }),
+});
+
+export const collections = { projects, 'in-progress': inProgress, lab };

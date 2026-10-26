@@ -10,6 +10,8 @@ interface Props {
   description?: string;
   current?: NavKey;
   pageClass?: string;
+  /** Keep the page out of search engines (the hidden /lab/ pages) */
+  noindex?: boolean;
 }
 
 const {
@@ -17,6 +19,7 @@ const {
   description = 'Jayson Alegarbes — independent UI/UX and visual designer based in Davao City, Philippines.',
   current,
   pageClass,
+  noindex = false,
 } = Astro.props;
 ---
 
@@ -26,6 +29,7 @@ const {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/images/brand/logo-mark.svg" />
     <title>{title}</title>
