@@ -42,7 +42,8 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
   ink.addBinding(inkDevelop, 'grain', { label: 'fine grain', min: 0, max: 0.3, step: 0.005 });
   ink.addBinding(inkDevelop, 'coarseGrain', { label: 'coarse grain', min: 0, max: 0.3, step: 0.005 });
   ink.addBinding(inkDevelop, 'grainSize', { label: 'grain size', min: 0.5, max: 8, step: 0.1 });
-  ink.addBinding(inkDevelop, 'fullTonesAt', { label: 'full tones from', min: 0, max: 0.95, step: 0.01 });
+  ink.addBinding(inkDevelop, 'photoAtEnd', { label: 'photo at end', min: 0, max: 1, step: 0.01 });
+  ink.addBinding(inkDevelop, 'fullTonesAt', { label: 'photo blend from', min: 0, max: 0.95, step: 0.01 });
 
   pane.on('change', () => fx.refresh());
 

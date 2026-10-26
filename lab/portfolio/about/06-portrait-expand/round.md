@@ -32,5 +32,5 @@ options:
     note: "Starts as a grainy two-tone ink print in the site's black and off-white; the tones come in as it grows, like a print developing."
   - name: "Ripple + Ink Develop"
     status: chosen
-    note: "Ripple and Ink Develop together: the wave rolls through the portrait while you scroll, on an ink print that develops to the full photo by full screen."
+    note: "Ripple and Ink Develop together: the wave rolls through the portrait while you scroll, on a grainy ink print that gains tones as it grows. Refined on the site afterwards: the print stays through full screen until the wipe (see src/scripts/portrait-expand.ts)."
 ---

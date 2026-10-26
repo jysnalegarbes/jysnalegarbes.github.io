@@ -4,8 +4,8 @@
     split  (1:190)  the line splits from the middle, portrait opens between
     expand (62:2)   text keeps leaving, portrait grows and recentres
     full            portrait fills the screen, text is off screen
-  While it grows, the portrait ripples with scroll speed and develops from
-  an ink print to the full photo (portrait-expand.ts).
+  While it grows, the portrait ripples with scroll speed and develops as a
+  grainy ink print, which stays until the wipe covers it (portrait-expand.ts).
     wipe            the full-strength portrait gives way to #141918 through
                     the Codrops noise wipe, bottom → top (about-wipe.ts),
                     into the first text section (1:384)

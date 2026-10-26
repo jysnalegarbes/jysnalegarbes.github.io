@@ -6,9 +6,11 @@
       plane, driven by scroll speed. It wobbles in perspective, with an RGB
       split where it bends, while you scroll, and settles flat when you stop.
     - Ink Develop: the portrait starts as a grainy two-tone ink print in the
-      site's black and off-white and develops to the full photo.
-  Both fade out over the growth: at full screen the plain <img> is back, so
-  the wipe always starts on it. The box geometry stays about-intro.ts's.
+      site's black and off-white and gains tones as it grows. The print
+      stays through full screen until the wipe covers it ("photo at end"
+      blends the real photo back in, 0 by default).
+  The ripple fades out over the growth, so the full-screen print sits flat.
+  The box geometry stays about-intro.ts's.
 
   Every value lives in src/config/portrait-expand.json. ?tweak opens a panel
   (portrait-tweaks.ts); on the dev server its "Save to project" writes it.
@@ -56,7 +58,7 @@ const fragment = /* glsl */ `
   uniform float amt;     // 1 at the start, 0 once it fills the screen
   uniform float u;       // progress through the growth, 0 → 1
   uniform vec4 ink;      // start tones, end tones, fine grain, coarse grain
-  uniform vec2 inkB;     // grain size, full tones from
+  uniform vec3 inkB;     // grain size, photo blend from, photo at end
   varying vec2 vUv;
   varying float vWave;
 
@@ -97,7 +99,7 @@ const fragment = /* glsl */ `
     vec3 shifted = vec3(cover(vUv + w * 0.04).r, cover(vUv + w * 0.01).g, cover(vUv - w * 0.03).b);
     vec3 col = mix(base, shifted, split);
 
-    // Ink print → posterised → full tones
+    // Ink print, gaining tones as it grows
     vec2 px = vec2(gl_FragCoord.x, res.y - gl_FragCoord.y) / dpr;
     float l = dot(col, vec3(0.299, 0.587, 0.114));
     float grain = ink.z * snoise(px / inkB.x + u * 7.0) + ink.w * snoise(px / 9.0);
@@ -105,7 +107,7 @@ const fragment = /* glsl */ `
     float n = mix(ink.x, ink.y, pow(dev, 1.5));
     float q = clamp(floor((l + grain) * n) / (n - 1.0), 0.0, 1.0);
     vec3 tone = mix(vec3(0.078, 0.098, 0.094), vec3(0.843, 0.871, 0.871), q);
-    gl_FragColor = vec4(mix(tone, col, smoothstep(inkB.y, 1.0, dev)), 1.0);
+    gl_FragColor = vec4(mix(tone, col, smoothstep(inkB.y, 1.0, dev) * inkB.z), 1.0);
   }
 `;
 
@@ -229,7 +231,8 @@ export function mountPortraitExpand(media: HTMLElement, rerender: () => void): P
     const u = Math.max(0, lastU);
     const box = lastBox;
     const amt = amount(u);
-    const on = ready && amt > 0.002 && box.w > 0.5;
+    // On for the whole sequence: the print stays at full screen, under the wipe
+    const on = ready && box.w > 0.5;
     canvas.style.visibility = on ? 'visible' : 'hidden';
     img!.style.opacity = on ? '0' : '';
     if (!on) return;
@@ -252,7 +255,7 @@ export function mountPortraitExpand(media: HTMLElement, rerender: () => void): P
     gl!.uniform1f(un.amt, amt);
     gl!.uniform1f(un.u, u);
     gl!.uniform4f(un.ink, d.startLevels, d.endLevels, d.grain, d.coarseGrain);
-    gl!.uniform2f(un.inkB, d.grainSize, d.fullTonesAt);
+    gl!.uniform3f(un.inkB, d.grainSize, d.fullTonesAt, d.photoAtEnd);
     gl!.drawArrays(gl!.TRIANGLES, 0, verts.length / 2);
   }
 

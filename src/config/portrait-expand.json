@@ -7,12 +7,13 @@
     "rgbSplit": 0.35
   },
   "inkDevelop": {
-    "startLevels": 2,
-    "endLevels": 10,
+    "startLevels": 3,
+    "endLevels": 12,
     "grain": 0.07,
     "coarseGrain": 0.05,
-    "grainSize": 2.2,
-    "fullTonesAt": 0.55
+    "grainSize": 4.3,
+    "fullTonesAt": 0.61,
+    "photoAtEnd": 0
   },
   "settle": 0.3
 }
