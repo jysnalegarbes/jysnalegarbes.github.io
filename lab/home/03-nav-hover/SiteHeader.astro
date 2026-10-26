@@ -1,0 +1,537 @@
+---
+export type NavKey = 'work' | 'about' | 'in-progress' | 'contact';
+
+interface Props {
+  current?: NavKey;
+}
+
+const { current } = Astro.props;
+
+const links: { key: NavKey; label: string; href: string }[] = [
+  { key: 'work', label: 'Work', href: '/work/' },
+  { key: 'about', label: 'About', href: '/about/' },
+  { key: 'in-progress', label: 'In Progress', href: '/in-progress/' },
+  { key: 'contact', label: 'Contact', href: '/contact/' },
+];
+
+/** Per-character spans for the letter-based hover options. */
+const chars = (text: string) => [...text.toUpperCase()].map((char, i) => ({ char: char === ' ' ? ' ' : char, i }));
+
+// Nav hover option (previews: ?nav=1..4, remembered for the session)
+const DEFAULT_NAV_HOVER = 1;
+---
+
+<header class="site-header">
+  <div class="badge desktop-only" data-badge>
+    <span class="badge__icon" aria-hidden="true">
+      <span class="badge__lottie" data-badge-hands></span>
+      <span class="badge__lottie ink-exempt" data-badge-lines></span>
+    </span>
+    <p class="badge__text">Open for selected<br />projects</p>
+  </div>
+
+  <a class="brand" href="/" aria-label="Jayson Alegarbes, home">
+    <img class="brand__mark ink-exempt" src="/images/brand/logo-mark.svg" width="46" height="46" alt="" />
+    <img class="brand__wordmark" src="/images/brand/logo-wordmark.svg" width="87" height="40" alt="" />
+  </a>
+
+  <nav class="menu" aria-label="Primary" data-menu data-nav-hover={DEFAULT_NAV_HOVER}>
+    <p class="menu__title desktop-only" aria-hidden="true">Menu</p>
+    <button
+      class="menu__title menu__toggle mobile-only"
+      type="button"
+      aria-expanded="false"
+      aria-controls="menu-panel"
+      data-menu-toggle
+    >
+      <span data-menu-label>Menu</span>
+    </button>
+
+    <div class="menu__panel" id="menu-panel">
+      <ul class="menu__list">
+        {
+          links.map(({ key, label, href }) => {
+            const active = key === current;
+            return (
+              <li>
+                <a
+                  class:list={['menu__link', { 'is-active': active }]}
+                  href={href}
+                  aria-current={active ? 'page' : undefined}
+                  data-nav-link
+                >
+                  <span class="menu__label">
+                    <span class="menu__text">
+                      {chars(label).map(({ char, i }) => (
+                        <span class="menu__char" style={`--i:${i}`}>
+                          {char}
+                        </span>
+                      ))}
+                    </span>
+                    <span class="menu__text menu__text--alt" aria-hidden="true">
+                      {chars(label).map(({ char, i }) => (
+                        <span class="menu__char" style={`--i:${i}`}>
+                          {char}
+                        </span>
+                      ))}
+                    </span>
+                  </span>
+                  <img class="menu__star ink-exempt" src="/images/brand/star.svg" width="18" height="18" alt="" />
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+
+      <!-- Mobile menu: availability badge pinned bottom-left (Figma 1:1143) -->
+      <div class="badge badge--panel mobile-only" data-badge data-badge-autoplay>
+        <span class="badge__icon" aria-hidden="true">
+          <span class="badge__lottie" data-badge-hands></span>
+          <span class="badge__lottie ink-exempt" data-badge-lines></span>
+        </span>
+        <p class="badge__text">Open for selected<br />projects</p>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<script>
+  import lottie from 'lottie-web/build/player/lottie_light';
+  import fistBump from '../assets/lottie/fist-bump.json';
+  import { mountNavHover } from '../scripts/nav-hover';
+
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /*
+    Availability badges: the fist bump plays once per trigger (hover on the
+    desktop badge, menu open for the mobile one). Leaving mid-way lets it
+    finish so the hands never snap back. Frame 0 doubles as the rest pose,
+    and the motion settles by frame 130. Each plays as two synced layers:
+    the hands (which invert under the home ink like the rest of the page)
+    and the green burst lines (ink-exempt).
+  */
+  type Anim = ReturnType<typeof lottie.loadAnimation>;
+
+  const layersOnly = (prefix: string) => ({
+    ...fistBump,
+    layers: fistBump.layers.filter((layer) => layer.nm.startsWith(prefix)),
+  });
+
+  const badges = [...document.querySelectorAll<HTMLElement>('[data-badge]')].map((badge) => {
+    let anims: Anim[] = [];
+    let playing = false;
+
+    const mount = () => {
+      if (anims.length || !badge.getClientRects().length) return;
+      const hands = badge.querySelector<HTMLElement>('[data-badge-hands]')!;
+      const lines = badge.querySelector<HTMLElement>('[data-badge-lines]')!;
+      anims = (
+        [
+          [hands, layersOnly('hand')],
+          [lines, layersOnly('lines')],
+        ] as const
+      ).map(([container, animationData]) =>
+        lottie.loadAnimation({ container, renderer: 'svg', loop: false, autoplay: false, animationData }),
+      );
+      anims.forEach((a) => a.goToAndStop(0, true));
+      anims[0].addEventListener('complete', () => {
+        playing = false;
+        anims.forEach((a) => a.goToAndStop(0, true));
+      });
+    };
+
+    const play = () => {
+      mount();
+      if (!anims.length || playing || reducedMotion.matches) return;
+      playing = true;
+      anims.forEach((a) => a.playSegments([0, 130], true));
+    };
+
+    if (!badge.hasAttribute('data-badge-autoplay')) badge.addEventListener('mouseenter', play);
+    return { badge, mount, play };
+  });
+
+  const mountVisibleBadges = () => badges.forEach((b) => b.mount());
+  mountVisibleBadges();
+  window.matchMedia('(min-width: 1024px)').addEventListener('change', mountVisibleBadges);
+
+  // Mobile menu
+  const menu = document.querySelector<HTMLElement>('[data-menu]');
+  const toggle = menu?.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const label = menu?.querySelector<HTMLElement>('[data-menu-label]');
+  const panelBadge = badges.find((b) => b.badge.hasAttribute('data-badge-autoplay'));
+
+  const setOpen = (open: boolean) => {
+    if (!menu || !toggle || !label) return;
+    menu.toggleAttribute('data-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    label.textContent = open ? 'Close' : 'Menu';
+    document.documentElement.style.overflow = open ? 'hidden' : '';
+    // Bump once the panel has faded in
+    if (open) setTimeout(() => panelBadge?.play(), 250);
+  };
+
+  toggle?.addEventListener('click', () => setOpen(!menu?.hasAttribute('data-open')));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu?.hasAttribute('data-open')) {
+      setOpen(false);
+      toggle?.focus();
+    }
+  });
+  window.matchMedia('(min-width: 1024px)').addEventListener('change', () => setOpen(false));
+
+  if (menu) mountNavHover(menu);
+</script>
+
+<style>
+  .site-header {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: start;
+    padding: calc(24 * var(--px)) var(--gutter) 0;
+    pointer-events: none;
+  }
+
+  .site-header > * {
+    pointer-events: auto;
+  }
+
+  /* On ink pages the header must not form a stacking context, or it would
+     trap its green .ink-exempt pieces under the fluid. Those pages keep
+     their content from covering the header instead (see index.astro). */
+  :global(body.has-ink) .site-header {
+    z-index: auto;
+  }
+
+  /* Availability badge */
+  .badge {
+    display: flex;
+    align-items: stretch;
+    gap: calc(20 * var(--px));
+    justify-self: start;
+    font-size: var(--fs-sm);
+  }
+
+  /* The box frames the rest pose; the 500×500 Lottie canvas overflows it
+     so the hands can swing outward during the bump. */
+  .badge__icon {
+    position: relative;
+    height: 2lh;
+    aspect-ratio: 30 / 24;
+  }
+
+  .badge__lottie {
+    position: absolute;
+    top: -33.33%;
+    left: -16.67%;
+    width: 133.33%;
+    height: 166.67%;
+    pointer-events: none;
+  }
+
+  .badge__text {
+    font-weight: 700;
+  }
+
+  /* Logo: mark + wordmark lockup (46 : 87 wide, 46 : 40.2 tall) */
+  .brand {
+    --logo-h: calc(22 * var(--px));
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--logo-h) * 10 / 46);
+  }
+
+  .brand__mark {
+    width: var(--logo-h);
+    height: var(--logo-h);
+  }
+
+  .brand__wordmark {
+    width: calc(var(--logo-h) * 87.003 / 46);
+    height: calc(var(--logo-h) * 40.205 / 46);
+  }
+
+  /* Menu */
+  .menu {
+    grid-column: 3;
+    justify-self: end;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: calc(151 * var(--px));
+  }
+
+  .menu__title {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--gray);
+    text-align: right;
+  }
+
+  /* Desktop: the panel is just a pass-through wrapper */
+  .menu__panel {
+    display: contents;
+  }
+
+  .menu__list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: calc(20 * var(--px));
+  }
+
+  /*
+    Nav link. Default: label only. On (hover, keyboard focus, active page,
+    or just clicked): the label shifts left and the green star takes the
+    right edge, so every label stays right-aligned to the same column.
+    The four hover options animate between those two states differently.
+  */
+  .menu__link {
+    --star: max(13px, calc(18 * var(--px)));
+    --gap: calc(10 * var(--px));
+    --shift: calc(var(--star) + var(--gap));
+    position: relative;
+    display: flex;
+    align-items: center;
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .menu__label {
+    display: grid;
+    transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  .menu__text {
+    grid-area: 1 / 1;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .menu__char {
+    display: inline-block;
+  }
+
+  .menu__text--alt {
+    opacity: 0;
+  }
+
+  .menu__star {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: var(--star);
+    height: var(--star);
+    margin-top: calc(var(--star) / -2);
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  .menu__link:is(:hover, :focus-visible, .is-active) .menu__label {
+    transform: translateX(calc(-1 * var(--shift)));
+  }
+
+  .menu__link:is(:hover, :focus-visible, .is-active) .menu__star {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* 1 · Gooey cross-fade (Codrops Gooey Text Hover, demo 2). The goo
+     filter and its blur pulse are driven from nav-hover.ts. */
+  [data-nav-hover='1'] .menu__text {
+    transition:
+      opacity 0.8s cubic-bezier(0.45, 0, 0.55, 1),
+      transform 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+  }
+
+  [data-nav-hover='1'] .menu__text--alt {
+    transform: translateX(0.4em);
+  }
+
+  [data-nav-hover='1'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text:not(.menu__text--alt) {
+    opacity: 0;
+    transform: translateX(-0.4em);
+  }
+
+  [data-nav-hover='1'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text--alt {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-nav-hover='1'] .menu__star {
+    transition:
+      opacity 0.5s ease 0.15s,
+      transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s;
+  }
+
+  /* 2 · Letter flip (dev_loop "Link Hover Interaction"): letters turn
+     away in 3D while the copy turns in, staggered. */
+  [data-nav-hover='2'] .menu__text {
+    perspective: 400px;
+    transition: opacity 0.4s cubic-bezier(0.445, 0.05, 0.55, 0.95);
+  }
+
+  [data-nav-hover='2'] .menu__char {
+    backface-visibility: hidden;
+    transform-origin: 50% 50% 0.4em;
+    transition: transform 0.5s cubic-bezier(0.5, 0, 0, 1);
+    transition-delay: calc(var(--i) * 25ms);
+  }
+
+  [data-nav-hover='2'] .menu__text--alt .menu__char {
+    transform: rotate3d(1, -0.5, 0, 90deg);
+  }
+
+  [data-nav-hover='2'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text:not(.menu__text--alt) {
+    opacity: 0;
+  }
+
+  [data-nav-hover='2'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text:not(.menu__text--alt) .menu__char {
+    transform: rotate3d(1, 0.3, 0, -90deg);
+  }
+
+  [data-nav-hover='2'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text--alt {
+    opacity: 1;
+  }
+
+  [data-nav-hover='2'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text--alt .menu__char {
+    transform: none;
+  }
+
+  [data-nav-hover='2'] .menu__star {
+    transform: scale(0) rotate(-90deg);
+    transition:
+      opacity 0.4s ease 0.1s,
+      transform 0.6s cubic-bezier(0.5, 0, 0, 1) 0.1s;
+  }
+
+  /* 3 · Letter roll: letters roll up through a mask and the copy rolls in
+     from below; the star springs in. */
+  [data-nav-hover='3'] .menu__label {
+    overflow: hidden;
+  }
+
+  [data-nav-hover='3'] .menu__text--alt {
+    opacity: 1;
+  }
+
+  [data-nav-hover='3'] .menu__char {
+    transition: transform 0.55s cubic-bezier(0.7, 0, 0.2, 1);
+    transition-delay: calc(var(--i) * 22ms);
+  }
+
+  [data-nav-hover='3'] .menu__text--alt .menu__char {
+    transform: translateY(105%);
+  }
+
+  [data-nav-hover='3'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text:not(.menu__text--alt) .menu__char {
+    transform: translateY(-105%);
+  }
+
+  [data-nav-hover='3'] .menu__link:is(:hover, :focus-visible, .is-active) .menu__text--alt .menu__char {
+    transform: none;
+  }
+
+  [data-nav-hover='3'] .menu__star {
+    transform: scale(0) rotate(-120deg);
+    transition:
+      opacity 0.3s ease 0.15s,
+      transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s;
+  }
+
+  /* 4 · Star spin: the label glides aside and the star spins open with a
+     soft overshoot. The quietest of the four. */
+  [data-nav-hover='4'] .menu__star {
+    transform: scale(0) rotate(180deg);
+    transition:
+      opacity 0.35s ease,
+      transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Mobile: Menu opens a full-screen panel (Figma 1:1143) */
+  @media (max-width: 1023.98px) {
+    .site-header {
+      grid-template-columns: auto 1fr auto;
+    }
+
+    .brand {
+      grid-column: 1;
+    }
+
+    .menu {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Open menu sits above everything, including the portrait and the ink;
+       the logo rides on top of the panel */
+    .menu[data-open] {
+      z-index: 45;
+    }
+
+    .site-header:has(.menu[data-open]) .brand {
+      position: relative;
+      z-index: 46;
+    }
+
+    .menu__panel {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      display: block;
+      padding: calc(148 * var(--px)) var(--gutter) calc(24 * var(--px));
+      background: var(--bg);
+      visibility: hidden;
+      opacity: 0;
+      transition:
+        opacity 0.35s ease,
+        visibility 0s linear 0.35s;
+    }
+
+    .menu[data-open] .menu__panel {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.35s ease;
+    }
+
+    .menu__list {
+      font-size: calc(20 * var(--px));
+    }
+
+    .badge--panel {
+      position: absolute;
+      bottom: calc(24 * var(--px));
+      left: var(--gutter);
+      gap: calc(12 * var(--px));
+      font-size: calc(16 * var(--px));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .site-header {
+      padding-top: calc(40 * var(--px));
+    }
+
+    /* Logo matches the availability badge's height (two lines of small text) */
+    .brand {
+      --logo-h: 2lh;
+      font-size: var(--fs-sm);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .menu__panel,
+    .menu__label,
+    .menu__text,
+    .menu__char,
+    .menu__star {
+      transition: none !important;
+    }
+  }
+</style>

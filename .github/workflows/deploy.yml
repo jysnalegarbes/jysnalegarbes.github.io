@@ -5,6 +5,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore: ['lab/**']   # the effects library isn't part of the site
   workflow_dispatch:
 
 permissions:

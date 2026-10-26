@@ -1,0 +1,489 @@
+---
+/*
+  Page length indicator: how far through the page you are, by chapter.
+  Four candidate styles share one set of numbers (page-progress.ts writes
+  --p, --active and per-chapter --at / --len / --cp); data-variant picks
+  the one drawn. Neutral parts blend like the header (difference) until the
+  page goes dark, then use the dark-frame colours unblended.
+
+  DEMO: the switcher is temporary, for choosing a style. Remove it, the
+  other three variants and their CSS once one is picked.
+*/
+interface Props {
+  chapters: string[];
+}
+
+const { chapters } = Astro.props;
+const num = (i: number) => String(i).padStart(2, '0');
+const total = num(chapters.length - 1);
+const variants = ['Rail', 'Folio', 'Orbit', 'Chapters'];
+---
+
+<div class="pp" data-pp data-variant="1" aria-hidden="true">
+  <!-- 1 Rail: hairline on the right edge, a tick per chapter, the current one named -->
+  <div class="pp-rail">
+    <div class="pp-rail__track"></div>
+    <div class="pp-rail__fill"></div>
+    {
+      chapters.map((c, i) => (
+        <div class="pp-rail__tick" data-pp-chapter={i}>
+          <span class="pp-rail__label">
+            <span class="pp-num">{num(i)}</span> {c}
+          </span>
+        </div>
+      ))
+    }
+  </div>
+
+  <!-- 2 Folio: editorial page number, chapter name and a progress hairline -->
+  <div class="pp-folio">
+    <div class="pp-folio__head">
+      <span class="pp-roll pp-folio__num">
+        <span class="pp-roll__list">{chapters.map((_, i) => <span>{num(i)}</span>)}</span>
+      </span>
+      <span class="pp-folio__total">/ {total}</span>
+    </div>
+    <span class="pp-roll pp-folio__label">
+      <span class="pp-roll__list">{chapters.map((c) => <span>{c}</span>)}</span>
+    </span>
+    <div class="pp-folio__foot">
+      <span class="pp-folio__bar"><span class="pp-folio__fill"></span></span>
+      <span class="pp-pct" data-pp-pct>00</span>
+    </div>
+  </div>
+
+  <!-- 3 Orbit: a ring that closes as you read, a dot per chapter -->
+  <div class="pp-orbit">
+    <div class="pp-orbit__text">
+      <span class="pp-roll pp-orbit__count">
+        <span class="pp-roll__list">{chapters.map((_, i) => <span>{num(i)} / {total}</span>)}</span>
+      </span>
+      <span class="pp-roll pp-orbit__label">
+        <span class="pp-roll__list">{chapters.map((c) => <span>{c}</span>)}</span>
+      </span>
+    </div>
+    <div class="pp-orbit__ring">
+      <svg viewBox="0 0 64 64">
+        <circle class="pp-orbit__track" cx="32" cy="32" r="30"></circle>
+        <circle class="pp-orbit__arc" cx="32" cy="32" r="30" pathLength="1"></circle>
+      </svg>
+      {chapters.map((_, i) => <span class="pp-orbit__dot" data-pp-chapter={i}></span>)}
+      <span class="pp-pct pp-orbit__pct" data-pp-pct>00</span>
+    </div>
+  </div>
+
+  <!-- 4 Chapters: a segmented hairline along the bottom, one segment per chapter -->
+  <div class="pp-chapters">
+    {
+      chapters.map((c, i) => (
+        <div class="pp-chapters__seg" data-pp-chapter={i}>
+          <span class="pp-chapters__label">
+            <span class="pp-num">{num(i)}</span> {c}
+          </span>
+          <span class="pp-chapters__line">
+            <span class="pp-chapters__fill"></span>
+          </span>
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<!-- DEMO switcher (temporary) -->
+<div class="pp-demo" data-pp-demo>
+  <span class="pp-demo__title">Indicator</span>
+  {
+    variants.map((v, i) => (
+      <button type="button" class="pp-demo__btn" data-pp-pick={i + 1}>
+        {i + 1} {v}
+      </button>
+    ))
+  }
+</div>
+
+<style>
+  .pp {
+    --ink: #cdcfd0;
+    --muted: #66696d;
+    --ease: cubic-bezier(0.625, 0.05, 0, 1);
+    --row: 1.25em;
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    pointer-events: none;
+    color: var(--ink);
+    font-size: 12px;
+    line-height: 1.25;
+    font-variant-numeric: tabular-nums;
+    mix-blend-mode: difference;
+  }
+
+  /* Over the dark text sections: the header's dark-frame colours, unblended */
+  :global(body.is-header-dark) .pp {
+    --ink: var(--white);
+    --muted: var(--gray);
+    mix-blend-mode: normal;
+  }
+
+  .pp > * {
+    display: none;
+  }
+
+  .pp[data-variant='1'] .pp-rail,
+  .pp[data-variant='2'] .pp-folio,
+  .pp[data-variant='3'] .pp-orbit,
+  .pp[data-variant='4'] .pp-chapters {
+    display: block;
+  }
+
+  .pp[data-variant='3'] .pp-orbit,
+  .pp[data-variant='4'] .pp-chapters {
+    display: flex;
+  }
+
+  .pp-num {
+    color: var(--muted);
+  }
+
+  /* Rolling text: a one-row window over the list, slid to the current chapter */
+  .pp-roll {
+    display: block;
+    height: var(--row);
+    overflow: hidden;
+  }
+
+  .pp-roll__list {
+    display: flex;
+    flex-direction: column;
+    translate: 0 calc(var(--active, 0) * var(--row) * -1);
+    transition: translate 0.8s var(--ease);
+  }
+
+  .pp-roll__list > span {
+    height: var(--row);
+    white-space: nowrap;
+  }
+
+  /* ---------- 1 Rail ---------- */
+
+  .pp-rail {
+    position: absolute;
+    top: 42%;
+    right: calc(var(--gutter) * 0.45);
+    width: 1px;
+    height: 46%;
+  }
+
+  .pp-rail__track,
+  .pp-rail__fill {
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+  }
+
+  .pp-rail__track {
+    opacity: 0.22;
+  }
+
+  .pp-rail__fill {
+    transform-origin: top;
+    scale: 1 var(--p, 0);
+  }
+
+  .pp-rail__tick {
+    position: absolute;
+    top: calc(var(--at, 0) * 100%);
+    right: 0;
+    width: 7px;
+    height: 1px;
+    background: currentColor;
+    transition: width 0.6s var(--ease);
+  }
+
+  .pp-rail__tick.is-active {
+    width: 18px;
+  }
+
+  .pp-rail__label {
+    position: absolute;
+    top: 50%;
+    right: 28px;
+    white-space: nowrap;
+    opacity: 0;
+    translate: 6px -50%;
+    transition:
+      opacity 0.4s,
+      translate 0.6s var(--ease);
+  }
+
+  .pp-rail__tick.is-active .pp-rail__label {
+    opacity: 1;
+    translate: 0 -50%;
+  }
+
+  /* ---------- 2 Folio ---------- */
+
+  .pp-folio {
+    position: absolute;
+    right: var(--gutter);
+    bottom: calc(var(--gutter) * 0.7);
+    width: 132px;
+  }
+
+  .pp-folio__head {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .pp-folio__num {
+    --row: 1.1em;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 36px;
+    line-height: 1.1;
+  }
+
+  .pp-folio__total {
+    color: var(--muted);
+  }
+
+  .pp-folio__label {
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .pp-folio__foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .pp-folio__bar {
+    position: relative;
+    flex: 1;
+    height: 1px;
+    background: color-mix(in srgb, currentColor 22%, transparent);
+  }
+
+  .pp-folio__fill {
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    transform-origin: left;
+    scale: var(--p, 0) 1;
+  }
+
+  .pp-pct::after {
+    content: '%';
+    color: var(--muted);
+  }
+
+  /* ---------- 3 Orbit ---------- */
+
+  .pp-orbit {
+    position: absolute;
+    right: var(--gutter);
+    bottom: calc(var(--gutter) * 0.7);
+    align-items: center;
+    gap: 16px;
+  }
+
+  .pp-orbit__text {
+    text-align: right;
+  }
+
+  .pp-orbit__count {
+    color: var(--muted);
+  }
+
+  .pp-orbit__label {
+    --row: 1.3em;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  .pp-orbit__ring {
+    --size: 64px;
+    position: relative;
+    width: var(--size);
+    height: var(--size);
+  }
+
+  .pp-orbit__ring svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    rotate: -90deg;
+  }
+
+  .pp-orbit__ring circle {
+    fill: none;
+    stroke: currentColor;
+  }
+
+  .pp-orbit__track {
+    stroke-width: 1;
+    opacity: 0.22;
+  }
+
+  .pp-orbit__arc {
+    stroke-width: 1.5;
+    stroke-dasharray: 1;
+    stroke-dashoffset: calc(1 - var(--p, 0));
+  }
+
+  .pp-orbit__dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: var(--black);
+    box-shadow: 0 0 0 1px currentColor;
+    transform: rotate(calc(var(--at, 0) * 1turn)) translateY(calc(var(--size) * -0.469));
+  }
+
+  :global(body:not(.is-header-dark)) .pp-orbit__dot {
+    background: #000;
+  }
+
+  .pp-orbit__dot.is-past {
+    background: currentColor;
+  }
+
+  .pp-orbit__pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ---------- 4 Chapters ---------- */
+
+  .pp-chapters {
+    position: absolute;
+    right: var(--gutter);
+    bottom: calc(var(--gutter) * 0.6);
+    left: var(--gutter);
+    gap: 8px;
+  }
+
+  .pp-chapters__seg {
+    flex: var(--len, 1) 1 0;
+    min-width: 0;
+  }
+
+  .pp-chapters__label {
+    display: block;
+    margin-bottom: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: clip;
+    opacity: 0.35;
+    transition: opacity 0.5s;
+  }
+
+  .pp-chapters__seg.is-active .pp-chapters__label {
+    opacity: 1;
+  }
+
+  .pp-chapters__line {
+    position: relative;
+    display: block;
+    height: 1px;
+    background: color-mix(in srgb, currentColor 22%, transparent);
+  }
+
+  .pp-chapters__fill {
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    transform-origin: left;
+    scale: var(--cp, 0) 1;
+  }
+
+  /* Mobile: rail without labels, other labels only for the current chapter */
+  @media (max-width: 1023px) {
+    .pp-rail__label {
+      display: none;
+    }
+
+    .pp-chapters__seg:not(.is-active) .pp-chapters__label {
+      visibility: hidden;
+    }
+
+    .pp-orbit__ring {
+      --size: 48px;
+    }
+
+    .pp-orbit__pct {
+      font-size: 10px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .pp {
+      font-size: max(12px, calc(14 * var(--px)));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pp * {
+      transition: none !important;
+    }
+  }
+
+  /* ---------- DEMO switcher (temporary) ---------- */
+
+  .pp-demo {
+    position: fixed;
+    top: calc(var(--gutter) + 64px);
+    left: 50%;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgb(255 255 255 / 0.14);
+    border-radius: 999px;
+    background: rgb(20 25 24 / 0.85);
+    color: #d7dede;
+    font-size: 12px;
+    translate: -50% 0;
+    backdrop-filter: blur(8px);
+  }
+
+  .pp-demo__title {
+    padding: 0 8px 0 10px;
+    color: #7b7f7b;
+  }
+
+  .pp-demo__btn {
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .pp-demo__btn:hover {
+    background: rgb(255 255 255 / 0.08);
+  }
+
+  .pp-demo__btn[aria-pressed='true'] {
+    background: #d7dede;
+    color: #141918;
+  }
+</style>

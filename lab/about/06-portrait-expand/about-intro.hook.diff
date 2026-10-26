@@ -1,0 +1,38 @@
+diff --git a/src/scripts/about-intro.ts b/src/scripts/about-intro.ts
+index ab40231..68bbac4 100644
+--- a/src/scripts/about-intro.ts
++++ b/src/scripts/about-intro.ts
+@@ -15,6 +15,7 @@
+   toward it time-based, so wheel notches don't step.
+ */
+ import { mountAboutWipe } from './about-wipe';
++import { mountPortraitExpand } from './portrait-expand';
+ 
+ // Scroll progress at which each state is reached
+ const K_SPLIT = 0.15;
+@@ -60,6 +61,9 @@ export function mountAboutIntro(section: HTMLElement) {
+   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+   const desktop = window.matchMedia('(min-width: 1024px)');
+ 
++  // DEMO: effect on the portrait while it grows (portrait-expand.ts)
++  const fx = reduced ? null : mountPortraitExpand(stage, media, () => shown >= 0 && render(shown));
++
+   section.classList.add('is-scrub');
+ 
+   let W = 0;
+@@ -97,6 +101,7 @@ export function mountAboutIntro(section: HTMLElement) {
+       { w: W, h: H, cx: W / 2, cy: H / 2 },
+     ];
+     wipe?.resize(W, H);
++    fx?.resize(W, H);
+   }
+ 
+   function portrait(p: number): Rect {
+@@ -140,6 +145,7 @@ export function mountAboutIntro(section: HTMLElement) {
+     media!.style.height = `${img.h}px`;
+     media!.style.transform = `translate3d(${img.cx - img.w / 2}px, ${img.cy - img.h / 2}px, 0)`;
+     media!.style.visibility = img.w < 0.5 ? 'hidden' : 'visible';
++    fx?.render(seg(p, 0, K_FULL), img);
+ 
+     const { dl, dr } = textShift(p, img);
+     left!.style.transform = `translate3d(${dl}px, 0, 0)`;
