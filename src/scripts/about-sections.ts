@@ -19,6 +19,8 @@
                  it reads as arriving twice)
     goo-2        demo 2: the same goo, sliding in from the left
     mask-words   Osmo Masked Text Reveal: words rise out of line masks
+    cascade-chars  Cascade Reveal: characters drop in from above, tilted
+                 -15° and settling with back.out(1.4), left to right
     words-rise   words fade up 0.75em, one after another
     stack        scrubbed: rises from below the screen into place
     scrub-lines  scrubbed: lines slide in and fade up, alternating from the
@@ -51,6 +53,14 @@ const WORDS_RISE = 0.75; // em; the brief's 15px on 20px text
 const LINE_SHIFT = 200 / 70; // em; the brief's x: -200 on the 70px paragraph
 const LINE_WINDOW = 0.5; // share of the scrub each line takes
 const FADE = 0.4; // s, reduced motion
+// Cascade Reveal (the brief's snippet): y -80px on the 40px paragraph, 0.5s
+// per character. The snippet staggers 0.04s per character, made for a short
+// heading; over a paragraph that's 6-9s, so the stagger is spread over a
+// fixed total instead. Set CASCADE_EACH to a number to use a per-character
+// stagger again (it wins over CASCADE_TOTAL).
+const CASCADE_DROP = 2; // em
+const CASCADE_TOTAL = 1.6; // s, first to last character
+const CASCADE_EACH: number | null = null;
 
 // Codrops goo variants: blur peak (em, from 1 / 1.5 units on ~16-unit
 // text), duration, alpha threshold. Their red-into-blue matrix row is left
@@ -64,7 +74,7 @@ const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const seg = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
 const easeOut = (t: number) => 1 - (1 - t) ** 2;
 
-type Fx = 'goo-1' | 'goo-2' | 'mask-words' | 'words-rise' | 'stack' | 'scrub-lines';
+type Fx = 'goo-1' | 'goo-2' | 'mask-words' | 'cascade-chars' | 'words-rise' | 'stack' | 'scrub-lines';
 
 interface Block {
   el: HTMLElement;
@@ -137,8 +147,17 @@ export function mountAboutSections(story: HTMLElement) {
 
   // Intro start / end states of a block's pieces
   const pieceFrom = (b: Block): gsap.TweenVars =>
-    b.fx === 'words-rise' ? { opacity: 0, y: WORDS_RISE * b.em } : { yPercent: 110 };
-  const pieceTo = (b: Block): gsap.TweenVars => (b.fx === 'words-rise' ? { opacity: 1, y: 0 } : { yPercent: 0 });
+    b.fx === 'words-rise'
+      ? { opacity: 0, y: WORDS_RISE * b.em }
+      : b.fx === 'cascade-chars'
+        ? { opacity: 0, y: -CASCADE_DROP * b.em, rotation: -15 }
+        : { yPercent: 110 };
+  const pieceTo = (b: Block): gsap.TweenVars =>
+    b.fx === 'words-rise'
+      ? { opacity: 1, y: 0 }
+      : b.fx === 'cascade-chars'
+        ? { opacity: 1, y: 0, rotation: 0 }
+        : { yPercent: 0 };
 
   let start = 0;
   const sections: Section[] = els.map((el) => {
@@ -183,22 +202,25 @@ export function mountAboutSections(story: HTMLElement) {
       const highlight = node.hasAttribute('data-highlight');
       const masked = fx === 'mask-words';
       const lines = fx === 'scrub-lines';
+      const chars = fx === 'cascade-chars';
       const words = masked || fx === 'words-rise';
-      if (!lines && !words && !highlight) return;
+      if (!lines && !words && !chars && !highlight) return;
 
       SplitText.create(node, {
-        type: lines ? 'lines' : masked ? 'lines,words' : 'words',
+        // Chars inside words, so a word never breaks across lines
+        type: lines ? 'lines' : masked ? 'lines,words' : chars ? 'words,chars' : 'words',
         mask: masked ? 'lines' : undefined,
         linesClass: 'split-line',
         wordsClass: 'split-word',
+        charsClass: 'split-char',
         autoSplit: true,
         onSplit(self) {
           block.em = parseFloat(getComputedStyle(node).fontSize);
           if (lines) {
             block.pieces = self.lines as HTMLElement[];
             renderLines(block);
-          } else if (words) {
-            block.pieces = self.words as HTMLElement[];
+          } else if (words || chars) {
+            block.pieces = (chars ? self.chars : self.words) as HTMLElement[];
             gsap.set(block.pieces, block.shown ? pieceTo(block) : pieceFrom(block));
           }
           if (highlight) buildHighlight(section, block, self.words as HTMLElement[]);
@@ -263,7 +285,7 @@ export function mountAboutSections(story: HTMLElement) {
     const tl = gsap.timeline({ delay: b.at });
     b.tl = tl;
     if (reduced) {
-      if (b.fx === 'words-rise' || b.fx === 'mask-words') gsap.set(b.pieces, pieceTo(b));
+      if (b.pieces.length && b.fx !== 'scrub-lines') gsap.set(b.pieces, pieceTo(b));
       tl.fromTo(b.el, { opacity: 0 }, { opacity: 1, duration: FADE, ease: 'none' });
       return;
     }
@@ -281,7 +303,13 @@ export function mountAboutSections(story: HTMLElement) {
         const vars: gsap.TweenVars =
           b.fx === 'words-rise'
             ? { duration: 0.5, ease: 'power2.out', stagger: 0.06 }
-            : { duration: 0.6, ease: OSMO_EASE, stagger: 0.06 }; // Osmo words
+            : b.fx === 'cascade-chars'
+              ? {
+                  duration: 0.5,
+                  ease: 'back.out(1.4)',
+                  stagger: CASCADE_EACH !== null ? { each: CASCADE_EACH, from: 'start' } : { amount: CASCADE_TOTAL, from: 'start' },
+                }
+              : { duration: 0.6, ease: OSMO_EASE, stagger: 0.06 }; // Osmo words
         tl.fromTo(b.pieces, pieceFrom(b), { ...pieceTo(b), ...vars });
       }
     }

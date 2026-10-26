@@ -50,7 +50,7 @@ const links: { key: NavKey; label: string; href: string }[] = [
 
         <Brand class="brand" href={main ? '/' : undefined} aria-label={main ? 'Jayson Alegarbes, home' : undefined}>
           <img class="brand__mark ink-exempt" src="/images/brand/logo-mark.svg" width="46" height="46" alt="" />
-          <img class="brand__wordmark" src="/images/brand/logo-wordmark.svg" width="87" height="40" alt="" />
+          <span class="brand__wordmark">Jayson<br />Alegarbes</span>
         </Brand>
 
         <Nav class="menu" aria-label={main ? 'Primary' : undefined} data-menu>
@@ -295,7 +295,6 @@ const links: { key: NavKey; label: string; href: string }[] = [
     display: none;
   }
 
-  .brand__wordmark,
   .badge__hands {
     filter: var(--hd-art, none);
   }
@@ -339,7 +338,8 @@ const links: { key: NavKey; label: string; href: string }[] = [
     font-weight: 700;
   }
 
-  /* Logo: mark + wordmark lockup (46 : 87 wide, 46 : 40.2 tall) */
+  /* Logo (Figma 1:24): mark + live two-line wordmark, Archivo Bold at
+     20 / 46 of the mark, 10 / 46 apart */
   .brand {
     --logo-h: calc(22 * var(--px));
     grid-column: 2;
@@ -354,8 +354,10 @@ const links: { key: NavKey; label: string; href: string }[] = [
   }
 
   .brand__wordmark {
-    width: calc(var(--logo-h) * 87.003 / 46);
-    height: calc(var(--logo-h) * 40.205 / 46);
+    font-size: calc(var(--logo-h) * 20 / 46);
+    font-weight: 700;
+    line-height: normal;
+    white-space: nowrap;
   }
 
   /* Menu */

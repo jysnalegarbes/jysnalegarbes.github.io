@@ -103,13 +103,13 @@ const photos = [
         <div class="about-sec__frame">
           <h2 class="about-heading" data-fx="goo-2"><span class="serif-italic">my</span> APPROACH</h2>
           <div class="about-approach">
-            <p class="about-body" data-fx="mask-words" data-cue="0.7">
+            <p class="about-body" data-fx="cascade-chars" data-cue="0.7">
               I start by understanding what needs to be communicated before worrying about how it should look. Because
               making something <span class="serif-italic">pretty is easy</span>. Making something <span
                 class="serif-italic">make sense is a little more interesting</span
               >.
             </p>
-            <p class="about-body" data-fx="mask-words" data-cue="0.7" data-fx-at="0.3">
+            <p class="about-body" data-fx="cascade-chars" data-cue="0.7" data-fx-at="0.6">
               I balance thoughtful UX with intentional visual design, creating experiences that feel <span
                 class="serif-italic">purposeful</span
               >, <span class="serif-italic">distinct</span>, and <span class="serif-italic">right</span> for the project.
@@ -129,7 +129,7 @@ const photos = [
                     src={p.src}
                     alt={p.alt}
                     widths={[420, 864]}
-                    sizes="(min-width: 1024px) 22.5vw, 46vw"
+                    sizes="(min-width: 1024px) 20vw, 46vw"
                     class="about-photo__img"
                   />
                 </div>
@@ -485,15 +485,16 @@ const photos = [
       top: calc(382 * var(--px));
       left: calc(820 * var(--px));
       width: calc(888 * var(--px));
-      gap: calc(120 * var(--px));
+      gap: calc(80 * var(--px));
     }
 
-    /* 93:417 — all three photos share one 432×508 box at (80, 441), under the heading */
+    /* 93:417 (updated 2026-10-26) — all three photos share one 385.6×453.4
+       box at (209.85, 423), each turned by its own --rot */
     .about-photos {
-      top: calc(441 * var(--px));
-      left: calc(80 * var(--px));
-      width: calc(432 * var(--px));
-      height: calc(508 * var(--px));
+      top: calc(423 * var(--px));
+      left: calc(209.85 * var(--px));
+      width: calc(385.58 * var(--px));
+      height: calc(453.42 * var(--px));
       margin: 0;
     }
 
