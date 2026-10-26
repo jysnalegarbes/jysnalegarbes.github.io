@@ -1,0 +1,123 @@
+---
+/*
+  Demo: About approach text intros (lab/portfolio/about/07-approach-text).
+  The "my APPROACH" screen with the library's standalone intros; ?pfx=1
+  masked words, ?pfx=2 Cascade Reveal. Full page: click to replay.
+  Embedded: replays every few seconds.
+*/
+import LabDemo from '../../../layouts/LabDemo.astro';
+---
+
+<LabDemo title="Approach text intro">
+  <section class="demo-approach" data-demo>
+    <h2 class="demo-approach__heading"><span class="serif-italic">my</span> APPROACH</h2>
+    <div class="demo-approach__body">
+      <p data-para>
+        I start by understanding what needs to be communicated before worrying about how it should look. Because
+        making something <span class="serif-italic">pretty is easy</span>. Making something <span class="serif-italic"
+          >make sense is a little more interesting</span
+        >.
+      </p>
+      <p data-para>
+        I balance thoughtful UX with intentional visual design, creating experiences that feel <span
+          class="serif-italic">purposeful</span
+        >, <span class="serif-italic">distinct</span>, and <span class="serif-italic">right</span> for the project.
+      </p>
+    </div>
+    <p class="demo-approach__hint">Click to replay</p>
+  </section>
+</LabDemo>
+
+<script>
+  import { play, type ApproachIntro } from '../../../../lab/portfolio/about/07-approach-text/approach-text';
+  import { autoplayLoop } from '../../../scripts/lab-demo';
+
+  const kind = (Number(new URLSearchParams(location.search).get('pfx')) === 1 ? 1 : 2) as ApproachIntro;
+  const paras = [...document.querySelectorAll<HTMLElement>('[data-para]')];
+
+  // The site starts the second paragraph 0.6s after the first
+  const run = () => paras.forEach((p, i) => play(p, kind, i * 0.6));
+
+  document.fonts.ready.then(() => {
+    run();
+    document.querySelector('[data-demo]')?.addEventListener('click', run);
+    let lastT = 0;
+    autoplayLoop(5, (t) => {
+      if (t < lastT) run(); // a new loop
+      lastT = t;
+    });
+  });
+</script>
+
+<style>
+  .demo-approach {
+    position: relative;
+    min-height: 100svh;
+    padding: calc(150 * var(--px)) var(--gutter) calc(80 * var(--px));
+    background: var(--black);
+    color: var(--white);
+    cursor: pointer;
+  }
+
+  .demo-approach__heading {
+    font-weight: 700;
+    font-size: calc(44 * var(--px));
+  }
+
+  .demo-approach__body {
+    display: flex;
+    flex-direction: column;
+    gap: calc(32 * var(--px));
+    margin-top: calc(40 * var(--px));
+    font-size: calc(20 * var(--px));
+    line-height: normal;
+  }
+
+  .demo-approach__body p {
+    opacity: 0;
+    text-indent: 3.76em;
+  }
+
+  .demo-approach__body :global(.split-word),
+  .demo-approach__body :global(.split-char),
+  .demo-approach__body :global(div:not(:first-child)) {
+    text-indent: 0;
+  }
+
+  .demo-approach__hint {
+    position: absolute;
+    right: var(--gutter);
+    bottom: var(--gutter);
+    font-size: var(--fs-sm);
+    color: var(--gray);
+  }
+
+  :global(.is-embed) .demo-approach__hint {
+    display: none;
+  }
+
+  /* Desktop: the site's Figma positions (1:661) */
+  @media (min-width: 1024px) {
+    .demo-approach {
+      padding: 0;
+    }
+
+    .demo-approach__heading {
+      position: absolute;
+      top: calc(286.5 * var(--px));
+      left: var(--gutter);
+      font-size: calc(110 * var(--px));
+      transform: translateY(-50%);
+    }
+
+    .demo-approach__body {
+      position: absolute;
+      top: calc(382 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+      gap: calc(80 * var(--px));
+      margin: 0;
+      font-size: calc(40 * var(--px));
+    }
+  }
+</style>

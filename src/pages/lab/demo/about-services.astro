@@ -1,0 +1,175 @@
+---
+/*
+  Demo: About services hover (lab/portfolio/about/08-services-hover).
+  The "what I DO" screen with the library's frozen service-hover. Full
+  page: hover the services. Embedded: a virtual cursor hovers each in turn.
+*/
+import { getImage } from 'astro:assets';
+import LabDemo from '../../../layouts/LabDemo.astro';
+import web from '../../../assets/about/services/web-ui-ux.webp';
+import visual from '../../../assets/about/services/visual-design.webp';
+import brand from '../../../assets/about/services/brand-digital.webp';
+
+const services = await Promise.all(
+  [
+    { title: 'Web & UI/UX', text: 'Websites, interfaces, responsive experiences, and prototypes.', image: web },
+    { title: 'Visual Design', text: 'Digital visuals, editorial layouts, and creative direction.', image: visual },
+    { title: 'Brand & Digital', text: 'Visual identities, brand systems, and digital applications.', image: brand },
+  ].map(async (s) => ({ ...s, hover: (await getImage({ src: s.image, width: 800, format: 'webp' })).src })),
+);
+---
+
+<LabDemo title="Services hover">
+  <section class="demo-services" data-demo>
+    <div class="demo-services__frame">
+      <h2 class="demo-services__heading"><span class="serif-italic">what</span> I DO</h2>
+      <ul class="demo-services__list" data-list>
+        {
+          services.map((s) => (
+            <li class="demo-service" data-service-img={s.hover}>
+              <h3 class="demo-service__title">{s.title}</h3>
+              <p class="demo-service__text">{s.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</LabDemo>
+
+<script>
+  import { mountServiceHover } from '../../../../lab/portfolio/about/08-services-hover/service-hover';
+  import { autoplayLoop } from '../../../scripts/lab-demo';
+
+  const section = document.querySelector<HTMLElement>('[data-demo]');
+  const list = document.querySelector<HTMLElement>('[data-list]');
+  if (section && list) {
+    const items = [...section.querySelectorAll<HTMLElement>('[data-service-img]')];
+    mountServiceHover(section, items.map((el) => ({ el, src: el.dataset.serviceImg! })));
+
+    // Embedded: in from the left, rest on each service, then out to the left
+    const at = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      return [r.left + r.width * 0.45, r.top + r.height / 2];
+    };
+    const ease = (k: number) => k * k * (3 - 2 * k);
+    let over = -1;
+    autoplayLoop(9, (t) => {
+      const lr = list.getBoundingClientRect();
+      const stops = [[lr.left - lr.width * 0.4, lr.top + lr.height / 2], ...items.map(at)];
+      stops.push(stops[0]);
+      // 1.5s per move, then 0.9s rest at each service
+      const seg = Math.min(Math.floor(t / 2.4), stops.length - 2);
+      const k = ease(Math.min(1, (t - seg * 2.4) / 1.5));
+      const [x0, y0] = stops[seg];
+      const [x1, y1] = stops[seg + 1];
+      const x = x0 + (x1 - x0) * k;
+      const y = y0 + (y1 - y0) * k;
+
+      const hit = items.findIndex((el) => {
+        const r = el.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+      });
+      if (hit !== over) {
+        if (over >= 0) items[over].dispatchEvent(new PointerEvent('pointerleave', { clientX: x, clientY: y }));
+        if (hit >= 0) items[hit].dispatchEvent(new PointerEvent('pointerenter', { clientX: x, clientY: y }));
+        const inList = x >= lr.left && x <= lr.right && y >= lr.top && y <= lr.bottom;
+        if (hit < 0 && !inList) list.dispatchEvent(new PointerEvent('pointerleave', { clientX: x, clientY: y }));
+        over = hit;
+      }
+      section.dispatchEvent(new PointerEvent('pointermove', { clientX: x, clientY: y }));
+    });
+  }
+</script>
+
+<style>
+  .demo-services {
+    position: relative;
+    min-height: 100svh;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .demo-services :global(.service-hover) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .demo-services__frame {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: calc(32 * var(--px));
+    padding: calc(150 * var(--px)) var(--gutter) calc(80 * var(--px));
+  }
+
+  .demo-services__heading {
+    font-weight: 700;
+    font-size: calc(44 * var(--px));
+  }
+
+  .demo-services__list {
+    display: flex;
+    flex-direction: column;
+    gap: calc(28 * var(--px));
+  }
+
+  .demo-service {
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+  }
+
+  .demo-service__title {
+    font-weight: 700;
+    font-size: calc(22 * var(--px));
+    text-transform: uppercase;
+  }
+
+  .demo-service__text {
+    font-size: calc(14 * var(--px));
+  }
+
+  /* Desktop: the site's Figma positions (1:603) */
+  @media (min-width: 1024px) {
+    .demo-services__frame {
+      display: block;
+      height: 100svh;
+      padding: 0;
+    }
+
+    .demo-services__heading {
+      position: absolute;
+      top: calc(286.5 * var(--px));
+      left: var(--gutter);
+      font-size: calc(110 * var(--px));
+      transform: translateY(-50%);
+    }
+
+    .demo-services__list {
+      position: absolute;
+      top: calc(213 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(860 * var(--px));
+      padding-block: calc(10 * var(--px));
+      gap: calc(80 * var(--px));
+    }
+
+    .demo-service {
+      gap: calc(40 * var(--px));
+    }
+
+    .demo-service__title {
+      font-size: calc(40 * var(--px));
+    }
+
+    .demo-service__text {
+      font-size: var(--fs-body);
+    }
+  }
+</style>
