@@ -9,6 +9,8 @@ demo: portrait-expand
 files:
   - portrait-expand.ts
   - about-intro.ts
+  - portrait-tweaks.ts
+  - portrait-expand.json
 options:
   - name: "Ink Edge"
     status: review

@@ -1,0 +1,43 @@
+{
+  "inkEdge": {
+    "reach": 1,
+    "blotSize": 1,
+    "speckle": 3,
+    "pool": 0.35,
+    "drift": 2.5
+  },
+  "lensSettle": {
+    "zoom": 0.3,
+    "blur": 0.6
+  },
+  "lensWarp": {
+    "base": 0.3,
+    "speedForFull": 3,
+    "bulge": 0.09,
+    "magnify": 0.28,
+    "rgbSplit": 0.025
+  },
+  "shutterStrips": {
+    "count": 7,
+    "stagger": 0.04,
+    "duration": 0.3,
+    "gap": 0.22,
+    "offset": 0.18
+  },
+  "ripple": {
+    "speedForFull": 1.2,
+    "height": 3.5,
+    "frequency": 6,
+    "waveSpeed": 10,
+    "rgbSplit": 0.35
+  },
+  "inkDevelop": {
+    "startLevels": 2,
+    "endLevels": 10,
+    "grain": 0.07,
+    "coarseGrain": 0.05,
+    "grainSize": 2.2,
+    "fullTonesAt": 0.55
+  },
+  "settle": 0.3
+}

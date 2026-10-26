@@ -4,7 +4,7 @@
 */
 import type { APIRoute, GetStaticPaths } from 'astro';
 
-const sources = import.meta.glob('/lab/**/*.{ts,js,astro,css,glsl}', {
+const sources = import.meta.glob('/lab/**/*.{ts,js,json,astro,css,glsl}', {
   query: '?raw',
   import: 'default',
   eager: true,

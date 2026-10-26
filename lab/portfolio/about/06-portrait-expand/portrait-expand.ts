@@ -15,23 +15,23 @@
   past the box) and hide the <img> while they run. 3 and 5 keep drawing for
   a moment after the scroll stops, so they ease back flat.
 
-  Library copy: ?pfx=N picks the mode; the switcher shows unless ?embed.
+  Every value lives in src/config/portrait-expand.json. ?tweak opens a panel
+  for the current effect (portrait-tweaks.ts); on the dev server its "Save to
+  project" writes that file.
+
+  Library copy: ?pfx=N picks the mode; the switcher and the tweak panel
+  (without Save) show unless ?embed.
 */
 import { linkProgram } from '../../../../src/scripts/liquid-morph';
+import defaults from './portrait-expand.json';
+
+export type PortraitSettings = typeof defaults;
 
 export type PortraitMode = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export const MODE_NAMES = ['None', 'Ink Edge', 'Lens Settle', 'Lens Warp', 'Shutter Strips', 'Ripple', 'Ink Develop'];
 const LAST_MODE = MODE_NAMES.length - 1;
 
-// Tunables
-const SETTLE_ZOOM = 0.3; // 2: extra scale at the start
-const SETTLE_BLUR = 0.006; // 2: blur at the start, as a fraction of the box width
-const WARP_BASE = 0.3; // 3: warp while scrolling slowly
-const WARP_SPEED = 3; // 3: progress/s that adds the full extra warp
-const STRIPS = 7; // 4
-const RIPPLE_SPEED = 1.2; // 5: progress/s for the full wave
 const RIPPLE_GRID = 32; // 5: mesh subdivisions per side
-const SETTLE = 0.3; // 3, 5: s for the speed to die down once the scroll stops
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 
@@ -51,6 +51,8 @@ const fragment = /* glsl */ `
   uniform float amt;     // 1 at the start, 0 once it fills the screen
   uniform float u;       // progress through the growth, 0 → 1
   uniform float warp;    // 3: strength, from scroll speed
+  uniform vec4 pa;       // the current effect's settings (see draw())
+  uniform vec4 pb;
 
   // 2D simplex noise (Ashima / Stefan Gustavson)
   vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
@@ -97,56 +99,56 @@ const fragment = /* glsl */ `
       // 1 Ink Edge: the box edge pushed in (and now and then out) by noise
       vec2 q = abs(c * rect.zw) - rect.zw * 0.5;
       float sd = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0);
-      float reach = amt * (8.0 + 0.1 * side);
-      float n = fbm(px / (24.0 + 0.12 * side) + u * 2.5);
+      float reach = amt * (8.0 + 0.1 * side) * pa.x;
+      float n = fbm(px / ((24.0 + 0.12 * side) * pa.y) + u * pb.x);
       float speck = snoise(px / 3.5 + u * 9.0);
-      float edge = sd + reach * (0.5 + 0.8 * n) + amt * 3.0 * speck;
+      float edge = sd + reach * (0.5 + 0.8 * n) + amt * pa.z * speck;
       float a = 1.0 - smoothstep(-0.75, 0.75, edge);
       // ink pooling a little darker just inside the edge
       float pool = smoothstep(-reach * 0.7, 0.0, edge) * amt;
       col = cover(uv);
-      col.rgb *= 1.0 - 0.35 * pool;
+      col.rgb *= 1.0 - pa.w * pool;
       col *= a;
     } else if (mode < 3.5) {
       // 3 Lens Warp: pillow-shaped outline, magnified centre, RGB split at the rim
-      vec2 b = 0.5 * (1.0 + 0.09 * warp * (1.0 - 4.0 * c.yx * c.yx));
+      vec2 b = 0.5 * (1.0 + pa.x * warp * (1.0 - 4.0 * c.yx * c.yx));
       vec2 d = (abs(c) - b) * rect.zw;
       float a = clamp(0.5 - max(d.x, d.y), 0.0, 1.0);
       vec2 cn = c / b * 0.5;
       float r2 = clamp(dot(cn, cn) * 2.0, 0.0, 1.0);
-      vec2 s = cn * (1.0 - 0.28 * warp * (1.0 - r2));
-      vec2 split = cn * 0.025 * warp * r2;
+      vec2 s = cn * (1.0 - pa.y * warp * (1.0 - r2));
+      vec2 split = cn * pa.z * warp * r2;
       col.r = cover(0.5 + s + split).r;
       col.ga = cover(0.5 + s).ga;
       col.b = cover(0.5 + s - split).b;
       col *= a;
     } else if (mode < 4.5) {
       // 4 Shutter Strips: alternate strips open from the top and the bottom
-      float n = ${STRIPS.toFixed(1)};
+      float n = pa.x;
       float i = floor(clamp(uv.x, 0.0, 0.9999) * n);
-      float r = smoothstep(i * 0.04, i * 0.04 + 0.3, u);
+      float r = smoothstep(i * pa.y, i * pa.y + pa.z, u);
       float down = mod(i, 2.0) < 0.5 ? 1.0 : -1.0;
       float v = down > 0.0 ? uv.y : 1.0 - uv.y;
       float sw = rect.z / n;
       float lx = fract(clamp(uv.x, 0.0, 0.9999) * n) * sw;
-      float gap = 0.5 * sw * 0.22 * (1.0 - smoothstep(0.5, 1.0, u));
+      float gap = 0.5 * sw * pa.w * (1.0 - smoothstep(0.5, 1.0, u));
       float ax = min(lx - gap, sw - gap - lx);
       float ay = (r - v) * rect.w;
       vec2 o = abs(c * rect.zw) - rect.zw * 0.5;
       float a = clamp(min(min(ax, ay), -max(o.x, o.y)) + 0.5, 0.0, 1.0);
-      col = cover(uv + vec2(0.0, down * (1.0 - r) * 0.18)) * a;
+      col = cover(uv + vec2(0.0, down * (1.0 - r) * pb.x)) * a;
     } else {
       // 6 Ink Develop: two-tone ink print, then posterised, then full tones
       vec4 src = cover(uv);
       float l = dot(src.rgb, vec3(0.299, 0.587, 0.114));
-      float grain = 0.07 * snoise(px / 2.2 + u * 7.0) + 0.05 * snoise(px / 9.0);
+      float grain = pa.z * snoise(px / pb.x + u * 7.0) + pa.w * snoise(px / 9.0);
       float dev = 1.0 - amt;
-      float n = mix(2.0, 10.0, pow(dev, 1.5));
+      float n = mix(pa.x, pa.y, pow(dev, 1.5));
       float q = clamp(floor((l + grain) * n) / (n - 1.0), 0.0, 1.0);
       vec3 tone = mix(vec3(0.078, 0.098, 0.094), vec3(0.843, 0.871, 0.871), q);
       vec2 o = abs(c * rect.zw) - rect.zw * 0.5;
       float a = clamp(0.5 - max(o.x, o.y), 0.0, 1.0);
-      col = vec4(mix(tone, src.rgb, smoothstep(0.55, 1.0, dev)), 1.0) * a;
+      col = vec4(mix(tone, src.rgb, smoothstep(pb.y, 1.0, dev)), 1.0) * a;
     }
     gl_FragColor = col;
   }
@@ -160,11 +162,13 @@ const rippleVertex = /* glsl */ `
   uniform vec2 view;  // stage, CSS px
   uniform float amp;
   uniform float phase;
+  uniform float height;
+  uniform float freq;
   varying vec2 vUv;
   varying float vWave;
   void main() {
     vUv = aUv;
-    float z = sin((aUv.y - 0.5) * 6.0 + phase) * amp * 3.5;
+    float z = sin((aUv.y - 0.5) * freq + phase) * amp * height;
     vWave = z;
     vec2 p = rect.xy + aUv * rect.zw;
     vec2 centre = view * 0.5;
@@ -179,6 +183,7 @@ const rippleFragment = /* glsl */ `
   uniform sampler2D tex;
   uniform vec4 rect;
   uniform float aspect;
+  uniform float split;
   varying vec2 vUv;
   varying float vWave;
   vec3 cover(vec2 uv) {
@@ -189,8 +194,8 @@ const rippleFragment = /* glsl */ `
   void main() {
     float w = vWave;
     vec3 base = cover(vUv);
-    vec3 split = vec3(cover(vUv + w * 0.04).r, cover(vUv + w * 0.01).g, cover(vUv - w * 0.03).b);
-    gl_FragColor = vec4(mix(base, split, 0.35), 1.0);
+    vec3 shifted = vec3(cover(vUv + w * 0.04).r, cover(vUv + w * 0.01).g, cover(vUv - w * 0.03).b);
+    gl_FragColor = vec4(mix(base, shifted, split), 1.0);
   }
 `;
 
@@ -216,6 +221,12 @@ export interface PortraitExpand {
   resize(width: number, height: number): void;
   /** u: progress through the growth 0 → 1; box: the portrait rect */
   render(u: number, box: Box): void;
+  /** Live settings: change them, then call refresh() */
+  settings: PortraitSettings;
+  mode(): PortraitMode;
+  setMode(m: PortraitMode): void;
+  onMode(fn: (m: PortraitMode) => void): void;
+  refresh(): void;
 }
 
 function initialMode(): PortraitMode {
@@ -236,6 +247,8 @@ export function mountPortraitExpand(
   const img = media.querySelector<HTMLImageElement>('img');
   if (!img) return null;
   let mode: PortraitMode = initialMode();
+  const settings: PortraitSettings = structuredClone(defaults);
+  const modeListeners: ((m: PortraitMode) => void)[] = [];
 
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-hidden', 'true');
@@ -254,8 +267,10 @@ export function mountPortraitExpand(
   let ripple: ReturnType<typeof linkProgram> | null = null;
   if (gl) {
     try {
-      prog = linkProgram(gl, vertex, fragment, ['tex', 'res', 'dpr', 'rect', 'aspect', 'mode', 'amt', 'u', 'warp']);
-      ripple = linkProgram(gl, rippleVertex, rippleFragment, ['tex', 'rect', 'view', 'aspect', 'amp', 'phase']);
+      prog = linkProgram(gl, vertex, fragment, ['tex', 'res', 'dpr', 'rect', 'aspect', 'mode', 'amt', 'u', 'warp', 'pa', 'pb']);
+      ripple = linkProgram(gl, rippleVertex, rippleFragment, [
+        'tex', 'rect', 'view', 'aspect', 'amp', 'phase', 'height', 'freq', 'split',
+      ]);
     } catch (err) {
       console.warn('[portrait-expand]', err);
     }
@@ -331,6 +346,20 @@ export function mountPortraitExpand(
       draw();
       if (settles() && !settleRaf) settleRaf = requestAnimationFrame(settle);
     },
+    settings,
+    mode: () => mode,
+    setMode(m) {
+      mode = m;
+      try {
+        localStorage.setItem('about-pfx', String(m));
+      } catch {}
+      modeListeners.forEach((fn) => fn(m));
+      rerender();
+    },
+    onMode(fn) {
+      modeListeners.push(fn);
+    },
+    refresh: () => rerender(),
   };
 
   // 1 → 0 over the growth, held near 1 at first
@@ -340,7 +369,7 @@ export function mountPortraitExpand(
   // After the scroll stops, let the speed die down and keep drawing
   function settle(now: number) {
     const dt = Math.min(0.1, (now - lastT) / 1000);
-    if (now - lastT > 50) speed *= Math.exp(-dt / SETTLE);
+    if (now - lastT > 50) speed *= Math.exp(-dt / Math.max(0.01, settings.settle));
     if (speed < 0.01) speed = 0;
     draw();
     settleRaf = settles() ? requestAnimationFrame(settle) : 0;
@@ -348,7 +377,7 @@ export function mountPortraitExpand(
 
   function draw() {
     const now = performance.now();
-    phase += Math.min(0.1, (now - drawnAt) / 1000) * 10;
+    phase += Math.min(0.1, (now - drawnAt) / 1000) * settings.ripple.waveSpeed;
     drawnAt = now;
     const u = Math.max(0, lastU);
     const box = lastBox;
@@ -356,8 +385,9 @@ export function mountPortraitExpand(
     const active = amt > 0.002 && box.w > 0.5;
 
     if (mode === 2 && active) {
-      img!.style.transform = `scale(${1 + SETTLE_ZOOM * amt})`;
-      img!.style.filter = amt > 0.02 ? `blur(${(SETTLE_BLUR * box.w * amt).toFixed(2)}px)` : '';
+      const { zoom, blur } = settings.lensSettle;
+      img!.style.transform = `scale(${1 + zoom * amt})`;
+      img!.style.filter = amt > 0.02 ? `blur(${((blur / 100) * box.w * amt).toFixed(2)}px)` : '';
     } else clearCss();
 
     const gpu = mode !== 0 && mode !== 2 && active && ready && gl && prog && ripple;
@@ -380,8 +410,12 @@ export function mountPortraitExpand(
       g.uniform4f(un.rect, x, y, box.w, box.h);
       g.uniform2f(un.view, canvas.width / dpr, canvas.height / dpr);
       g.uniform1f(un.aspect, aspect);
-      g.uniform1f(un.amp, amt * clamp(speed / RIPPLE_SPEED));
+      const r = settings.ripple;
+      g.uniform1f(un.amp, amt * clamp(speed / r.speedForFull));
       g.uniform1f(un.phase, phase);
+      g.uniform1f(un.height, r.height);
+      g.uniform1f(un.freq, r.frequency);
+      g.uniform1f(un.split, r.rgbSplit);
       g.drawArrays(g.TRIANGLES, 0, gridVerts.length / 2);
       return;
     }
@@ -399,11 +433,27 @@ export function mountPortraitExpand(
     g.uniform1f(un.mode, mode);
     g.uniform1f(un.amt, amt);
     g.uniform1f(un.u, u);
-    g.uniform1f(un.warp, amt * clamp(WARP_BASE + (1 - WARP_BASE) * (speed / WARP_SPEED)));
+    const w = settings.lensWarp;
+    g.uniform1f(un.warp, amt * clamp(w.base + (1 - w.base) * (speed / w.speedForFull)));
+    const [pa, pb] = params();
+    g.uniform4f(un.pa, ...pa);
+    g.uniform4f(un.pb, ...pb);
     g.drawArrays(g.TRIANGLE_STRIP, 0, 4);
   }
 
-  if (!new URLSearchParams(location.search).has('embed')) mountSwitcher();
+  // The current effect's settings, packed for the shader's pa / pb
+  function params(): [[number, number, number, number], [number, number, number, number]] {
+    const { inkEdge: e, lensWarp: w, shutterStrips: st, inkDevelop: d } = settings;
+    if (mode === 1) return [[e.reach, e.blotSize, e.speckle, e.pool], [e.drift, 0, 0, 0]];
+    if (mode === 3) return [[w.bulge, w.magnify, w.rgbSplit, 0], [0, 0, 0, 0]];
+    if (mode === 4) return [[Math.round(st.count), st.stagger, st.duration, st.gap], [st.offset, 0, 0, 0]];
+    return [[d.startLevels, d.endLevels, d.grain, d.coarseGrain], [d.grainSize, d.fullTonesAt, 0, 0]];
+  }
+
+  if (!new URLSearchParams(location.search).has('embed')) {
+    mountSwitcher();
+    import('./portrait-tweaks').then(({ mountPortraitTweaks }) => mountPortraitTweaks(api, defaults, null));
+  }
 
   function mountSwitcher() {
     const bar = document.createElement('div');
@@ -432,14 +482,7 @@ export function mountPortraitExpand(
         cursor: 'pointer',
         font: 'inherit',
       });
-      b.addEventListener('click', () => {
-        mode = i as PortraitMode;
-        try {
-          localStorage.setItem('about-pfx', String(i));
-        } catch {}
-        paint();
-        rerender();
-      });
+      b.addEventListener('click', () => api.setMode(i as PortraitMode));
       bar.append(b);
       return b;
     });
@@ -449,6 +492,7 @@ export function mountPortraitExpand(
         b.style.color = i === mode ? '#141918' : '#d7dede';
       });
     paint();
+    api.onMode(paint);
     document.body.append(bar);
   }
 
