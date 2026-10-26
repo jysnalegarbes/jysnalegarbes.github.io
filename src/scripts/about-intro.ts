@@ -4,6 +4,8 @@
     split  (1:190)  the line splits from the middle, portrait opens between
     expand (62:2)   text keeps leaving, portrait grows and recentres
     full            portrait fills the screen, text is off screen
+  While it grows, the portrait ripples with scroll speed and develops from
+  an ink print to the full photo (portrait-expand.ts).
     wipe            the full-strength portrait gives way to #141918 through
                     the Codrops noise wipe, bottom → top (about-wipe.ts),
                     into the first text section (1:384)
@@ -15,6 +17,7 @@
   toward it time-based, so wheel notches don't step.
 */
 import { mountAboutWipe } from './about-wipe';
+import { mountPortraitExpand } from './portrait-expand';
 
 // Scroll progress at which each state is reached
 const K_SPLIT = 0.15;
@@ -60,6 +63,9 @@ export function mountAboutIntro(section: HTMLElement) {
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const desktop = window.matchMedia('(min-width: 1024px)');
 
+  // Ripple + Ink Develop on the portrait while it grows (portrait-expand.ts)
+  const fx = reduced ? null : mountPortraitExpand(media, () => shown >= 0 && render(shown));
+
   section.classList.add('is-scrub');
 
   let W = 0;
@@ -97,6 +103,7 @@ export function mountAboutIntro(section: HTMLElement) {
       { w: W, h: H, cx: W / 2, cy: H / 2 },
     ];
     wipe?.resize(W, H);
+    fx?.resize(W, H);
   }
 
   function portrait(p: number): Rect {
@@ -140,6 +147,7 @@ export function mountAboutIntro(section: HTMLElement) {
     media!.style.height = `${img.h}px`;
     media!.style.transform = `translate3d(${img.cx - img.w / 2}px, ${img.cy - img.h / 2}px, 0)`;
     media!.style.visibility = img.w < 0.5 ? 'hidden' : 'visible';
+    fx?.render(seg(p, 0, K_FULL), img);
 
     const { dl, dr } = textShift(p, img);
     left!.style.transform = `translate3d(${dl}px, 0, 0)`;

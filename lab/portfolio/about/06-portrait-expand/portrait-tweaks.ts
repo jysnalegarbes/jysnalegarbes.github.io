@@ -114,8 +114,9 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
 
   const show = (m: PortraitMode) => {
     pick.effect = m;
-    folders.forEach((f, mode) => (f.hidden = mode !== m));
-    settle.hidden = m !== 3 && m !== 5;
+    // 7 is Ripple and Ink Develop together
+    folders.forEach((f, mode) => (f.hidden = !(mode === m || (m === 7 && (mode === 5 || mode === 6)))));
+    settle.hidden = m !== 3 && m !== 5 && m !== 7;
     pane.refresh();
   };
   show(fx.mode());

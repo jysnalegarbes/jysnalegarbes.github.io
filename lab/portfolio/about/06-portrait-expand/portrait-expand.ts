@@ -11,9 +11,11 @@
                      wobbles in perspective while you scroll, settles flat
     6 Ink Develop    starts as a grainy two-tone ink print; the tones come in
                      as it grows, like a print developing
+    7 Ripple + Ink   5 and 6 together: the wave while scrolling, on a print
+                     that develops to the full photo by full screen
   All but 2 draw the portrait on a stage-sized canvas (so edges can bleed
   past the box) and hide the <img> while they run. 3 and 5 keep drawing for
-  a moment after the scroll stops, so they ease back flat.
+  a moment after the scroll stops, so they ease back flat (7 too).
 
   Every value lives in src/config/portrait-expand.json. ?tweak opens a panel
   for the current effect (portrait-tweaks.ts); on the dev server its "Save to
@@ -27,8 +29,17 @@ import defaults from './portrait-expand.json';
 
 export type PortraitSettings = typeof defaults;
 
-export type PortraitMode = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-export const MODE_NAMES = ['None', 'Ink Edge', 'Lens Settle', 'Lens Warp', 'Shutter Strips', 'Ripple', 'Ink Develop'];
+export type PortraitMode = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export const MODE_NAMES = [
+  'None',
+  'Ink Edge',
+  'Lens Settle',
+  'Lens Warp',
+  'Shutter Strips',
+  'Ripple',
+  'Ink Develop',
+  'Ripple + Ink',
+];
 const LAST_MODE = MODE_NAMES.length - 1;
 
 const RIPPLE_GRID = 32; // 5: mesh subdivisions per side
@@ -184,8 +195,38 @@ const rippleFragment = /* glsl */ `
   uniform vec4 rect;
   uniform float aspect;
   uniform float split;
+  uniform float develop; // 7: 1 to tone it like Ink Develop
+  uniform vec2 res;
+  uniform float dpr;
+  uniform float amt;
+  uniform float u;
+  uniform vec4 pa;       // Ink Develop's settings, as in the main shader
+  uniform vec4 pb;
   varying vec2 vUv;
   varying float vWave;
+  // 2D simplex noise (Ashima / Stefan Gustavson)
+  vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
+  float snoise(vec2 v) {
+    const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+    vec2 i = floor(v + dot(v, C.yy));
+    vec2 x0 = v - i + dot(i, C.xx);
+    vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+    vec4 x12 = x0.xyxy + C.xxzz;
+    x12.xy -= i1;
+    i = mod(i, 289.0);
+    vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+    vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+    m = m * m; m = m * m;
+    vec3 x = 2.0 * fract(p * C.www) - 1.0;
+    vec3 h = abs(x) - 0.5;
+    vec3 ox = floor(x + 0.5);
+    vec3 a0 = x - ox;
+    m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
+    vec3 g;
+    g.x = a0.x * x0.x + h.x * x0.y;
+    g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+    return 130.0 * dot(m, g);
+  }
   vec3 cover(vec2 uv) {
     float box = rect.z / rect.w;
     vec2 s = box > aspect ? vec2(1.0, aspect / box) : vec2(box / aspect, 1.0);
@@ -195,7 +236,18 @@ const rippleFragment = /* glsl */ `
     float w = vWave;
     vec3 base = cover(vUv);
     vec3 shifted = vec3(cover(vUv + w * 0.04).r, cover(vUv + w * 0.01).g, cover(vUv - w * 0.03).b);
-    gl_FragColor = vec4(mix(base, shifted, split), 1.0);
+    vec3 col = mix(base, shifted, split);
+    if (develop > 0.5) {
+      vec2 px = vec2(gl_FragCoord.x, res.y - gl_FragCoord.y) / dpr;
+      float l = dot(col, vec3(0.299, 0.587, 0.114));
+      float grain = pa.z * snoise(px / pb.x + u * 7.0) + pa.w * snoise(px / 9.0);
+      float dev = 1.0 - amt;
+      float n = mix(pa.x, pa.y, pow(dev, 1.5));
+      float q = clamp(floor((l + grain) * n) / (n - 1.0), 0.0, 1.0);
+      vec3 tone = mix(vec3(0.078, 0.098, 0.094), vec3(0.843, 0.871, 0.871), q);
+      col = mix(tone, col, smoothstep(pb.y, 1.0, dev));
+    }
+    gl_FragColor = vec4(col, 1.0);
   }
 `;
 
@@ -270,6 +322,7 @@ export function mountPortraitExpand(
       prog = linkProgram(gl, vertex, fragment, ['tex', 'res', 'dpr', 'rect', 'aspect', 'mode', 'amt', 'u', 'warp', 'pa', 'pb']);
       ripple = linkProgram(gl, rippleVertex, rippleFragment, [
         'tex', 'rect', 'view', 'aspect', 'amp', 'phase', 'height', 'freq', 'split',
+        'develop', 'res', 'dpr', 'amt', 'u', 'pa', 'pb',
       ]);
     } catch (err) {
       console.warn('[portrait-expand]', err);
@@ -364,7 +417,7 @@ export function mountPortraitExpand(
 
   // 1 → 0 over the growth, held near 1 at first
   const amount = (u: number) => 1 - u * u * (3 - 2 * u);
-  const settles = () => (mode === 3 || mode === 5) && speed > 0.01 && amount(lastU) > 0.002;
+  const settles = () => (mode === 3 || mode === 5 || mode === 7) && speed > 0.01 && amount(lastU) > 0.002;
 
   // After the scroll stops, let the speed die down and keep drawing
   function settle(now: number) {
@@ -400,7 +453,7 @@ export function mountPortraitExpand(
     const y = box.cy - box.h / 2;
     g.clear(g.COLOR_BUFFER_BIT);
 
-    if (mode === 5) {
+    if (mode === 5 || mode === 7) {
       const { program, u: un, aUv } = ripple!;
       g.useProgram(program);
       g.bindBuffer(g.ARRAY_BUFFER, grid);
@@ -416,6 +469,14 @@ export function mountPortraitExpand(
       g.uniform1f(un.height, r.height);
       g.uniform1f(un.freq, r.frequency);
       g.uniform1f(un.split, r.rgbSplit);
+      g.uniform1f(un.develop, mode === 7 ? 1 : 0);
+      g.uniform2f(un.res, canvas.width, canvas.height);
+      g.uniform1f(un.dpr, dpr);
+      g.uniform1f(un.amt, amt);
+      g.uniform1f(un.u, u);
+      const [pa, pb] = params();
+      g.uniform4f(un.pa, ...pa);
+      g.uniform4f(un.pb, ...pb);
       g.drawArrays(g.TRIANGLES, 0, gridVerts.length / 2);
       return;
     }
