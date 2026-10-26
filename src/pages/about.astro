@@ -1,17 +1,27 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageProgress from '../components/PageProgress.astro';
 import portrait from '../assets/about/portrait-hero.webp';
 import aquarium from '../assets/about/beyond-aquarium.png';
 import billiards from '../assets/about/beyond-billiards.png';
 import hiking from '../assets/about/beyond-hiking.jpg';
+// Placeholders from the old site's Approach images (Jayson, 2026-10-26)
+import serviceWeb from '../assets/about/services/web-ui-ux.webp';
+import serviceVisual from '../assets/about/services/visual-design.webp';
+import serviceBrand from '../assets/about/services/brand-digital.webp';
 
-const services = [
-  { title: 'Web & UI/UX', text: 'Websites, interfaces, responsive experiences, and prototypes.' },
-  { title: 'Visual Design', text: 'Digital visuals, editorial layouts, and creative direction.' },
-  { title: 'Brand & Digital', text: 'Visual identities, brand systems, and digital applications.' },
-];
+const services = await Promise.all(
+  [
+    { title: 'Web & UI/UX', text: 'Websites, interfaces, responsive experiences, and prototypes.', image: serviceWeb },
+    { title: 'Visual Design', text: 'Digital visuals, editorial layouts, and creative direction.', image: serviceVisual },
+    { title: 'Brand & Digital', text: 'Visual identities, brand systems, and digital applications.', image: serviceBrand },
+  ].map(async (s) => ({
+    ...s,
+    // Hover image (service-hover.ts): ~46% of the screen height, so 800 wide covers 2x screens
+    hover: (await getImage({ src: s.image, width: 800, format: 'webp' })).src,
+  })),
+);
 
 // In the order their words come up in the text (rotations from Figma 1:711)
 const photos = [
@@ -84,7 +94,7 @@ const photos = [
           <ul class="about-services">
             {
               services.map((s, i) => (
-                <li class="about-service" data-fx="stack" data-cue={0.7 + i * 0.5} data-span="0.5">
+                <li class="about-service" data-fx="stack" data-cue={0.7 + i * 0.5} data-span="0.5" data-service-img={s.hover}>
                   <h3 class="about-service__title">{s.title}</h3>
                   <p class="about-service__text">{s.text}</p>
                 </li>
@@ -153,6 +163,7 @@ const photos = [
   import { mountAboutIntro } from '../scripts/about-intro';
   import { mountAboutSections } from '../scripts/about-sections';
   import { mountPageProgress } from '../scripts/page-progress';
+  import { mountServiceHover } from '../scripts/service-hover';
   import Lenis from 'lenis';
   import 'lenis/dist/lenis.css';
 
@@ -164,6 +175,13 @@ const photos = [
   // Chapters: the opening, then each text section
   const progress = document.querySelector<HTMLElement>('[data-pp]');
   if (progress) mountPageProgress(progress, () => [0, ...(sections?.starts() ?? [])]);
+
+  // what I DO: hover a service to show its image
+  const servicesSec = document.querySelector<HTMLElement>('.about-sec--services');
+  if (servicesSec) {
+    const items = [...servicesSec.querySelectorAll<HTMLElement>('[data-service-img]')];
+    mountServiceHover(servicesSec, items.map((el) => ({ el, src: el.dataset.serviceImg! })));
+  }
 
   // Smooth scrolling (brief 67:107), paused while the open menu holds the page
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -353,6 +371,20 @@ const photos = [
   .about-body {
     font-size: calc(20 * var(--px));
     text-indent: 3.76em;
+  }
+
+  /* Hover image canvas (service-hover.ts) behind the services text */
+  .about-sec--services :global(.service-hover) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .about-sec--services .about-sec__frame {
+    position: relative;
+    z-index: 1;
   }
 
   .about-services {
