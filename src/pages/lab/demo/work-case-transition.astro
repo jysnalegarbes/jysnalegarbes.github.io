@@ -1,0 +1,227 @@
+---
+/*
+  Demo: Work → case study transition (lab/portfolio/work/02-case-transition).
+  One page plays both sides: a Work-style main slot with the next cards,
+  then the opened card morphs into a mock case study's cover, drawn by the
+  library's frozen work-gl.ts (and ink-wipe.ts for Ink). ?pfx=1..4: Glide,
+  Liquid, Strips, Ink. It loops: hold, morph, case intro, hold, reset.
+*/
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import LabDemo from '../../../layouts/LabDemo.astro';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const first = projects[0];
+---
+
+<LabDemo title="Case study transition">
+  <div class="srcs" aria-hidden="true">
+    {
+      projects.slice(0, 3).map((p) => (
+        <Image src={p.data.cover} alt="" widths={[480, 800, 1200, 1600]} sizes="60vw" loading="eager" class="src" />
+      ))
+    }
+  </div>
+
+  <!-- Work side -->
+  <div class="work-ui" data-work-ui>
+    <span class="work-ui__num serif-italic">01</span>
+    <span class="work-ui__name">{first.data.title}</span>
+  </div>
+
+  <!-- Case side (mock of the case study opening) -->
+  <div class="case-ui" data-case-ui>
+    <p class="case-ui__title" data-case-title>{first.data.title}</p>
+    <dl class="case-ui__meta" data-case-meta>
+      <div><dt>About</dt><dd>{first.data.summary}</dd></div>
+      <div><dt>Year</dt><dd>{first.data.year}</dd></div>
+      <div><dt>Tools</dt><dd>{first.data.tools}</dd></div>
+    </dl>
+  </div>
+
+  <canvas class="gl" data-gl></canvas>
+</LabDemo>
+
+<script>
+  import gsap from 'gsap';
+  import { mountWorkGl, easeMorph, type CaseFx, type GlFrame } from '../../../../lab/portfolio/work/02-case-transition/work-gl';
+  import { mountInkWipe } from '../../../../lab/portfolio/work/02-case-transition/ink-wipe';
+
+  const pfx = Number(new URLSearchParams(location.search).get('pfx'));
+  const fx = ([1, 2, 3, 4].includes(pfx) ? pfx : 2) as CaseFx;
+  // Same durations as the frozen case-transition.ts
+  const DURATION: Record<CaseFx, number> = { 1: 1.1, 2: 1.3, 3: 1.35, 4: 1.4 };
+
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-gl]')!;
+  const images = [...document.querySelectorAll<HTMLImageElement>('.src')];
+  const workUi = document.querySelector<HTMLElement>('[data-work-ui]')!;
+  const title = document.querySelector<HTMLElement>('[data-case-title]')!;
+  const meta = document.querySelector<HTMLElement>('[data-case-meta]')!;
+  const gl = mountWorkGl(canvas, images, { onReady: () => {} });
+
+  // Layout in viewport units (the demo is drawn at 1440×900 in the library)
+  const layout = () => {
+    const w = innerWidth;
+    const h = innerHeight;
+    const main = { x: w * 0.05, y: h * 0.24, w: w * 0.4, h: w * 0.4 * 0.663 };
+    const side1 = { x: main.x + main.w + w * 0.017, y: h * 0.36, w: w * 0.235, h: w * 0.235 * 0.83 };
+    const side2 = { x: side1.x + side1.w + w * 0.017, y: h * 0.48, w: side1.w, h: side1.h };
+    const cover = { x: w * 0.3, y: h * 0.32, w: w * 0.6, h: w * 0.6 * 0.592 };
+    return { main, sides: [side1, side2], cover };
+  };
+
+  const state = { t: 0 };
+  let ink: ReturnType<typeof mountInkWipe> = null;
+  let inkMode: 'spread' | 'recede' | null = null;
+  const inkState = { p: 0 };
+  const inkEase = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+
+  const setInk = (mode: 'spread' | 'recede' | null) => {
+    if (mode === inkMode) return;
+    ink?.destroy();
+    ink = mode ? mountInkWipe(mode, { zIndex: 30 }) : null;
+    inkMode = mode;
+  };
+
+  function draw() {
+    const { main, sides, cover } = layout();
+    const t = state.t;
+    const fade = Math.max(0, 1 - t / 0.45);
+    const drift = easeMorph(Math.min(1, t / 0.8));
+    const frame: GlFrame = {
+      time: performance.now() / 1000,
+      velocity: fx === 1 ? Math.sin(Math.PI * Math.min(1, t * 1.6)) * 0.5 : 0,
+      cards: [
+        { ...main, focus: 1 },
+        ...sides.map((r) => ({ ...r, x: r.x - drift * (fx === 1 ? 160 : 60), alpha: fade, focus: 0 })),
+      ],
+      travel: t > 0 ? { index: 0, from: main, to: cover, t, fx } : undefined,
+    };
+    gl?.render(frame);
+
+    if (ink) {
+      const e = easeMorph(t);
+      const rect = inkMode === 'recede' ? cover : {
+        x: main.x + (cover.x - main.x) * e,
+        y: main.y + (cover.y - main.y) * e,
+        w: main.w + (cover.w - main.w) * e,
+        h: main.h + (cover.h - main.h) * e,
+      };
+      ink.draw(rect, inkMode === 'spread' ? inkEase(inkState.p) : inkState.p);
+    }
+  }
+
+  // One loop: hold on Work, morph, case intro, hold, reset
+  function loop() {
+    const tl = gsap.timeline({ onComplete: loop, onUpdate: draw });
+    state.t = 0;
+    inkState.p = 0;
+    gsap.set(workUi, { opacity: 1 });
+    gsap.set([title, meta], { opacity: 0, y: 30 });
+    tl.to({}, { duration: 0.9 });
+    tl.to(workUi, { opacity: 0, duration: 0.35, ease: 'power2.out' });
+    if (fx === 4) {
+      tl.add(() => setInk('spread'));
+      tl.to(inkState, { p: 1, duration: DURATION[fx] * 0.92, ease: 'none' }, '<+0.11');
+    }
+    tl.to(state, { t: 1, duration: DURATION[fx], ease: 'none' }, fx === 4 ? '<-0.11' : '<');
+    if (fx === 4) {
+      tl.add(() => {
+        inkState.p = 0;
+        setInk('recede');
+      });
+      tl.to(inkState, { p: 1, duration: 1.3, ease: 'power2.inOut' });
+      tl.add(() => setInk(null));
+    }
+    tl.to(title, { opacity: 1, y: 0, duration: 1, ease: 'expo.out' }, fx === 4 ? '<-1' : '>');
+    tl.to(meta, { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '<+0.15');
+    tl.to({}, { duration: 1.8 });
+    tl.to([title, meta], { opacity: 0, duration: 0.4 });
+  }
+
+  addEventListener('message', (e) => {
+    if (e.origin !== location.origin) return;
+    if (e.data?.lab === 'pause') gsap.globalTimeline.pause();
+    if (e.data?.lab === 'play') gsap.globalTimeline.resume();
+  });
+
+  addEventListener('resize', draw);
+  // Wait for the covers before the first morph (never longer than 2.5 s)
+  Promise.race([
+    Promise.all(images.map((img) => img.decode().catch(() => {}))),
+    new Promise((r) => setTimeout(r, 2500)),
+  ]).then(() => setTimeout(loop, 300));
+  draw();
+</script>
+
+<style>
+  .srcs {
+    display: none;
+  }
+
+  .gl {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+  }
+
+  .work-ui,
+  .case-ui {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .work-ui__num {
+    position: absolute;
+    top: 13vh;
+    left: 5vw;
+    font-size: 5.5vw;
+    line-height: 0.95;
+  }
+
+  .work-ui__name {
+    position: absolute;
+    top: calc(24vh + 26.5vw + 2vh);
+    left: 5vw;
+    font-size: 2vw;
+    font-weight: 700;
+  }
+
+  /* Hidden until the loop brings the case side in */
+  .case-ui__title,
+  .case-ui__meta {
+    opacity: 0;
+  }
+
+  .case-ui__title {
+    position: absolute;
+    top: 11vh;
+    left: 5vw;
+    font-size: 7.6vw;
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .case-ui__meta {
+    position: absolute;
+    top: 32vh;
+    left: 5vw;
+    width: 21vw;
+    display: grid;
+    gap: 3vh;
+    font-size: 1vw;
+    font-weight: 700;
+  }
+
+  .case-ui__meta dt {
+    color: var(--gray);
+    margin-bottom: 0.6vh;
+  }
+</style>

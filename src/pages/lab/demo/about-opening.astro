@@ -1,0 +1,151 @@
+---
+/*
+  Demo: About opening end (lab/portfolio/about/01-opening-circle).
+  The 2026-10-20 About opening with the library's frozen scripts; ?pfx=1
+  the centre circle (portrait left at 5% lighten), ?pfx=2 the noise wipe.
+  Full page: scroll it. Embedded: it scrolls itself from the expanded
+  portrait to the end and back, and pauses on the library's message.
+*/
+import { Image } from 'astro:assets';
+import LabDemo from '../../../layouts/LabDemo.astro';
+import portrait from '../../../assets/about/portrait-hero.webp';
+---
+
+<LabDemo title="Opening end">
+  <section class="about-intro" data-about-intro>
+    <div class="about-intro__stage" data-about-stage>
+      <!-- Circle option: solid black under the portrait, 95% black over it -->
+      <div class="about-intro__dark about-intro__dark--under" data-about-dark aria-hidden="true"></div>
+      <div class="about-intro__media" data-about-media>
+        <Image
+          src={portrait}
+          alt="Illustrated portrait of Jayson at his desk"
+          widths={[720, 1080, 1440, 1920]}
+          sizes="100vw"
+          loading="eager"
+          class="about-intro__img"
+        />
+      </div>
+      <h1 class="about-intro__greeting">
+        <span class="about-intro__half" data-about-half="left"><span class="serif-italic">hi!</span> NICE TO</span>{' '}<span class="about-intro__half" data-about-half="right">MEET YOU</span>
+      </h1>
+      <div class="about-intro__dark about-intro__dark--over" data-about-dark aria-hidden="true"></div>
+      <!-- Wipe option -->
+      <canvas class="about-intro__wipe" data-about-wipe aria-hidden="true"></canvas>
+      <div class="about-intro__black" data-about-black aria-hidden="true"></div>
+    </div>
+  </section>
+</LabDemo>
+
+<script>
+  import { mountAboutIntro as mountCircle } from '../../../../lab/portfolio/about/01-opening-circle/about-intro';
+  import { mountAboutIntro as mountWipe } from '../../../../lab/portfolio/about/01-opening-circle/about-intro-wipe';
+  import { autoplayScroll } from '../../../scripts/lab-demo';
+
+  const circle = Number(new URLSearchParams(location.search).get('pfx')) === 1;
+  const intro = document.querySelector<HTMLElement>('[data-about-intro]');
+  if (intro) {
+    intro.classList.toggle('is-circle', circle);
+    (circle ? mountCircle : mountWipe)(intro);
+    // Embedded: from the 1090-wide portrait (Figma 62:2) to the end, and back
+    autoplayScroll(() => {
+      const run = intro.offsetHeight - innerHeight;
+      return [run * (circle ? 0.5 : 0.42), run];
+    });
+  }
+</script>
+
+<style>
+  .about-intro {
+    position: relative;
+    height: 100svh;
+  }
+
+  /* Each option's own length: 400svh for the circle, 450svh for the wipe */
+  .about-intro.is-scrub {
+    height: 450svh;
+  }
+
+  .about-intro.is-scrub.is-circle {
+    height: 400svh;
+  }
+
+  .about-intro__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .about-intro__greeting {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-weight: 700;
+    font-size: calc(40 * var(--px));
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+
+  .about-intro__half {
+    display: inline-block;
+    will-change: transform;
+  }
+
+  .about-intro__media {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    will-change: transform, width, height;
+  }
+
+  .about-intro__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  .about-intro__dark {
+    position: absolute;
+    inset: 0;
+    visibility: hidden;
+    clip-path: circle(0px at 50% 50%);
+    pointer-events: none;
+  }
+
+  .about-intro__dark--under {
+    background: var(--black);
+  }
+
+  /* Figma: portrait on lighten at 5% over #141918 */
+  .about-intro__dark--over {
+    background: rgb(20 25 24 / 0.95);
+  }
+
+  .about-intro__wipe,
+  .about-intro__black {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .about-intro__black {
+    background: var(--black);
+  }
+
+  @media (min-width: 1024px) {
+    .about-intro__greeting {
+      top: calc(50% + 72 * var(--px));
+      font-size: calc(110 * var(--px));
+    }
+  }
+</style>

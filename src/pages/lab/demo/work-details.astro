@@ -1,0 +1,148 @@
+---
+/*
+  Demo: Work details swap (lab/portfolio/work/03-detail-text-swap). The
+  main slot's number, year, name and category stepping through the
+  projects, using the library's frozen detail-swap.ts. ?pfx=1..3: gooey
+  demo 1 (chosen), gooey demo 3, masked roll. The cover cross-fades
+  underneath for context. Embedded or full page, it plays itself.
+*/
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import LabDemo from '../../../layouts/LabDemo.astro';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+const data = projects.map((p, i) => ({
+  index: String(i + 1).padStart(2, '0'),
+  year: String(p.data.year),
+  title: p.data.title,
+  category: p.data.category,
+}));
+---
+
+<LabDemo title="Work details swap">
+  <div class="slot" data-projects={JSON.stringify(data)}>
+    <div class="slot__head">
+      <span class="field slot__index serif-italic" data-field="index"><span class="swap-text">{data[0].index}</span></span>
+      <span class="field slot__year" data-field="year"><span class="swap-text">{data[0].year}</span></span>
+    </div>
+    <div class="slot__media">
+      {
+        projects.map((p, i) => (
+          <Image src={p.data.cover} alt="" widths={[800, 1200]} sizes="50vw" loading="eager" class:list={['slot__img', { 'is-on': i === 0 }]} />
+        ))
+      }
+    </div>
+    <div class="slot__caption">
+      <span class="field slot__title" data-field="title"><span class="swap-text">{data[0].title}</span></span>
+      <span class="field slot__category" data-field="category"><span class="swap-text">{data[0].category}</span></span>
+    </div>
+  </div>
+</LabDemo>
+
+<script>
+  import { swapText, type SwapVariant } from '../../../../lab/portfolio/work/03-detail-text-swap/detail-swap';
+
+  const variants: SwapVariant[] = ['demo1', 'demo3', 'roll'];
+  const pfx = Number(new URLSearchParams(location.search).get('pfx'));
+  const variant = variants[pfx - 1] ?? 'demo1';
+
+  const slot = document.querySelector<HTMLElement>('.slot')!;
+  const projects: Record<string, string>[] = JSON.parse(slot.dataset.projects!);
+  const fields = ['index', 'year', 'title', 'category'];
+  const imgs = [...slot.querySelectorAll<HTMLElement>('.slot__img')];
+
+  let current = 0;
+  let paused = false;
+  addEventListener('message', (e) => {
+    if (e.origin !== location.origin) return;
+    if (e.data?.lab === 'pause') paused = true;
+    if (e.data?.lab === 'play') paused = false;
+  });
+
+  setInterval(() => {
+    if (paused) return;
+    current = (current + 1) % projects.length;
+    imgs.forEach((img, i) => img.classList.toggle('is-on', i === current));
+    fields.forEach((f, i) => {
+      const box = slot.querySelector<HTMLElement>(`[data-field="${f}"]`)!;
+      swapText(box, projects[current][f], variant, 1, i * 0.04);
+    });
+  }, 2000);
+</script>
+
+<style>
+  .slot {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 52vw;
+    translate: -50% -50%;
+  }
+
+  .slot__head,
+  .slot__caption {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  .slot__head {
+    align-items: flex-end;
+    margin-bottom: 1.2vw;
+  }
+
+  .slot__caption {
+    margin-top: 1.4vw;
+  }
+
+  .field {
+    display: grid;
+    white-space: nowrap;
+  }
+
+  .field :global(.swap-text) {
+    grid-area: 1 / 1;
+  }
+
+  .slot__index {
+    font-size: 5.6vw;
+    line-height: 0.95;
+  }
+
+  .slot__year,
+  .slot__category {
+    font-size: 1vw;
+    font-weight: 700;
+  }
+
+  .slot__category {
+    color: var(--gray);
+  }
+
+  .slot__title {
+    font-size: 2.1vw;
+    font-weight: 700;
+  }
+
+  .slot__media {
+    position: relative;
+    aspect-ratio: 736 / 488;
+    overflow: hidden;
+  }
+
+  .slot__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+
+  .slot__img.is-on {
+    opacity: 1;
+  }
+</style>

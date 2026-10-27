@@ -1,0 +1,104 @@
+---
+/*
+  Demo: Work gallery scroll effect (lab/portfolio/work/01-scroll-effect).
+  The project covers on a looping strip, drawn by the library's frozen
+  work-gl.ts. ?pfx=1..4: Flag, Bend, Ink drag, Halftone. The strip glides
+  one card at a time (sometimes two), so each option shows what it does at
+  speed and settles flat at rest. Embedded or full page, it plays itself.
+*/
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import LabDemo from '../../../layouts/LabDemo.astro';
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+// Twice over, so the loop's wrap point stays off screen
+const cards = [...projects, ...projects];
+---
+
+<LabDemo title="Work scroll effect">
+  <div class="strip" aria-hidden="true">
+    {
+      cards.map((p) => (
+        <Image src={p.data.cover} alt="" widths={[480, 800, 1200]} sizes="40vw" loading="eager" class="strip__src" />
+      ))
+    }
+  </div>
+  <canvas class="strip__gl" data-strip-gl></canvas>
+</LabDemo>
+
+<script>
+  import { mountWorkGl, type WorkFx } from '../../../../lab/portfolio/work/01-scroll-effect/work-gl';
+
+  const pfx = Number(new URLSearchParams(location.search).get('pfx'));
+  const fx = ([1, 2, 3, 4].includes(pfx) ? pfx : 1) as WorkFx;
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-strip-gl]')!;
+  const images = [...document.querySelectorAll<HTMLImageElement>('.strip__src')];
+  const gl = mountWorkGl(canvas, images, { fx, onReady: () => {} });
+
+  // Gallery-like motion: hold, then glide 1 card (every third move, 2)
+  const STEP = 2.1; // s per move, hold included
+  const GLIDE = 0.85; // s of travel
+  const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
+  const span = (k: number) => (k % 3 === 2 ? 2 : 1);
+  const posAt = (t: number) => {
+    const k = Math.floor(t / STEP);
+    let base = 0;
+    for (let i = 0; i < k; i++) base += span(i);
+    return base + span(k) * ease(Math.min(1, (t % STEP) / GLIDE));
+  };
+
+  let paused = false;
+  addEventListener('message', (e) => {
+    if (e.origin !== location.origin) return;
+    if (e.data?.lab === 'pause') paused = true;
+    if (e.data?.lab === 'play') paused = false;
+  });
+
+  const count = images.length;
+  let t = 0;
+  let last = 0;
+  let prevPos = 0;
+  let velocity = 0;
+
+  function frame(now: number) {
+    const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+    last = now;
+    if (!paused) t += dt;
+    const pos = posAt(t);
+    // Same speed measure as the gallery: projects per second / 3, smoothed
+    const raw = dt > 0 ? (pos - prevPos) / dt : 0;
+    prevPos = pos;
+    velocity += (Math.max(-1, Math.min(1, raw / 3)) - velocity) * (1 - Math.exp(-dt * 8));
+
+    const w = innerWidth;
+    const h = innerHeight;
+    const cw = w * 0.36;
+    const ch = cw * 0.68;
+    const gap = w * 0.025;
+    const pitch = cw + gap;
+    const x0 = w * 0.06;
+    const cards = images.map((_, i) => {
+      // Wrapped into [-2, count - 2) so cards enter right and leave left
+      const d = ((((i - pos + 2) % count) + count) % count) - 2;
+      return { x: x0 + d * pitch, y: (h - ch) / 2, w: cw, h: ch, focus: Math.max(0, 1 - Math.abs(d)) };
+    });
+    gl?.render({ cards, velocity, time: now / 1000 });
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+
+<style>
+  .strip {
+    display: none;
+  }
+
+  .strip__gl {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+</style>

@@ -152,7 +152,7 @@ export function mountAboutIntro(section: HTMLElement) {
     media!.style.width = `${img.w}px`;
     media!.style.height = `${img.h}px`;
     media!.style.transform = `translate3d(${img.cx - img.w / 2}px, ${img.cy - img.h / 2}px, 0)`;
-    media!.style.visibility = img.w < 0.5 ? 'hidden' : '';
+    media!.style.visibility = img.w < 0.5 ? 'hidden' : 'visible';
 
     const { dl, dr } = textShift(p, img);
     left!.style.transform = `translate3d(${dl}px, 0, 0)`;
@@ -162,7 +162,7 @@ export function mountAboutIntro(section: HTMLElement) {
     const clip = d <= 0 ? 'circle(0px at 50% 50%)' : d >= 1 ? 'none' : `circle(${d * maxR}px at 50% 50%)`;
     darks.forEach((el) => {
       el.style.clipPath = clip;
-      el.style.visibility = d <= 0 ? 'hidden' : '';
+      el.style.visibility = d <= 0 ? 'hidden' : 'visible';
     });
   }
 

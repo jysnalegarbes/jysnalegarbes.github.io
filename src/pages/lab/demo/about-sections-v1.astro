@@ -1,0 +1,246 @@
+---
+/*
+  Demo: About section effects, first pass (lab/portfolio/about/02-section-effects-v1).
+  Three of the 2026-10-20 About sections with the library's frozen script,
+  which runs all three effects at once. ?pfx picks what the embedded card
+  plays: 1 the ink-wave entry of "what I DO", 2 its melt exit, 3 a fast run
+  across all three sections for the velocity bend. Full page: scroll it.
+*/
+import LabDemo from '../../../layouts/LabDemo.astro';
+
+const services = [
+  { title: 'Web & UI/UX', text: 'Websites, interfaces, responsive experiences, and prototypes.' },
+  { title: 'Visual Design', text: 'Digital visuals, editorial layouts, and creative direction.' },
+  { title: 'Brand & Digital', text: 'Visual identities, brand systems, and digital applications.' },
+];
+---
+
+<LabDemo title="Section effects, first pass">
+  <section class="about-sec about-sec--hello" data-about-section>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <p class="about-hello" data-reveal="words">
+          Independent <span class="serif-italic">designer</span><br />based in the Philippines.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-sec about-sec--services" data-about-section>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <h2 class="about-heading" data-reveal="chars"><span class="serif-italic">what</span> I DO</h2>
+        <ul class="about-services">
+          {
+            services.map((s, i) => (
+              <li class="about-service">
+                <h3 class="about-service__title" data-reveal="words" data-reveal-delay={0.08 + i * 0.08}>
+                  {s.title}
+                </h3>
+                <p class="about-service__text" data-reveal="words" data-reveal-delay={0.12 + i * 0.08}>
+                  {s.text}
+                </p>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="about-body about-services__note" data-reveal="words" data-reveal-delay="0.36">
+          A little bit of everything. Mostly the things that look good on a screen.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-sec about-sec--approach" data-about-section data-no-exit>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <h2 class="about-heading" data-reveal="chars"><span class="serif-italic">my</span> APPROACH</h2>
+        <div class="about-approach">
+          <p class="about-body" data-reveal="words" data-reveal-delay="0.12">
+            I start by understanding what needs to be communicated before worrying about how it should look. Because
+            making something <span class="serif-italic">pretty is easy</span>. Making something <span class="serif-italic"
+              >make sense is a little more interesting</span
+            >.
+          </p>
+          <p class="about-body" data-reveal="words" data-reveal-delay="0.3">
+            I balance thoughtful UX with intentional visual design, creating experiences that feel <span
+              class="serif-italic">purposeful</span
+            >, <span class="serif-italic">distinct</span>, and <span class="serif-italic">right</span> for the project.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</LabDemo>
+
+<script>
+  import { mountAboutSections } from '../../../../lab/portfolio/about/02-section-effects-v1/about-sections';
+  import { autoplayScroll } from '../../../scripts/lab-demo';
+
+  const pfx = Number(new URLSearchParams(location.search).get('pfx')) || 1;
+  const [hello, services, approach] = [...document.querySelectorAll<HTMLElement>('[data-about-section]')];
+
+  mountAboutSections();
+
+  // Scroll position where a section is `s` screens in (0 = its top at the
+  // bottom edge, 1 = pinned), the measure the script itself uses
+  const at = (el: HTMLElement, s: number) => el.offsetTop - innerHeight + s * innerHeight;
+
+  autoplayScroll(() => {
+    if (pfx === 2) return [at(services, 1.6), at(services, 2.9)]; // melt exit
+    if (pfx === 3) return [at(hello, 1.2), at(approach, 1.3)]; // fast: the bend
+    return [at(services, 0.15), at(services, 1.3)]; // ink-wave entry
+  });
+</script>
+
+<style>
+  .about-sec {
+    --len: 220svh;
+    position: relative;
+    height: var(--len);
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .about-sec--hello {
+    --len: 200svh;
+  }
+
+  .about-sec__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .about-sec__frame {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(32 * var(--px));
+    height: 100%;
+    padding: calc(110 * var(--px)) var(--gutter) calc(48 * var(--px));
+  }
+
+  .about-hello,
+  .about-body,
+  .about-service__text {
+    font-weight: 400;
+  }
+
+  .about-hello {
+    font-size: calc(32 * var(--px));
+    text-align: center;
+  }
+
+  /* Split pieces are inline-blocks: they'd each inherit the paragraph indent */
+  .about-sec :global(.split-word),
+  .about-sec :global(.split-char) {
+    text-indent: 0;
+  }
+
+  .about-heading {
+    font-weight: 700;
+    font-size: calc(48 * var(--px));
+    white-space: nowrap;
+  }
+
+  .about-body {
+    font-size: calc(20 * var(--px));
+    text-indent: 3.76em;
+  }
+
+  .about-services {
+    display: flex;
+    flex-direction: column;
+    gap: calc(28 * var(--px));
+  }
+
+  .about-service {
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+  }
+
+  .about-service__title {
+    font-weight: 700;
+    font-size: calc(22 * var(--px));
+    text-transform: uppercase;
+  }
+
+  .about-service__text {
+    font-size: calc(14 * var(--px));
+  }
+
+  .about-approach {
+    display: flex;
+    flex-direction: column;
+    gap: calc(32 * var(--px));
+  }
+
+  @media (min-width: 1024px) {
+    .about-sec__frame {
+      display: block;
+      position: relative;
+      height: calc(1080 * var(--px));
+      padding: 0;
+    }
+
+    .about-sec__frame > * {
+      position: absolute;
+    }
+
+    .about-hello {
+      top: calc(627 * var(--px));
+      left: 50%;
+      font-size: calc(80 * var(--px));
+      white-space: nowrap;
+      transform: translate(-50%, -100%);
+    }
+
+    .about-heading {
+      top: calc(286.5 * var(--px));
+      left: var(--gutter);
+      font-size: calc(110 * var(--px));
+      transform: translateY(-50%);
+    }
+
+    .about-body {
+      font-size: calc(40 * var(--px));
+    }
+
+    .about-services {
+      top: calc(213 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(860 * var(--px));
+      padding-block: calc(10 * var(--px));
+      gap: calc(80 * var(--px));
+    }
+
+    .about-service {
+      gap: calc(40 * var(--px));
+    }
+
+    .about-service__title {
+      font-size: calc(40 * var(--px));
+    }
+
+    .about-service__text {
+      font-size: var(--fs-body);
+    }
+
+    .about-services__note {
+      top: calc(960 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+      transform: translateY(-100%);
+    }
+
+    .about-approach {
+      top: calc(382 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+      gap: calc(120 * var(--px));
+    }
+  }
+</style>
