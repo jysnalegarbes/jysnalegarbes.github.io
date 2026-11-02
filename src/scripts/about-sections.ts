@@ -33,6 +33,16 @@
   pile: it rises from below with the home hero's clip reveal (scrolling
   back lifts it off again).
 
+  Flow sections ([data-flow], 2026-11-02): after the pinned greeting the
+  page scrolls on continuously. A flow section sits in the normal page
+  below the pin and stays active once its top has come up past the bottom
+  of the screen. There data-cue is how far up the screen (0..1) a block's
+  own top must be for it to come in, so it holds at any section height.
+  Its title keeps its intro, its content just scrolls in (fx "plain" shows
+  a block as is, for the highlight). data-hl="from to" runs the highlight
+  while the highlighted block's top goes from / to those shares of the way
+  up the screen.
+
   Returns where each section starts (scroll px), for the page indicator.
 
   Reduced motion: short fades, no movement, blur or filter.
@@ -74,12 +84,13 @@ const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const seg = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
 const easeOut = (t: number) => 1 - (1 - t) ** 2;
 
-type Fx = 'goo-1' | 'goo-2' | 'mask-words' | 'cascade-chars' | 'words-rise' | 'stack' | 'scrub-lines';
+type Fx = 'goo-1' | 'goo-2' | 'mask-words' | 'cascade-chars' | 'words-rise' | 'stack' | 'scrub-lines' | 'plain';
 
 interface Block {
   el: HTMLElement;
   fx: Fx;
   cue: number;
+  view: number; // flow: data-cue as given (share of the screen), cue is derived
   at: number;
   span: number; // scrubbed blocks: screens to come in
   em: number;
@@ -99,9 +110,12 @@ interface Photo {
 
 interface Section {
   el: HTMLElement;
-  start: number; // screens into the pin
+  start: number; // screens into the pin (flow: measured from the page)
   len: number;
   last: boolean;
+  flow: boolean;
+  hl: [number, number] | null; // flow: highlight from / to, shares of the screen
+  hlAt: number; // flow: screens from the section's top to the highlight's
   blocks: Block[];
   highlight: { block: Block; words: HTMLElement[]; tl: gsap.core.Timeline } | null;
   photos: Photo[];
@@ -162,18 +176,23 @@ export function mountAboutSections(story: HTMLElement) {
   let start = 0;
   const sections: Section[] = els.map((el) => {
     const len = parseFloat(el.dataset.len ?? '1');
-    const last = el.hasAttribute('data-no-exit');
+    const flow = el.hasAttribute('data-flow');
+    const last = flow || el.hasAttribute('data-no-exit');
+    const hl = el.querySelector<HTMLElement>('[data-hl]')?.dataset.hl?.split(' ').map(Number);
     const section: Section = {
       el,
       start,
       len,
       last,
+      flow,
+      hl: hl?.length === 2 ? (hl as [number, number]) : null,
+      hlAt: 0,
       blocks: [],
       highlight: null,
       photos: [],
       shownPhoto: -1,
     };
-    start += len + (last ? 0 : parseFloat(el.dataset.rest ?? String(REST)));
+    if (!flow) start += len + (last ? 0 : parseFloat(el.dataset.rest ?? String(REST)));
 
     section.photos = [...el.querySelectorAll<HTMLElement>('[data-photo-trigger]')].map((p) => ({
       el: p,
@@ -188,6 +207,7 @@ export function mountAboutSections(story: HTMLElement) {
         el: node,
         fx,
         cue: parseFloat(node.dataset.cue ?? '0'),
+        view: parseFloat(node.dataset.cue ?? '0'),
         at: parseFloat(node.dataset.fxAt ?? '0'),
         span: parseFloat(node.dataset.span ?? '0.5'),
         em: parseFloat(getComputedStyle(node).fontSize),
@@ -296,7 +316,8 @@ export function mountAboutSections(story: HTMLElement) {
         break;
       case 'stack':
       case 'scrub-lines':
-        gsap.set(b.el, { opacity: 1 }); // the movement is scrubbed in update()
+      case 'plain':
+        gsap.set(b.el, { opacity: 1 }); // the movement is scrubbed in update(), or none
         break;
       default: {
         gsap.set(b.el, { opacity: 1 });
@@ -370,6 +391,17 @@ export function mountAboutSections(story: HTMLElement) {
   function measure() {
     H = stage!.offsetHeight || window.innerHeight;
     storyTop = story.getBoundingClientRect().top + window.scrollY;
+    // Flow sections: local 0 when their top reaches the bottom of the screen
+    sections.forEach((s) => {
+      if (!s.flow) return;
+      const top = s.el.getBoundingClientRect().top + window.scrollY;
+      s.start = (top - storyTop - H) / H;
+      s.len = s.el.offsetHeight / H + 1;
+      // A block's cue counts from its own top, so it holds at any section height
+      const below = (el: Element) => (el.getBoundingClientRect().top + window.scrollY - top) / H;
+      s.blocks.forEach((b) => (b.cue = below(b.el) + b.view));
+      if (s.hl && s.highlight) s.hlAt = below(s.highlight.block.el);
+    });
   }
 
   function update() {
@@ -400,7 +432,8 @@ export function mountAboutSections(story: HTMLElement) {
 
       const hl = s.highlight;
       if (!hl) return;
-      hl.tl.progress(seg(local, hl.block.cue + 0.1, s.len - 0.4));
+      const [hlFrom, hlTo] = s.hl ? [s.hlAt + s.hl[0], s.hlAt + s.hl[1]] : [hl.block.cue + 0.1, s.len - 0.4];
+      hl.tl.progress(seg(local, hlFrom, hlTo));
       if (!s.photos.length) return;
       // A trigger word counts once its colour tween is halfway (0.5s tweens, 0.1 apart)
       const t = hl.tl.time();
@@ -420,6 +453,11 @@ export function mountAboutSections(story: HTMLElement) {
     update();
   });
   document.fonts?.ready.then(() => {
+    measure();
+    update();
+  });
+  // Flow sections move as images load above them
+  window.addEventListener('load', () => {
     measure();
     update();
   });
