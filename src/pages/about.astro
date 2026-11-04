@@ -134,7 +134,8 @@ const photos = [
         </div>
       </section>
 
-      <section class="about-sec about-sec--beyond" data-about-section data-flow>
+      <!-- Desktop holds it in place 2.5 screens while the highlight lays the photos -->
+      <section class="about-sec about-sec--beyond" data-about-section data-flow data-hold style="--hold: 2.5">
         <div class="about-sec__frame">
           <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">beyond</span> DESIGN</h2>
           <div class="about-photos" data-photos data-content>
@@ -152,8 +153,15 @@ const photos = [
               ))
             }
           </div>
-          <!-- Highlight over 0.9 screens (was 0.55), so each photo has time to land -->
-          <p class="about-body about-beyond__text" data-fx="plain" data-highlight data-hl="0.1 1" data-content>
+          <!-- Highlight over 0.9 screens of scroll (mobile), or 5–85% of the hold (desktop) -->
+          <p
+            class="about-body about-beyond__text"
+            data-fx="plain"
+            data-highlight
+            data-hl="0.1 1"
+            data-hl-hold="0.05 0.85"
+            data-content
+          >
             Outside design, I enjoy exploring new trails through hiking. I challenge friends to a game of billiards
             whenever I get the chance. I also spend an unreasonable amount of time admiring aquariums on Reels. I don't
             have one yet, but apparently watching other people's tanks counts as research.
@@ -166,10 +174,13 @@ const photos = [
       <section class="about-sec about-sec--end" data-about-section data-flow data-about-end>
         <div class="about-sec__frame">
           <div class="about-end__head">
-            <h2 class="about-end__title" data-fx="goo-1" data-cue="0.4">
+            <!-- A longer, stronger goo than the other titles (1.6s → 2.6s, blur × 1.5) -->
+            <h2 class="about-end__title" data-fx="goo-1" data-cue="0.4" data-fx-dur="2.6" data-fx-blur="1.5">
               <span class="serif-italic">anyway,</span> <span class="about-end__nowrap">THAT’S ME.</span>
             </h2>
-            <p class="about-end__lead">Back to making things, figuring things out, and occasionally watching aquariums.</p>
+            <p class="about-end__lead" data-fx="magnetic" data-cue="0.4" data-fx-at="0.4">
+              Back to making things, figuring things out, and occasionally watching aquariums.
+            </p>
           </div>
         </div>
       </section>
@@ -619,6 +630,19 @@ const photos = [
       position: fixed;
       z-index: 3;
       pointer-events: none;
+    }
+
+    /* data-hold: the section grows by --hold screens and its frame sticks to
+       the top of the screen meanwhile (clip, not hidden: hidden would make
+       the section a scroll container and stop the sticking) */
+    .is-story .about-sec[data-hold] {
+      height: calc(1080 * var(--px) + var(--hold) * 100svh);
+      overflow: clip;
+    }
+
+    .is-story .about-sec[data-hold] .about-sec__frame {
+      position: sticky;
+      top: 0;
     }
 
     .about-body {

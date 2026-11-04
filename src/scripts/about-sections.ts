@@ -50,6 +50,15 @@
   other way, so one title hands over to the next in the same slot. Mobile
   keeps the usual cue.
 
+  Held sections (data-hold="screens", desktop, 2026-11-04): CSS makes the
+  section that much taller and its frame sticky, so its content holds in
+  place once its top reaches the top of the screen. A highlight inside runs
+  over data-hl-hold="from to" (shares of the hold) instead of data-hl.
+
+  Goo intros take data-fx-dur (s) and data-fx-blur (× the peak) to run
+  longer or stronger. magnetic: Magnetic Pull, characters fly in from
+  random offsets and turns (Jayson's snippet, ±200px as ±5em).
+
   Returns where each section starts (scroll px), for the page indicator.
 
   Reduced motion: short fades, no movement, blur or filter.
@@ -79,6 +88,7 @@ const FADE = 0.4; // s, reduced motion
 const CASCADE_DROP = 2; // em
 const CASCADE_TOTAL = 1.6; // s, first to last character
 const CASCADE_EACH: number | null = null;
+const MAGNET = 5; // em, the snippet's ±200px on 40px text
 
 // Codrops goo variants: blur peak (em, from 1 / 1.5 units on ~16-unit
 // text), duration, alpha threshold. Their red-into-blue matrix row is left
@@ -92,7 +102,16 @@ const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const seg = (v: number, a: number, b: number) => clamp((v - a) / (b - a));
 const easeOut = (t: number) => 1 - (1 - t) ** 2;
 
-type Fx = 'goo-1' | 'goo-2' | 'mask-words' | 'cascade-chars' | 'words-rise' | 'stack' | 'scrub-lines' | 'plain';
+type Fx =
+  | 'goo-1'
+  | 'goo-2'
+  | 'mask-words'
+  | 'cascade-chars'
+  | 'magnetic'
+  | 'words-rise'
+  | 'stack'
+  | 'scrub-lines'
+  | 'plain';
 
 interface Block {
   el: HTMLElement;
@@ -103,7 +122,7 @@ interface Block {
   span: number; // scrubbed blocks: screens to come in
   em: number;
   pieces: HTMLElement[]; // what the intro animates, if split
-  goo: { blur: SVGFEGaussianBlurElement; filter: string } | null;
+  goo: { blur: SVGFEGaussianBlurElement; filter: string; duration: number; peak: number } | null;
   scrub: { p: number; to: number }; // scrub-lines: eased progress and its target
   pin: { from: number; to: number } | null; // data-pin: screens into the story it shows between
   shown: boolean;
@@ -125,6 +144,8 @@ interface Section {
   last: boolean;
   flow: boolean;
   hl: [number, number] | null; // flow: highlight from / to, shares of the screen
+  hlHold: [number, number] | null; // held: highlight from / to, shares of the hold
+  hold: number; // data-hold: screens the content holds in place (desktop), else 0
   hlAt: number; // flow: screens from the section's top to the highlight's
   content: HTMLElement[]; // [data-content]: what a pinned title waits on
   blocks: Block[];
@@ -177,12 +198,19 @@ export function mountAboutSections(story: HTMLElement) {
       ? { opacity: 0, y: WORDS_RISE * b.em }
       : b.fx === 'cascade-chars'
         ? { opacity: 0, y: -CASCADE_DROP * b.em, rotation: -15 }
-        : { yPercent: 110 };
+        : b.fx === 'magnetic'
+          ? {
+              opacity: 0,
+              x: () => gsap.utils.random(-MAGNET, MAGNET) * b.em,
+              y: () => gsap.utils.random(-MAGNET, MAGNET) * b.em,
+              rotation: () => gsap.utils.random(-90, 90),
+            }
+          : { yPercent: 110 };
   const pieceTo = (b: Block): gsap.TweenVars =>
     b.fx === 'words-rise'
       ? { opacity: 1, y: 0 }
-      : b.fx === 'cascade-chars'
-        ? { opacity: 1, y: 0, rotation: 0 }
+      : b.fx === 'cascade-chars' || b.fx === 'magnetic'
+        ? { opacity: 1, x: 0, y: 0, rotation: 0 }
         : { yPercent: 0 };
 
   let start = 0;
@@ -190,14 +218,19 @@ export function mountAboutSections(story: HTMLElement) {
     const len = parseFloat(el.dataset.len ?? '1');
     const flow = el.hasAttribute('data-flow');
     const last = flow || el.hasAttribute('data-no-exit');
-    const hl = el.querySelector<HTMLElement>('[data-hl]')?.dataset.hl?.split(' ').map(Number);
+    const pair = (v: string | undefined) => {
+      const n = v?.split(' ').map(Number);
+      return n?.length === 2 ? (n as [number, number]) : null;
+    };
     const section: Section = {
       el,
       start,
       len,
       last,
       flow,
-      hl: hl?.length === 2 ? (hl as [number, number]) : null,
+      hl: pair(el.querySelector<HTMLElement>('[data-hl]')?.dataset.hl),
+      hlHold: pair(el.querySelector<HTMLElement>('[data-hl-hold]')?.dataset.hlHold),
+      hold: 0,
       hlAt: 0,
       content: [...el.querySelectorAll<HTMLElement>('[data-content]')],
       blocks: [],
@@ -226,7 +259,14 @@ export function mountAboutSections(story: HTMLElement) {
         span: parseFloat(node.dataset.span ?? '0.5'),
         em: parseFloat(getComputedStyle(node).fontSize),
         pieces: [],
-        goo: fx === 'goo-1' || fx === 'goo-2' ? makeFilter(GOO[fx].matrix) : null,
+        goo:
+          fx === 'goo-1' || fx === 'goo-2'
+            ? {
+                ...makeFilter(GOO[fx].matrix),
+                duration: parseFloat(node.dataset.fxDur ?? String(GOO[fx].duration)),
+                peak: GOO[fx].blur * parseFloat(node.dataset.fxBlur ?? '1'),
+              }
+            : null,
         scrub: { p: 0, to: 0 },
         pin: null,
         shown: false,
@@ -237,7 +277,7 @@ export function mountAboutSections(story: HTMLElement) {
       const highlight = node.hasAttribute('data-highlight');
       const masked = fx === 'mask-words';
       const lines = fx === 'scrub-lines';
-      const chars = fx === 'cascade-chars';
+      const chars = fx === 'cascade-chars' || fx === 'magnetic';
       const words = masked || fx === 'words-rise';
       if (!lines && !words && !chars && !highlight) return;
 
@@ -297,7 +337,7 @@ export function mountAboutSections(story: HTMLElement) {
 
   // Codrops goo while the block fades in (demo 1 condenses, demo 2 also slides)
   function gooIn(tl: gsap.core.Timeline, b: Block, fx: 'goo-1' | 'goo-2') {
-    const { blur: peak, duration } = GOO[fx];
+    const { peak, duration } = b.goo!;
     const blur = { v: 0 };
     const setBlur = () => b.goo!.blur.setAttribute('stdDeviation', blur.v.toFixed(2));
     const onStart = () => (b.el.style.filter = b.goo!.filter);
@@ -316,7 +356,7 @@ export function mountAboutSections(story: HTMLElement) {
   // A pinned title leaves the way it came: back into goo while fading, demo 2
   // sliding on to the right as the next title slides in from the left
   function gooOut(tl: gsap.core.Timeline, b: Block, fx: 'goo-1' | 'goo-2') {
-    const { blur: peak, duration } = GOO[fx];
+    const { peak, duration } = b.goo!;
     const blur = { v: 0 };
     b.el.style.filter = b.goo!.filter;
     tl.fromTo(blur, { v: 0 }, { v: peak * b.em, duration, ease: 'power1.in', onUpdate: () => b.goo!.blur.setAttribute('stdDeviation', blur.v.toFixed(2)) }, 0);
@@ -356,7 +396,9 @@ export function mountAboutSections(story: HTMLElement) {
                   ease: 'back.out(1.4)',
                   stagger: CASCADE_EACH !== null ? { each: CASCADE_EACH, from: 'start' } : { amount: CASCADE_TOTAL, from: 'start' },
                 }
-              : { duration: 0.6, ease: OSMO_EASE, stagger: 0.06 }; // Osmo words
+              : b.fx === 'magnetic'
+                ? { duration: 1, ease: 'power3.out', stagger: 0.02 } // the snippet's
+                : { duration: 0.6, ease: OSMO_EASE, stagger: 0.06 }; // Osmo words
         tl.fromTo(b.pieces, pieceFrom(b), { ...pieceTo(b), ...vars });
       }
     }
@@ -434,23 +476,32 @@ export function mountAboutSections(story: HTMLElement) {
   function measure() {
     H = stage!.offsetHeight || window.innerHeight;
     storyTop = story.getBoundingClientRect().top + window.scrollY;
-    // Flow sections: local 0 when their top reaches the bottom of the screen
+    // Flow sections: local 0 when their top reaches the bottom of the screen.
+    // Offsets are taken from the frame, which a held section may have stuck
+    // to the top of the screen right now; at rest it sits at the section's top.
+    const frameOf = (s: Section) => s.el.querySelector<HTMLElement>('.about-sec__frame') ?? s.el;
     sections.forEach((s) => {
       if (!s.flow) return;
       const top = s.el.getBoundingClientRect().top + window.scrollY;
+      const frame = frameOf(s);
       s.start = (top - storyTop - H) / H;
       s.len = s.el.offsetHeight / H + 1;
+      s.hold = s.el.hasAttribute('data-hold') ? Math.max(0, s.el.offsetHeight - frame.offsetHeight) / H : 0;
       // A block's cue counts from its own top, so it holds at any section height
-      const below = (el: Element) => (el.getBoundingClientRect().top + window.scrollY - top) / H;
+      const frameTop = frame.getBoundingClientRect().top;
+      const below = (el: Element) => (el.getBoundingClientRect().top - frameTop) / H;
       s.blocks.forEach((b) => (b.cue = below(b.el) + b.view));
       if (s.hl && s.highlight) s.hlAt = below(s.highlight.block.el);
     });
     // Pinned titles: from the previous section's content leaving the top of
-    // the screen to their own section's
-    const bottom = (s: Section | undefined) =>
-      s?.content.length
-        ? (Math.max(...s.content.map((el) => el.getBoundingClientRect().bottom)) + window.scrollY - storyTop) / H
-        : null;
+    // the screen to their own section's (a held section's, once released)
+    const bottom = (s: Section | undefined) => {
+      if (!s?.content.length) return null;
+      const frameTop = frameOf(s).getBoundingClientRect().top;
+      const top = s.el.getBoundingClientRect().top + window.scrollY;
+      const most = Math.max(...s.content.map((el) => el.getBoundingClientRect().bottom - frameTop));
+      return (top + s.hold * H + most - storyTop) / H;
+    };
     sections.forEach((s, i) => {
       const from = bottom(sections[i - 1]);
       const to = bottom(s);
@@ -488,7 +539,13 @@ export function mountAboutSections(story: HTMLElement) {
 
       const hl = s.highlight;
       if (!hl) return;
-      const [hlFrom, hlTo] = s.hl ? [s.hlAt + s.hl[0], s.hlAt + s.hl[1]] : [hl.block.cue + 0.1, s.len - 0.4];
+      // Held: over the hold, which starts as the section's top meets the screen's (local 1)
+      const [hlFrom, hlTo] =
+        s.hold > 0 && s.hlHold
+          ? [1 + s.hlHold[0] * s.hold, 1 + s.hlHold[1] * s.hold]
+          : s.hl
+            ? [s.hlAt + s.hl[0], s.hlAt + s.hl[1]]
+            : [hl.block.cue + 0.1, s.len - 0.4];
       hl.tl.progress(seg(local, hlFrom, hlTo));
       if (!s.photos.length) return;
       // A trigger word counts once its colour tween is halfway (0.5s tweens, 0.1 apart)
