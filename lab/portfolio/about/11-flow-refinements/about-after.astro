@@ -1,0 +1,702 @@
+---
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import portrait from '../assets/about/portrait-hero.webp';
+import aquarium from '../assets/about/beyond-aquarium.png';
+import billiards from '../assets/about/beyond-billiards.png';
+import hiking from '../assets/about/beyond-hiking.jpg';
+// Placeholders from the old site's Approach images (Jayson, 2026-10-26)
+import serviceWeb from '../assets/about/services/web-ui-ux.webp';
+import serviceVisual from '../assets/about/services/visual-design.webp';
+import serviceBrand from '../assets/about/services/brand-digital.webp';
+
+const services = await Promise.all(
+  [
+    { title: 'Web & UI/UX', text: 'Websites, interfaces, responsive experiences, and prototypes.', image: serviceWeb },
+    { title: 'Visual Design', text: 'Digital visuals, editorial layouts, and creative direction.', image: serviceVisual },
+    { title: 'Brand & Digital', text: 'Visual identities, brand systems, and digital applications.', image: serviceBrand },
+  ].map(async (s) => ({
+    ...s,
+    // Hover image (service-hover.ts): ~46% of the screen height, so 800 wide covers 2x screens
+    hover: (await getImage({ src: s.image, width: 800, format: 'webp' })).src,
+  })),
+);
+
+// In the order their words come up in the text (rotations from Figma 1:711)
+const photos = [
+  { src: hiking, alt: 'Hiking a forest trail with friends', rot: -2.23, trigger: 'hiking' },
+  { src: billiards, alt: 'Playing billiards in an open-air pool hall', rot: 0, trigger: 'billiards' },
+  { src: aquarium, alt: 'A planted aquarium glowing under a lamp', rot: -4.62, trigger: 'aquariums' },
+];
+---
+
+<BaseLayout title="About — Jayson Alegarbes" current="about">
+  <!--
+    Opening sequence (Figma 66:95): the greeting splits, the portrait opens
+    between the halves and grows to fill the screen, then a noise wipe turns
+    it to black from the bottom up. Without JS it stays the static greeting
+    (1:142).
+  -->
+  <section class="about-intro" data-about-intro>
+    <div class="about-intro__stage" data-about-stage>
+      <div class="about-intro__media" data-about-media>
+        <Image
+          src={portrait}
+          alt="Illustrated portrait of Jayson at his desk"
+          width={2880}
+          widths={[720, 1080, 1440, 1920, 2880]}
+          sizes="max(100vw, 75vh)"
+          loading="eager"
+          class="about-intro__img"
+        />
+      </div>
+      <h1 class="about-intro__greeting">
+        <span class="about-intro__half" data-about-half="left"><span class="serif-italic">hi!</span> NICE TO</span>{' '}<span class="about-intro__half" data-about-half="right">MEET YOU</span>
+      </h1>
+      <canvas class="about-intro__wipe" data-about-wipe aria-hidden="true"></canvas>
+      <div class="about-intro__black" data-about-black aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!--
+    Text sections (Figma 1:384 → 1:711; transitions 67:107, sequence 92:43;
+    services 154:2, 2026-11-02; ending 175:132, 2026-11-04). The greeting is
+    pinned: it comes in on its own screen as the wipe ends, then the page
+    scrolls on continuously (about-sections.ts). In the flow, section titles
+    keep their intro; on desktop they hold in place (data-pin) from the
+    previous section's [data-content] leaving the screen to their own's.
+    Content scrolls in (the intro paragraph's lines slide in as it does).
+    Desktop places everything on the Figma coordinates of a 1920×1080 frame;
+    mobile stacks it. Without JS they're plain stacked sections.
+  -->
+  <div class="about-story" data-about-story>
+    <div class="about-story__pin">
+      <div class="about-story__stage" data-about-stage-story>
+        <section class="about-sec about-sec--hello" data-about-section data-len="1.4" data-no-exit>
+          <div class="about-sec__frame">
+            <p class="about-hello" data-fx="goo-1" data-cue="0.5">
+              Independent <span class="serif-italic">designer</span><br />based in the Philippines.
+            </p>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="about-flow" data-about-flow>
+      <section class="about-sec about-sec--intro" data-about-section data-flow>
+        <div class="about-sec__frame">
+          <p class="about-intro-text" data-fx="scrub-lines" data-cue="0.1" data-span="0.6" data-content>
+            I design <span class="serif-italic">websites</span>, <span class="serif-italic">interfaces</span>, and <span
+              class="serif-italic">visual experiences</span
+            > that bring structure to ideas and make digital experiences easier to understand, use, and remember.
+          </p>
+        </div>
+      </section>
+
+      <section class="about-sec about-sec--services" data-about-section data-flow>
+        <div class="about-sec__frame">
+          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">what</span> I DO</h2>
+          <!-- 154:2: rows step 90 left each; hovering one lays a white band under it -->
+          <ul class="about-services" data-content>
+            {
+              services.map((s, i) => (
+                <li class="about-service" style={`--i: ${i}`} data-service-img={s.hover}>
+                  <h3 class="about-service__title">{s.title}</h3>
+                  <p class="about-service__text">{s.text}</p>
+                </li>
+              ))
+            }
+          </ul>
+          {/* Hidden for now (Jayson, 2026-10-24; still hidden in 154:2)
+          <p class="about-body about-services__note">
+            A little bit of everything. Mostly the things that look good on a screen.
+          </p>
+          */}
+        </div>
+      </section>
+
+      <section class="about-sec about-sec--approach" data-about-section data-flow>
+        <div class="about-sec__frame">
+          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">my</span> APPROACH</h2>
+          <div class="about-approach" data-content>
+            <p class="about-body">
+              I start by understanding what needs to be communicated before worrying about how it should look. Because
+              making something <span class="serif-italic">pretty is easy</span>. Making something <span
+                class="serif-italic">make sense is a little more interesting</span
+              >.
+            </p>
+            <p class="about-body">
+              I balance thoughtful UX with intentional visual design, creating experiences that feel <span
+                class="serif-italic">purposeful</span
+              >, <span class="serif-italic">distinct</span>, and <span class="serif-italic">right</span> for the project.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-sec about-sec--beyond" data-about-section data-flow>
+        <div class="about-sec__frame">
+          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">beyond</span> DESIGN</h2>
+          <div class="about-photos" data-photos data-content>
+            {
+              photos.map((p) => (
+                <div class="about-photo" data-photo-trigger={p.trigger} data-rot={p.rot} style={`--rot: ${p.rot}deg`}>
+                  <Image
+                    src={p.src}
+                    alt={p.alt}
+                    widths={[420, 864]}
+                    sizes="(min-width: 1024px) 20vw, 46vw"
+                    class="about-photo__img"
+                  />
+                </div>
+              ))
+            }
+          </div>
+          <!-- Highlight over 0.9 screens (was 0.55), so each photo has time to land -->
+          <p class="about-body about-beyond__text" data-fx="plain" data-highlight data-hl="0.1 1" data-content>
+            Outside design, I enjoy exploring new trails through hiking. I challenge friends to a game of billiards
+            whenever I get the chance. I also spend an unreasonable amount of time admiring aquariums on Reels. I don't
+            have one yet, but apparently watching other people's tanks counts as research.
+          </p>
+        </div>
+      </section>
+
+      <!-- 175:132: the page turns from dark to light as this comes up (script
+           below). Its "Keep Scrolling" line is at opacity 0 in Figma: left out. -->
+      <section class="about-sec about-sec--end" data-about-section data-flow data-about-end>
+        <div class="about-sec__frame">
+          <div class="about-end__head">
+            <h2 class="about-end__title" data-fx="goo-1" data-cue="0.4">
+              <span class="serif-italic">anyway,</span> <span class="about-end__nowrap">THAT’S ME.</span>
+            </h2>
+            <p class="about-end__lead">Back to making things, figuring things out, and occasionally watching aquariums.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mountAboutIntro } from '../scripts/about-intro';
+  import { mountAboutSections } from '../scripts/about-sections';
+  import { mountServiceHover } from '../scripts/service-hover';
+  import gsap from 'gsap';
+  import Lenis from 'lenis';
+  import 'lenis/dist/lenis.css';
+
+  const intro = document.querySelector<HTMLElement>('[data-about-intro]');
+  if (intro) mountAboutIntro(intro);
+  const story = document.querySelector<HTMLElement>('[data-about-story]');
+  if (story) mountAboutSections(story);
+
+  // Ending (156:74): once it's halfway up, the page turns from dark to light
+  // (--flow-t 0 → 1), and back when scrolling up again. Time-based, so it
+  // never rests half-grey. The header takes its light-page colours with it.
+  const flow = document.querySelector<HTMLElement>('[data-about-flow]');
+  const end = document.querySelector<HTMLElement>('[data-about-end]');
+  if (flow && end) {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let light = false;
+    const onScroll = () => {
+      const top = end.getBoundingClientRect().top / window.innerHeight;
+      const want = light ? top < 0.65 : top < 0.5; // a little hysteresis
+      if (want === light) {
+        // The opening re-asserts the dark header on scroll under reduced motion
+        if (light) document.body.classList.remove('is-header-dark');
+        return;
+      }
+      light = want;
+      gsap.to(flow, { '--flow-t': light ? 1 : 0, duration: reduced ? 0 : 0.9, ease: 'power2.inOut', overwrite: true });
+      document.body.classList.toggle('is-header-dark', !light);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  // what I DO: hover a service to show its image
+  const servicesSec = document.querySelector<HTMLElement>('.about-sec--services');
+  if (servicesSec) {
+    const items = [...servicesSec.querySelectorAll<HTMLElement>('[data-service-img]')];
+    mountServiceHover(servicesSec, items.map((el) => ({ el, src: el.dataset.serviceImg! })));
+  }
+
+  // Smooth scrolling (brief 67:107), paused while the open menu holds the page
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const lenis = new Lenis({ autoRaf: true });
+    const menu = document.querySelector('[data-header="main"] [data-menu]');
+    if (menu) {
+      new MutationObserver(() => (menu.hasAttribute('data-open') ? lenis.stop() : lenis.start())).observe(menu, {
+        attributes: true,
+        attributeFilter: ['data-open'],
+      });
+    }
+  }
+</script>
+
+<style>
+  /* ---------- Opening ---------- */
+
+  .about-intro {
+    position: relative;
+    height: 100svh;
+  }
+
+  /* Pinned for the length of the sequence (set by the script) */
+  .about-intro.is-scrub {
+    height: 450svh;
+  }
+
+  .about-intro__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .about-intro__greeting {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-weight: 700;
+    font-size: calc(40 * var(--px));
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+
+  .about-intro__half {
+    display: inline-block;
+    will-change: transform;
+  }
+
+  .about-intro__media {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    will-change: transform, width, height;
+  }
+
+  .about-intro__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  .about-intro__wipe,
+  .about-intro__black {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .about-intro__black {
+    background: var(--black);
+  }
+
+  /* ---------- Text sections ---------- */
+
+  /* Without JS: plain stacked screens */
+  .about-story {
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .about-sec {
+    position: relative;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  /* With JS: the greeting's pinned stage, then the flow */
+  .is-story .about-story__pin {
+    height: calc((var(--story-len) + 1) * 100svh);
+  }
+
+  /* Overlaps the opening's last screen so the stage pins right as the wipe
+     ends; that screen stays clear so the wipe shows through */
+  .about-intro.is-scrub + .about-story.is-story {
+    margin-top: -100svh;
+    background: linear-gradient(transparent 100svh, var(--black) 100svh);
+  }
+
+  .is-story .about-story__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .is-story .about-story__stage .about-sec {
+    position: absolute;
+    inset: 0;
+    height: auto;
+    pointer-events: none;
+  }
+
+  .is-story .about-story__stage .about-sec.is-active {
+    pointer-events: auto;
+  }
+
+  /* The flow: dark, turning light for the ending (--flow-t, set by the script) */
+  .about-flow {
+    --flow-t: 0;
+    background: color-mix(in srgb, var(--black), var(--bg) calc(var(--flow-t) * 100%));
+    color: color-mix(in srgb, var(--white), var(--black) calc(var(--flow-t) * 100%));
+  }
+
+  .about-flow .about-sec {
+    height: auto;
+  }
+
+  .is-story [data-fx],
+  .is-story [data-photo-trigger] {
+    opacity: 0;
+  }
+
+  /* The goo slide and ink-bleed scale, kept apart from each block's own transform */
+  [data-fx] {
+    translate: var(--fx-x, 0px) 0;
+    scale: var(--fx-s, 1);
+  }
+
+  .is-story [data-highlight] {
+    color: rgb(255 255 255 / 0.15);
+  }
+
+  /* Mobile: content stacked and centred under the header */
+  .about-sec__frame {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(32 * var(--px));
+    height: 100%;
+    padding: calc(110 * var(--px)) var(--gutter) calc(48 * var(--px));
+  }
+
+  .about-flow .about-sec__frame {
+    padding-block: calc(64 * var(--px));
+  }
+
+  .about-hello,
+  .about-intro-text,
+  .about-body,
+  .about-service__text {
+    font-weight: 400;
+  }
+
+  .about-hello {
+    font-size: calc(32 * var(--px));
+    text-align: center;
+  }
+
+  .about-intro-text {
+    font-size: calc(26 * var(--px));
+    text-indent: 3.76em;
+  }
+
+  /* Split pieces are inline-blocks: they'd each inherit the paragraph indent */
+  .about-sec :global(.split-word),
+  .about-sec :global(.split-char) {
+    text-indent: 0;
+  }
+
+  /* Split lines (and their masks) are blocks: only the first keeps the paragraph indent */
+  .about-sec :global(.split-line-mask:not(:first-child)),
+  .about-sec :global(.split-line:not(:first-child)) {
+    text-indent: 0;
+  }
+
+  .about-heading {
+    font-weight: 700;
+    font-size: calc(48 * var(--px));
+    white-space: nowrap;
+  }
+
+  .about-body {
+    font-size: calc(20 * var(--px));
+    text-indent: 3.76em;
+  }
+
+  /* Layers, bottom up: a hovered row's band, the hover image canvas
+     (service-hover.ts), the text. No stacking contexts in between, so the
+     band can sit under the image while its text sits over it. */
+  .about-sec--services {
+    isolation: isolate;
+  }
+
+  .about-sec--services :global(.service-hover) {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .about-services {
+    display: flex;
+    flex-direction: column;
+    gap: calc(28 * var(--px));
+  }
+
+  /* Each row: its text, a 1px rule 10 below it (Line 346, #D7DEDE) */
+  .about-service {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+    padding-block: calc(10 * var(--px));
+  }
+
+  .about-service > * {
+    position: relative;
+    z-index: 2;
+    transition: color 0.35s ease;
+  }
+
+  .about-service::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: calc(-10 * var(--px));
+    left: 0;
+    border-top: 1px solid var(--white);
+    transition: opacity 0.35s ease;
+  }
+
+  /* 154:2 hover: a white band the full width of the screen (clipped by the
+     section) opens from its centre under the row; the text turns black and
+     the rule hides under it */
+  @media (hover: hover) and (pointer: fine) {
+    .about-service::before {
+      content: '';
+      position: absolute;
+      inset: 0 -100vw;
+      background: #fff;
+      transform: scaleY(0);
+      transition: transform 0.5s cubic-bezier(0.625, 0.05, 0, 1);
+    }
+
+    .about-service:hover::before {
+      transform: scaleY(1);
+    }
+
+    .about-service:hover > * {
+      color: var(--black);
+    }
+
+    .about-service:hover::after {
+      opacity: 0;
+    }
+  }
+
+  .about-service__title {
+    font-weight: 700;
+    font-size: calc(22 * var(--px));
+    text-transform: uppercase;
+  }
+
+  .about-service__text {
+    font-size: calc(14 * var(--px));
+  }
+
+  .about-approach {
+    display: flex;
+    flex-direction: column;
+    gap: calc(32 * var(--px));
+  }
+
+  .about-photos {
+    position: relative;
+    flex: none;
+    width: calc(200 * var(--px));
+    height: calc(235 * var(--px));
+    margin-inline: auto;
+  }
+
+  .about-photo {
+    position: absolute;
+    inset: 0;
+    transform: rotate(var(--rot));
+  }
+
+  .about-photo__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ---------- Ending (175:132) ---------- */
+
+  .about-sec--end .about-sec__frame {
+    align-items: center;
+    min-height: 100svh;
+  }
+
+  .about-end__head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(20 * var(--px));
+    text-align: center;
+  }
+
+  .about-end__title {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: calc(48 * var(--px));
+    line-height: 1.05;
+  }
+
+  /* Mobile wraps after "anyway," rather than before "ME." */
+  .about-end__nowrap {
+    white-space: nowrap;
+  }
+
+  .about-end__lead {
+    font-weight: 400;
+    font-size: calc(20 * var(--px));
+  }
+
+  /* Desktop: Figma coordinates on a 1920×1080 frame, top-aligned with the
+     header so the columns line up with the nav (e.g. services at 213) */
+  @media (min-width: 1024px) {
+    .about-intro__greeting {
+      top: calc(50% + 72 * var(--px));
+      font-size: calc(110 * var(--px));
+    }
+
+    .about-sec__frame {
+      display: block;
+      position: relative;
+      height: calc(1080 * var(--px));
+      padding: 0;
+    }
+
+    .about-sec__frame > * {
+      position: absolute;
+    }
+
+    /* 1:384 — bottom edge at 50% + 87 */
+    .about-hello {
+      top: calc(627 * var(--px));
+      left: 50%;
+      font-size: calc(80 * var(--px));
+      white-space: nowrap;
+      transform: translate(-50%, -100%);
+    }
+
+    /* 1:556 */
+    .about-intro-text {
+      top: 50%;
+      left: calc(307 * var(--px));
+      width: calc(1306 * var(--px));
+      font-size: calc(70 * var(--px));
+      transform: translateY(-50%);
+    }
+
+    /* 1:603 / 1:661 — centred on y 286.5 */
+    .about-heading {
+      top: calc(286.5 * var(--px));
+      left: var(--gutter);
+      font-size: calc(110 * var(--px));
+      transform: translateY(-50%);
+    }
+
+    /* Held in the same place on the screen while their section goes by
+       (data-pin, about-sections.ts); over the content passing under them */
+    .is-story .about-heading[data-pin] {
+      position: fixed;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .about-body {
+      font-size: calc(40 * var(--px));
+    }
+
+    /* 154:2 — rows 1012 wide, text tops 166 apart from y 464, each 90
+       further left than the one above (668, 578, 488); the band is 106 */
+    .about-services {
+      top: calc(454 * var(--px));
+      left: calc(488 * var(--px));
+      width: calc(1192 * var(--px));
+      gap: calc(60 * var(--px));
+    }
+
+    .about-service {
+      width: calc(1012 * var(--px));
+      margin-left: calc((2 - var(--i)) * 90 * var(--px));
+      gap: calc(20 * var(--px));
+    }
+
+    .about-service__title {
+      font-size: calc(40 * var(--px));
+    }
+
+    .about-service__text {
+      font-size: var(--fs-body);
+    }
+
+    /* bottom edge at 75% + 150 */
+    .about-services__note {
+      top: calc(960 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+      transform: translateY(-100%);
+    }
+
+    .about-approach {
+      top: calc(382 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+      gap: calc(80 * var(--px));
+    }
+
+    /* 93:417 (updated 2026-10-26) — all three photos share one 385.6×453.4
+       box at (209.85, 423), each turned by its own --rot */
+    .about-photos {
+      top: calc(423 * var(--px));
+      left: calc(209.85 * var(--px));
+      width: calc(385.58 * var(--px));
+      height: calc(453.42 * var(--px));
+      margin: 0;
+    }
+
+    .about-beyond__text {
+      top: calc(408 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+    }
+
+    /* 175:132 — title over subline, 44 apart, the block (y 423 → 658)
+       centred on x 960 */
+    .about-end__head {
+      top: calc(540.5 * var(--px));
+      left: 50%;
+      gap: calc(44 * var(--px));
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+    }
+
+    .about-end__title {
+      font-size: calc(110 * var(--px));
+      line-height: normal;
+    }
+
+    .about-end__lead {
+      font-size: calc(40 * var(--px));
+    }
+  }
+
+</style>

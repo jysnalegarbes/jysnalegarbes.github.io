@@ -43,6 +43,13 @@
   while the highlighted block's top goes from / to those shares of the way
   up the screen.
 
+  Pinned titles ([data-pin], desktop, 2026-11-04): the title holds in its
+  Figma place on the screen (CSS makes it fixed) while its section goes by.
+  It comes in once the previous section's [data-content] has left the top
+  of the screen and goes out once its own has, through the same goo run the
+  other way, so one title hands over to the next in the same slot. Mobile
+  keeps the usual cue.
+
   Returns where each section starts (scroll px), for the page indicator.
 
   Reduced motion: short fades, no movement, blur or filter.
@@ -50,6 +57,7 @@
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 import { CustomEase } from 'gsap/CustomEase';
+import { mountPhotoRipple } from './photo-ripple';
 
 gsap.registerPlugin(SplitText, CustomEase);
 
@@ -97,6 +105,7 @@ interface Block {
   pieces: HTMLElement[]; // what the intro animates, if split
   goo: { blur: SVGFEGaussianBlurElement; filter: string } | null;
   scrub: { p: number; to: number }; // scrub-lines: eased progress and its target
+  pin: { from: number; to: number } | null; // data-pin: screens into the story it shows between
   shown: boolean;
   tl: gsap.core.Timeline | null;
 }
@@ -106,6 +115,7 @@ interface Photo {
   rot: number;
   trigger: string;
   word: number; // index in the highlight's words, -1 until split
+  fx: ReturnType<typeof mountPhotoRipple>; // the home portrait's wave, on entrance
 }
 
 interface Section {
@@ -116,6 +126,7 @@ interface Section {
   flow: boolean;
   hl: [number, number] | null; // flow: highlight from / to, shares of the screen
   hlAt: number; // flow: screens from the section's top to the highlight's
+  content: HTMLElement[]; // [data-content]: what a pinned title waits on
   blocks: Block[];
   highlight: { block: Block; words: HTMLElement[]; tl: gsap.core.Timeline } | null;
   photos: Photo[];
@@ -128,6 +139,7 @@ export function mountAboutSections(story: HTMLElement) {
   if (!stage || !els.length) return null;
 
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const desktop = window.matchMedia('(min-width: 1024px)'); // pinned titles
   const white = getComputedStyle(document.documentElement).getPropertyValue('--white').trim() || '#fff';
   story.classList.add('is-story'); // final layout before anything is split
 
@@ -187,6 +199,7 @@ export function mountAboutSections(story: HTMLElement) {
       flow,
       hl: hl?.length === 2 ? (hl as [number, number]) : null,
       hlAt: 0,
+      content: [...el.querySelectorAll<HTMLElement>('[data-content]')],
       blocks: [],
       highlight: null,
       photos: [],
@@ -199,6 +212,7 @@ export function mountAboutSections(story: HTMLElement) {
       rot: parseFloat(p.dataset.rot ?? '0'),
       trigger: p.dataset.photoTrigger!.toLowerCase(),
       word: -1,
+      fx: reduced ? null : mountPhotoRipple(p),
     }));
 
     el.querySelectorAll<HTMLElement>('[data-fx]').forEach((node) => {
@@ -214,6 +228,7 @@ export function mountAboutSections(story: HTMLElement) {
         pieces: [],
         goo: fx === 'goo-1' || fx === 'goo-2' ? makeFilter(GOO[fx].matrix) : null,
         scrub: { p: 0, to: 0 },
+        pin: null,
         shown: false,
         tl: null,
       };
@@ -298,6 +313,17 @@ export function mountAboutSections(story: HTMLElement) {
     tl.fromTo(b.el, { opacity: 0 }, { opacity: 1, duration, ease: 'none' }, 0);
   }
 
+  // A pinned title leaves the way it came: back into goo while fading, demo 2
+  // sliding on to the right as the next title slides in from the left
+  function gooOut(tl: gsap.core.Timeline, b: Block, fx: 'goo-1' | 'goo-2') {
+    const { blur: peak, duration } = GOO[fx];
+    const blur = { v: 0 };
+    b.el.style.filter = b.goo!.filter;
+    tl.fromTo(blur, { v: 0 }, { v: peak * b.em, duration, ease: 'power1.in', onUpdate: () => b.goo!.blur.setAttribute('stdDeviation', blur.v.toFixed(2)) }, 0);
+    if (fx === 'goo-2') tl.to(b.el, { '--fx-x': `${GOO_2_SHIFT * b.em}px`, duration, ease: 'power2.inOut' }, 0);
+    tl.to(b.el, { opacity: 0, duration, ease: 'none', onComplete: () => (b.el.style.filter = '') }, 0);
+  }
+
   function show(b: Block) {
     stop(b);
     b.shown = true;
@@ -346,6 +372,10 @@ export function mountAboutSections(story: HTMLElement) {
       tl.to(b.el, { opacity: 0, duration: FADE, ease: 'none' });
       return;
     }
+    if (b.pin && (b.fx === 'goo-1' || b.fx === 'goo-2')) {
+      gooOut(tl, b, b.fx);
+      return;
+    }
     tl.fromTo(
       b.el,
       { filter: 'blur(0px)' },
@@ -355,7 +385,9 @@ export function mountAboutSections(story: HTMLElement) {
 
   /* ---------- Photos (section 5) ---------- */
 
-  // The home hero's reveal: clip opens upward (expo.inOut 1.1s), here while rising
+  // The home hero's reveal: clip opens upward (expo.inOut 1.1s), here while
+  // rising, as the home portrait's wave runs through it. Once open the clip
+  // comes off, so the wave's tail can spill past the edges.
   function photoIn(p: Photo) {
     gsap.killTweensOf(p.el);
     if (reduced) {
@@ -365,8 +397,15 @@ export function mountAboutSections(story: HTMLElement) {
     gsap.fromTo(
       p.el,
       { opacity: 1, yPercent: 40, rotation: p.rot, clipPath: 'inset(100% 0% 0% 0%)' },
-      { yPercent: 0, clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'expo.inOut' },
+      {
+        yPercent: 0,
+        clipPath: 'inset(0% 0% 0% 0%)',
+        duration: 1.1,
+        ease: 'expo.inOut',
+        onComplete: () => (p.el.style.clipPath = 'none'),
+      },
     );
+    p.fx?.ripple();
   }
 
   // The same, reversed: lifted back off the pile
@@ -376,7 +415,11 @@ export function mountAboutSections(story: HTMLElement) {
       gsap.to(p.el, { opacity: 0, duration: FADE, ease: 'none' });
       return;
     }
-    gsap.to(p.el, { yPercent: 40, clipPath: 'inset(100% 0% 0% 0%)', duration: 0.8, ease: 'expo.inOut' });
+    gsap.fromTo(
+      p.el,
+      { clipPath: p.el.style.clipPath === 'none' ? 'inset(0% 0% 0% 0%)' : p.el.style.clipPath },
+      { yPercent: 40, clipPath: 'inset(100% 0% 0% 0%)', duration: 0.8, ease: 'expo.inOut' },
+    );
   }
 
   // The photos pile up: each trigger lays one on top, scrolling back lifts them off
@@ -402,6 +445,19 @@ export function mountAboutSections(story: HTMLElement) {
       s.blocks.forEach((b) => (b.cue = below(b.el) + b.view));
       if (s.hl && s.highlight) s.hlAt = below(s.highlight.block.el);
     });
+    // Pinned titles: from the previous section's content leaving the top of
+    // the screen to their own section's
+    const bottom = (s: Section | undefined) =>
+      s?.content.length
+        ? (Math.max(...s.content.map((el) => el.getBoundingClientRect().bottom)) + window.scrollY - storyTop) / H
+        : null;
+    sections.forEach((s, i) => {
+      const from = bottom(sections[i - 1]);
+      const to = bottom(s);
+      s.blocks.forEach((b) => {
+        b.pin = desktop.matches && b.el.hasAttribute('data-pin') && from !== null && to !== null ? { from, to } : null;
+      });
+    });
   }
 
   function update() {
@@ -413,7 +469,7 @@ export function mountAboutSections(story: HTMLElement) {
       s.el.classList.toggle('is-active', active);
 
       s.blocks.forEach((b) => {
-        const want = active && local >= b.cue;
+        const want = b.pin ? pos >= b.pin.from && pos < b.pin.to : active && local >= b.cue;
         if (want !== b.shown) (want ? show : hide)(b);
         if (b.fx === 'stack' && !reduced) {
           // Holds below the screen until its cue, then rises into place

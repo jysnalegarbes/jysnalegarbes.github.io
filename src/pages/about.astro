@@ -60,11 +60,12 @@ const photos = [
 
   <!--
     Text sections (Figma 1:384 → 1:711; transitions 67:107, sequence 92:43;
-    services 154:2 and ending 156:74, 2026-11-02). The greeting is pinned:
-    it comes in on its own screen as the wipe ends, then the page scrolls on
-    continuously (about-sections.ts). In the flow, each section's title keeps
-    its intro (data-fx, once its top is data-cue of the way up the screen)
-    and its content just scrolls in.
+    services 154:2, 2026-11-02; ending 175:132, 2026-11-04). The greeting is
+    pinned: it comes in on its own screen as the wipe ends, then the page
+    scrolls on continuously (about-sections.ts). In the flow, section titles
+    keep their intro; on desktop they hold in place (data-pin) from the
+    previous section's [data-content] leaving the screen to their own's.
+    Content scrolls in (the intro paragraph's lines slide in as it does).
     Desktop places everything on the Figma coordinates of a 1920×1080 frame;
     mobile stacks it. Without JS they're plain stacked sections.
   -->
@@ -84,7 +85,7 @@ const photos = [
     <div class="about-flow" data-about-flow>
       <section class="about-sec about-sec--intro" data-about-section data-flow>
         <div class="about-sec__frame">
-          <p class="about-intro-text">
+          <p class="about-intro-text" data-fx="scrub-lines" data-cue="0.1" data-span="0.6" data-content>
             I design <span class="serif-italic">websites</span>, <span class="serif-italic">interfaces</span>, and <span
               class="serif-italic">visual experiences</span
             > that bring structure to ideas and make digital experiences easier to understand, use, and remember.
@@ -94,9 +95,9 @@ const photos = [
 
       <section class="about-sec about-sec--services" data-about-section data-flow>
         <div class="about-sec__frame">
-          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3"><span class="serif-italic">what</span> I DO</h2>
+          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">what</span> I DO</h2>
           <!-- 154:2: rows step 90 left each; hovering one lays a white band under it -->
-          <ul class="about-services">
+          <ul class="about-services" data-content>
             {
               services.map((s, i) => (
                 <li class="about-service" style={`--i: ${i}`} data-service-img={s.hover}>
@@ -116,8 +117,8 @@ const photos = [
 
       <section class="about-sec about-sec--approach" data-about-section data-flow>
         <div class="about-sec__frame">
-          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3"><span class="serif-italic">my</span> APPROACH</h2>
-          <div class="about-approach">
+          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">my</span> APPROACH</h2>
+          <div class="about-approach" data-content>
             <p class="about-body">
               I start by understanding what needs to be communicated before worrying about how it should look. Because
               making something <span class="serif-italic">pretty is easy</span>. Making something <span
@@ -135,8 +136,8 @@ const photos = [
 
       <section class="about-sec about-sec--beyond" data-about-section data-flow>
         <div class="about-sec__frame">
-          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3"><span class="serif-italic">beyond</span> DESIGN</h2>
-          <div class="about-photos" data-photos>
+          <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">beyond</span> DESIGN</h2>
+          <div class="about-photos" data-photos data-content>
             {
               photos.map((p) => (
                 <div class="about-photo" data-photo-trigger={p.trigger} data-rot={p.rot} style={`--rot: ${p.rot}deg`}>
@@ -151,7 +152,8 @@ const photos = [
               ))
             }
           </div>
-          <p class="about-body about-beyond__text" data-fx="plain" data-highlight data-hl="0.17 0.72">
+          <!-- Highlight over 0.9 screens (was 0.55), so each photo has time to land -->
+          <p class="about-body about-beyond__text" data-fx="plain" data-highlight data-hl="0.1 1" data-content>
             Outside design, I enjoy exploring new trails through hiking. I challenge friends to a game of billiards
             whenever I get the chance. I also spend an unreasonable amount of time admiring aquariums on Reels. I don't
             have one yet, but apparently watching other people's tanks counts as research.
@@ -159,17 +161,16 @@ const photos = [
         </div>
       </section>
 
-      <!-- 156:74: the page turns from dark to light as this comes up (script below) -->
+      <!-- 175:132: the page turns from dark to light as this comes up (script
+           below). Its "Keep Scrolling" line is at opacity 0 in Figma: left out. -->
       <section class="about-sec about-sec--end" data-about-section data-flow data-about-end>
         <div class="about-sec__frame">
           <div class="about-end__head">
-            <p class="about-end__lead">Thanks for reading.</p>
             <h2 class="about-end__title" data-fx="goo-1" data-cue="0.4">
-              GOT <span class="serif-italic">a project</span> IN MIND?
+              <span class="serif-italic">anyway,</span> <span class="about-end__nowrap">THAT’S ME.</span>
             </h2>
+            <p class="about-end__lead">Back to making things, figuring things out, and occasionally watching aquariums.</p>
           </div>
-          <a class="about-end__link about-end__link--hello" href="/contact/">Say hello</a>
-          <a class="about-end__link about-end__link--work" href="/work/">See the work</a>
         </div>
       </section>
     </div>
@@ -535,7 +536,7 @@ const photos = [
     object-fit: cover;
   }
 
-  /* ---------- Ending (156:74) ---------- */
+  /* ---------- Ending (175:132) ---------- */
 
   .about-sec--end .about-sec__frame {
     align-items: center;
@@ -545,34 +546,28 @@ const photos = [
   .about-end__head {
     display: flex;
     flex-direction: column;
-    gap: calc(8 * var(--px));
+    align-items: center;
+    gap: calc(20 * var(--px));
     text-align: center;
   }
 
-  .about-end__lead,
-  .about-end__link {
-    font-weight: 400;
-    font-size: calc(20 * var(--px));
-  }
-
   .about-end__title {
+    font-family: var(--font-serif);
     font-weight: 700;
     font-size: calc(48 * var(--px));
     line-height: 1.05;
   }
 
-  .about-end__link {
-    color: inherit;
-    text-decoration: underline;
-    text-decoration-color: transparent;
-    text-underline-offset: 0.2em;
-    transition: text-decoration-color 0.3s ease;
+  /* Mobile wraps after "anyway," rather than before "ME." */
+  .about-end__nowrap {
+    white-space: nowrap;
   }
 
-  .about-end__link:hover,
-  .about-end__link:focus-visible {
-    text-decoration-color: currentColor;
+  .about-end__lead {
+    font-weight: 400;
+    font-size: calc(20 * var(--px));
   }
+
   /* Desktop: Figma coordinates on a 1920×1080 frame, top-aligned with the
      header so the columns line up with the nav (e.g. services at 213) */
   @media (min-width: 1024px) {
@@ -616,6 +611,14 @@ const photos = [
       left: var(--gutter);
       font-size: calc(110 * var(--px));
       transform: translateY(-50%);
+    }
+
+    /* Held in the same place on the screen while their section goes by
+       (data-pin, about-sections.ts); over the content passing under them */
+    .is-story .about-heading[data-pin] {
+      position: fixed;
+      z-index: 3;
+      pointer-events: none;
     }
 
     .about-body {
@@ -676,37 +679,23 @@ const photos = [
       width: calc(888 * var(--px));
     }
 
-    /* 156:74 — the heading block centred on y 474.5, x 363 → 1558; the
-       links centred on (504, 806) and (1416, 806) */
+    /* 175:132 — title over subline, 44 apart, the block (y 423 → 658)
+       centred on x 960 */
     .about-end__head {
-      top: calc(474.5 * var(--px));
-      left: calc(363 * var(--px));
-      width: calc(1195 * var(--px));
-      gap: calc(4 * var(--px));
-      transform: translateY(-50%);
-    }
-
-    .about-end__lead,
-    .about-end__link {
-      font-size: calc(40 * var(--px));
+      top: calc(540.5 * var(--px));
+      left: 50%;
+      gap: calc(44 * var(--px));
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
     }
 
     .about-end__title {
       font-size: calc(110 * var(--px));
-      white-space: nowrap;
+      line-height: normal;
     }
 
-    .about-end__link {
-      top: calc(806 * var(--px));
-      transform: translate(-50%, -50%);
-    }
-
-    .about-end__link--hello {
-      left: calc(504 * var(--px));
-    }
-
-    .about-end__link--work {
-      left: calc(1416 * var(--px));
+    .about-end__lead {
+      font-size: calc(40 * var(--px));
     }
   }
 

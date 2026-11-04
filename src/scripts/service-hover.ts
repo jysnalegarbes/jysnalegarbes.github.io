@@ -10,6 +10,10 @@
       fill colour that sweeps over it, stretching it slightly as it goes.
       The fill is the site's green; the reveal runs 0 → 1 linearly, replayed
       whenever the hovered service changes.
+    - Ink halftone (2026-11-04): under the band the photo first comes in as
+      black ink dots on paper (a 45° screen, each dot sized by how dark the
+      photo is there), then resolves back into the photo from the top down,
+      the dots getting finer as they fade.
   Hand-written WebGL like the rest of the site (the demos use Three.js).
   The canvas sits behind the services text, as in the demo. Fine pointers
   only; off under reduced motion.
@@ -22,7 +26,11 @@ const PLANE_H = 1 / 2.184; // of the viewport: the demo's 1-unit plane at fov 40
 const STRENGTH = 0.25; // the demo's RGBShiftEffect strength
 const FOLLOW = 1; // s, power4.out, as in the demo
 const FADE = 0.5; // s, power4.out, as in the demo
-const REVEAL = 1.5; // s, linear, as in the demo
+const REVEAL = 1.1; // s, linear (the demo's 1.5, a little faster)
+const INK_HOLD = 0.55; // s into the reveal the halftone holds before resolving
+const INK_RESOLVE = 0.9; // s it takes to resolve into the photo
+const INK = [0x14 / 255, 0x19 / 255, 0x18 / 255]; // --black
+const PAPER = [0xd7 / 255, 0xde / 255, 0xde / 255]; // --white
 const GRID = 32;
 
 const vertex = /* glsl */ `
@@ -54,6 +62,9 @@ const fragment = /* glsl */ `
   uniform float uTime;
   uniform float uAlpha;
   uniform vec2 uShift;   // red channel shift, in uv (the demo's uOffset)
+  uniform float uInk;    // halftone: 1 all dots, 0 the photo
+  uniform vec3 uInkColor;
+  uniform vec3 uPaper;
   varying vec2 vUv;
 
   float hashwithoutsine12(vec2 p) {
@@ -103,25 +114,44 @@ const fragment = /* glsl */ `
   }
   float parabola(float x, float k) { return pow(4. * x * (1. - x), k); }
 
-  void main() {
-    // texture cover
-    vec2 uv = vUv - vec2(0.5);
+  // Plane uv → texture uv: cover, then the reveal's stretch
+  vec2 texUv(vec2 p, float dt) {
+    vec2 uv = p - vec2(0.5);
     float aspect1 = uTextureSize.x / uTextureSize.y;
     float aspect2 = uElementSize.x / uElementSize.y;
     if (aspect1 > aspect2) { uv *= vec2(aspect2 / aspect1, 1.); }
     else { uv *= vec2(1., aspect1 / aspect2); }
     uv += vec2(0.5);
+    uv.y = 1. - (1. - uv.y) * (1. - dt * 0.3);
+    return uv;
+  }
 
+  void main() {
     // Variation 2 (uType 1)
     float hash = hashwithoutsine12(vUv * 1000. + floor(uTime * 3.) * 0.1);
     vec3 fillColor = uFillColor + (vec3(hash) - vec3(0.5)) * 0.2;
     float n = (cnoise(vUv * vec2(35., 1.)) + 1.) * 0.5;
     float dt = parabola(cubicInOut(uProgress), 1.);
-    vec2 distUV = uv;
-    distUV.y = 1. - (1. - uv.y) * (1. - dt * 0.3);
+    vec2 distUV = texUv(vUv, dt);
 
     // Motion Hover: the red channel trails by the drag offset
     vec3 image = vec3(texture2D(uTexture, distUV + uShift).r, texture2D(uTexture, distUV).gb);
+
+    // Ink halftone: one dot per cell of a 45° screen, sampled at the cell's
+    // centre; the top resolves first, the cells get finer as it does. No
+    // branch: a texture read under per-pixel control flow can come back black.
+    float ink = clamp(uInk * 1.4 - vUv.y * 0.4, 0., 1.);
+    float cell = mix(4., 12., uInk); // CSS px
+    mat2 rot = mat2(0.7071, 0.7071, -0.7071, 0.7071);
+    vec2 g = rot * (vUv * uElementSize) / cell;
+    vec2 centre = (floor(g) + 0.5) * cell * rot / uElementSize; // back to plane uv
+    vec3 c = texture2D(uTexture, texUv(centre, dt)).rgb;
+    float dark = 1. - dot(c, vec3(0.299, 0.587, 0.114));
+    float r = sqrt(dark) * 0.62; // dot area follows darkness
+    float aa = 1.2 / cell;
+    float dotMask = 1. - smoothstep(r - aa, r + aa, length(fract(g) - 0.5));
+    vec3 halftone = mix(uPaper, uInkColor, dotMask);
+    image = mix(image, halftone, smoothstep(0., 1., ink));
 
     // Done: the band's width is 0 here and smoothstep(1, 1, x) is undefined
     if (uProgress >= 1.) {
@@ -167,7 +197,7 @@ export function mountServiceHover(section: HTMLElement, items: { el: HTMLElement
   try {
     prog = linkProgram(gl, vertex, fragment, [
       'uView', 'uPos', 'uSize', 'uOffset', 'uTexture', 'uTextureSize', 'uElementSize',
-      'uFillColor', 'uProgress', 'uTime', 'uAlpha', 'uShift',
+      'uFillColor', 'uProgress', 'uTime', 'uAlpha', 'uShift', 'uInk', 'uInkColor', 'uPaper',
     ]);
   } catch (err) {
     console.warn('[service-hover]', err);
@@ -186,6 +216,8 @@ export function mountServiceHover(section: HTMLElement, items: { el: HTMLElement
   gl.clearColor(0, 0, 0, 0);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true); // three.js's default, as the shader expects
   gl.uniform3fv(prog.u.uFillColor, GREEN);
+  gl.uniform3fv(prog.u.uInkColor, INK);
+  gl.uniform3fv(prog.u.uPaper, PAPER);
   gl.uniform1i(prog.u.uTexture, 0);
 
   // Textures load in the background; a service shows nothing until its own is ready
@@ -248,7 +280,10 @@ export function mountServiceHover(section: HTMLElement, items: { el: HTMLElement
     gl!.clear(gl!.COLOR_BUFFER_BIT);
     const t = textures[current];
     const alpha = alphaAt(now);
-    const progress = Math.min(1, Math.max(0, (now - revealAt) / 1000 / REVEAL));
+    const since = (now - revealAt) / 1000;
+    const progress = Math.min(1, Math.max(0, since / REVEAL));
+    const k = Math.min(1, Math.max(0, (since - INK_HOLD) / INK_RESOLVE));
+    const ink = 1 - k * k * (3 - 2 * k); // smoothstep
     if (t?.tex && alpha > 0.001) {
       const h = H * PLANE_H;
       const w = h * (t.w / t.h);
@@ -265,6 +300,7 @@ export function mountServiceHover(section: HTMLElement, items: { el: HTMLElement
       gl!.uniform2f(u.uTextureSize, t.w, t.h);
       gl!.uniform2f(u.uElementSize, w, h);
       gl!.uniform1f(u.uProgress, progress);
+      gl!.uniform1f(u.uInk, ink);
       gl!.uniform1f(u.uTime, time);
       gl!.uniform1f(u.uAlpha, alpha);
       gl!.drawArrays(gl!.TRIANGLES, 0, verts.length / 2);
