@@ -59,6 +59,12 @@
   longer or stronger. magnetic: Magnetic Pull, characters fly in from
   random offsets and turns (Jayson's snippet, ±200px as ±5em).
 
+  scrub-mask (GreenSock's SplitText + ScrollTrigger lines pen, GggpRoB):
+  lines rise out of their masks (yPercent 120, stagger 0.1), scrubbed
+  straight to the scroll from the block's top reaching the middle of the
+  screen (data-cue 0.5) to its bottom doing so ("top center" → "bottom
+  center"). It's on screen whole while its section is: the masks hide it.
+
   Returns where each section starts (scroll px), for the page indicator.
 
   Reduced motion: short fades, no movement, blur or filter.
@@ -111,6 +117,7 @@ type Fx =
   | 'words-rise'
   | 'stack'
   | 'scrub-lines'
+  | 'scrub-mask'
   | 'plain';
 
 interface Block {
@@ -124,6 +131,7 @@ interface Block {
   pieces: HTMLElement[]; // what the intro animates, if split
   goo: { blur: SVGFEGaussianBlurElement; filter: string; duration: number; peak: number } | null;
   scrub: { p: number; to: number }; // scrub-lines: eased progress and its target
+  scrubTl: gsap.core.Timeline | null; // scrub-mask: the lines' rise, set by progress
   pin: { from: number; to: number } | null; // data-pin: screens into the story it shows between
   shown: boolean;
   tl: gsap.core.Timeline | null;
@@ -268,6 +276,7 @@ export function mountAboutSections(story: HTMLElement) {
               }
             : null,
         scrub: { p: 0, to: 0 },
+        scrubTl: null,
         pin: null,
         shown: false,
         tl: null,
@@ -277,14 +286,15 @@ export function mountAboutSections(story: HTMLElement) {
       const highlight = node.hasAttribute('data-highlight');
       const masked = fx === 'mask-words';
       const lines = fx === 'scrub-lines';
+      const maskLines = fx === 'scrub-mask';
       const chars = fx === 'cascade-chars' || fx === 'magnetic';
       const words = masked || fx === 'words-rise';
-      if (!lines && !words && !chars && !highlight) return;
+      if (!lines && !maskLines && !words && !chars && !highlight) return;
 
       SplitText.create(node, {
         // Chars inside words, so a word never breaks across lines
-        type: lines ? 'lines' : masked ? 'lines,words' : chars ? 'words,chars' : 'words',
-        mask: masked ? 'lines' : undefined,
+        type: lines ? 'lines' : masked || maskLines ? 'lines,words' : chars ? 'words,chars' : 'words',
+        mask: masked || maskLines ? 'lines' : undefined,
         linesClass: 'split-line',
         wordsClass: 'split-word',
         charsClass: 'split-char',
@@ -294,6 +304,15 @@ export function mountAboutSections(story: HTMLElement) {
           if (lines) {
             block.pieces = self.lines as HTMLElement[];
             renderLines(block);
+          } else if (maskLines) {
+            // The pen's gsap.from: 0.5s per line with its default power1.out
+            const p = block.scrubTl?.progress() ?? 0;
+            block.scrubTl?.kill();
+            block.pieces = self.lines as HTMLElement[];
+            block.scrubTl = gsap
+              .timeline({ paused: true })
+              .from(block.pieces, { yPercent: 120, stagger: 0.1, duration: 0.5, ease: 'power1.out' })
+              .progress(p);
           } else if (words || chars) {
             block.pieces = (chars ? self.chars : self.words) as HTMLElement[];
             gsap.set(block.pieces, block.shown ? pieceTo(block) : pieceFrom(block));
@@ -382,6 +401,7 @@ export function mountAboutSections(story: HTMLElement) {
         break;
       case 'stack':
       case 'scrub-lines':
+      case 'scrub-mask':
       case 'plain':
         gsap.set(b.el, { opacity: 1 }); // the movement is scrubbed in update(), or none
         break;
@@ -520,12 +540,18 @@ export function mountAboutSections(story: HTMLElement) {
       s.el.classList.toggle('is-active', active);
 
       s.blocks.forEach((b) => {
-        const want = b.pin ? pos >= b.pin.from && pos < b.pin.to : active && local >= b.cue;
+        const want = b.pin
+          ? pos >= b.pin.from && pos < b.pin.to
+          : active && (b.fx === 'scrub-mask' || local >= b.cue);
         if (want !== b.shown) (want ? show : hide)(b);
         if (b.fx === 'stack' && !reduced) {
           // Holds below the screen until its cue, then rises into place
           const y = (1 - easeOut(seg(local, b.cue, b.cue + b.span))) * H;
           b.el.style.transform = `translate3d(0, ${y.toFixed(1)}px, 0)`;
+        }
+        if (b.fx === 'scrub-mask' && b.scrubTl) {
+          // scrub: true, straight to the scroll; span = the block's own height
+          b.scrubTl.progress(reduced ? 1 : seg(local, b.cue, b.cue + b.el.offsetHeight / H));
         }
         if (b.fx === 'scrub-lines') {
           const p = seg(local, b.cue, b.cue + b.span);

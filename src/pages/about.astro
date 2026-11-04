@@ -119,13 +119,13 @@ const photos = [
         <div class="about-sec__frame">
           <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">my</span> APPROACH</h2>
           <div class="about-approach" data-content>
-            <p class="about-body">
+            <p class="about-body" data-fx="scrub-mask" data-cue="0.5">
               I start by understanding what needs to be communicated before worrying about how it should look. Because
               making something <span class="serif-italic">pretty is easy</span>. Making something <span
                 class="serif-italic">make sense is a little more interesting</span
               >.
             </p>
-            <p class="about-body">
+            <p class="about-body" data-fx="scrub-mask" data-cue="0.5">
               I balance thoughtful UX with intentional visual design, creating experiences that feel <span
                 class="serif-italic">purposeful</span
               >, <span class="serif-italic">distinct</span>, and <span class="serif-italic">right</span> for the project.
@@ -153,7 +153,9 @@ const photos = [
               ))
             }
           </div>
-          <!-- Highlight over 0.9 screens of scroll (mobile), or 5–85% of the hold (desktop) -->
+          <!-- Highlight over 0.9 screens of scroll (mobile), or 5–85% of the hold (desktop).
+               Copy (2026-11-04): each photo's word comes 11 words after the last (words
+               8, 19, 30), so the photos land evenly. -->
           <p
             class="about-body about-beyond__text"
             data-fx="plain"
@@ -162,9 +164,9 @@ const photos = [
             data-hl-hold="0.05 0.85"
             data-content
           >
-            Outside design, I enjoy exploring new trails through hiking. I challenge friends to a game of billiards
-            whenever I get the chance. I also spend an unreasonable amount of time admiring aquariums on Reels. I don't
-            have one yet, but apparently watching other people's tanks counts as research.
+            Outside design, I enjoy exploring new trails through hiking. I also love challenging my friends to a game of
+            billiards whenever I get the chance. I spend unreasonable hours admiring aquariums on Reels. I don't have one
+            yet, but apparently watching other people's tanks counts as research.
           </p>
         </div>
       </section>
