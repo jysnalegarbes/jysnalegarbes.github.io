@@ -12,8 +12,9 @@
   Arriving: BaseLayout's head script puts the same finished screen up
   before first paint, and a cross-document view transition keeps the old
   frame on screen until then, so the hand-over doesn't flash. Straight
-  away the words melt back into goo (the caps word sliding on) while the
-  ink lifts off the top, uncovering the page from the bottom up.
+  after a 0.3s hold the words melt back into goo (the caps word sliding
+  on) while the ink lifts off the top, uncovering the page from the bottom
+  up. <html> carries .pt-revealing meanwhile (the header's badge waits).
 
   The next page is prefetched when a nav link is hovered, focused or
   touched (and at the click at the latest), so the hand-over is short.
@@ -30,6 +31,7 @@ export const TRANSITION_KEY = 'page-transition';
 
 const WIPE_IN = 0.9; // s
 const WIPE_OUT = 1.1; // s
+const ARRIVE_DELAY = 0.3; // s the finished screen holds on the new page
 const LEAD_AT = 0.35; // s into the wipe the italic word starts
 const WORD_AT = 0.45; // ...and the caps word
 
@@ -69,7 +71,7 @@ export function mountPageTransition() {
 
   function reset() {
     root!.classList.remove('is-on');
-    html.classList.remove('pt-arriving');
+    html.classList.remove('pt-arriving', 'pt-revealing');
     html.removeAttribute('data-pt');
     root!.querySelectorAll('.is-current').forEach((el) => el.classList.remove('is-current'));
     root!.querySelectorAll<HTMLElement>('[data-pt-lead], [data-pt-word]').forEach((el) => {
@@ -161,8 +163,10 @@ export function mountPageTransition() {
 
   // Only our hand-over gets the view transition (it holds the inked frame)
   window.addEventListener('pageswap', (e) => {
-    const vt = (e as Event & { viewTransition?: { skipTransition(): void } }).viewTransition;
-    if (!leaving) vt?.skipTransition();
+    const vt = (e as Event & { viewTransition?: { ready: Promise<void>; skipTransition(): void } }).viewTransition;
+    if (!vt || leaving) return;
+    vt.ready.catch(() => {}); // skipping rejects it
+    vt.skipTransition();
   });
 
   /* ---------- Arriving ---------- */
@@ -176,6 +180,7 @@ export function mountPageTransition() {
     const em = parseFloat(getComputedStyle(screen).fontSize);
     screen.classList.add('is-current');
     root!.classList.add('is-on');
+    html.classList.add('pt-revealing');
     html.classList.remove('pt-arriving');
     html.removeAttribute('data-pt');
 
@@ -190,7 +195,7 @@ export function mountPageTransition() {
 
     // Straight on from where the leaving page stopped: both words melt back
     // into the goo (the caps word sliding on), the ink lifting as they go
-    const tl = gsap.timeline({ onComplete: reset });
+    const tl = gsap.timeline({ delay: ARRIVE_DELAY, onComplete: reset });
     const a = gooOn(lead, em);
     const b = gooOn(word, em);
     [a, b].forEach((g) => tl.to(g.state, { v: g.peak, duration: g.duration, ease: 'power1.in', onUpdate: g.set }, 0));

@@ -8,6 +8,7 @@ summary: "The transition runs straight through: the words form through the ink g
 files:
   - page-transition.ts
   - PageTransition.astro
+  - SiteHeader.astro
 options:
   - name: "Hand-over · continuous"
     status: review
