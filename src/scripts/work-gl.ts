@@ -18,15 +18,17 @@
   resolve back; scrolling breaks the whole strip into dots again, holds
   them while it moves and resolves them once it comes to rest, card by
   card from the left-most on screen to the right-most (INK_STAGGER apart),
-  with a soft ink sound once the last has settled (ink-sound.ts).
+  quicker than elsewhere (INK_HOLD / INK_RESOLVE below). The settle sound
+  (ink-sound.ts) is off for now (Jayson, 2026-11-06).
 */
 import type { CardFrame, GalleryFrame, Rect } from './work-gallery';
 import { easeMorph, imageFragment, linkProgram, liquidVertex, planeGeometry, uploadTexture } from './liquid-morph';
 import { inkAt, inkGlsl, setInkColors } from './ink-halftone';
-import { playInkSettle } from './ink-sound';
 
 const INK_RISE = 0.15; // s for the photos to break into dots
 const INK_STAGGER = 0.15; // s between cards resolving, left to right
+const INK_HOLD = 0.3; // s the dots hold once the strip stops (elsewhere 0.55)
+const INK_RESOLVE = 0.45; // s each card takes to resolve (elsewhere 0.9)
 const MOVING = 0.03; // |velocity| above which the strip counts as moving
 
 export interface Travel {
@@ -216,14 +218,12 @@ export function mountWorkGl(
       .filter(({ r, i }) => textures[i] && r.x < view.w && r.x + r.w > 0)
       .sort((a, b) => a.r.x - b.r.x);
     const rank = new Map(shown.map(({ i }, k) => [i, k]));
-    const wasInking = ink.some((v) => v > 0);
     let inking = false;
     frame.cards.forEach((_, i) => {
-      const target = still < 0 ? 1 : inkAt(still - (rank.get(i) ?? 0) * INK_STAGGER);
+      const target = still < 0 ? 1 : inkAt(still - (rank.get(i) ?? 0) * INK_STAGGER, INK_HOLD, INK_RESOLVE);
       ink[i] = target > ink[i] ? Math.min(target, ink[i] + dt / INK_RISE) : target;
       if (ink[i] > 0 || target > 0) inking = true;
     });
-    if (wasInking && !inking) playInkSettle();
 
     frame.cards.forEach((r, i) => {
       const t = textures[i];

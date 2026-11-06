@@ -26,9 +26,10 @@ export const INK_COLOR = [0x14 / 255, 0x19 / 255, 0x18 / 255]; // --black
 export const INK_PAPER = [0xd7 / 255, 0xde / 255, 0xde / 255]; // --white
 
 /** uInk for a halftone that started `seconds` ago: 1 all dots, 0 the photo
-    (a frame stamped a hair before the start counts as the start) */
-export function inkAt(seconds: number) {
-  const k = Math.min(1, Math.max(0, (seconds - INK_HOLD) / INK_RESOLVE));
+    (a frame stamped a hair before the start counts as the start). hold and
+    resolve default to INK_HOLD / INK_RESOLVE. */
+export function inkAt(seconds: number, hold = INK_HOLD, resolve = INK_RESOLVE) {
+  const k = Math.min(1, Math.max(0, (seconds - hold) / resolve));
   return 1 - k * k * (3 - 2 * k); // smoothstep
 }
 
