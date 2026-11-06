@@ -50,7 +50,10 @@ const {
         } catch (e) {}
         // Only the transition's hand-over uses the view transition
         addEventListener('pagereveal', function (e) {
-          if (e.viewTransition && !document.documentElement.classList.contains('pt-arriving')) e.viewTransition.skipTransition();
+          if (e.viewTransition && !document.documentElement.classList.contains('pt-arriving')) {
+            e.viewTransition.ready.catch(function () {}); // skipping rejects it
+            e.viewTransition.skipTransition();
+          }
         });
       })();
     </script>

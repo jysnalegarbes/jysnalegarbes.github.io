@@ -16,8 +16,9 @@
   Ink halftone (ink-halftone.ts), all cards together (2026-11-06): once
   every cover has loaded they break into black ink dots at once and
   resolve back; scrolling breaks the whole strip into dots again, holds
-  them while it moves and resolves them once it comes to rest, with a
-  soft ink sound as they settle (ink-sound.ts).
+  them while it moves and resolves them once it comes to rest, card by
+  card from the left-most on screen to the right-most (INK_STAGGER apart),
+  with a soft ink sound once the last has settled (ink-sound.ts).
 */
 import type { CardFrame, GalleryFrame, Rect } from './work-gallery';
 import { easeMorph, imageFragment, linkProgram, liquidVertex, planeGeometry, uploadTexture } from './liquid-morph';
@@ -25,6 +26,7 @@ import { inkAt, inkGlsl, setInkColors } from './ink-halftone';
 import { playInkSettle } from './ink-sound';
 
 const INK_RISE = 0.15; // s for the photos to break into dots
+const INK_STAGGER = 0.15; // s between cards resolving, left to right
 const MOVING = 0.03; // |velocity| above which the strip counts as moving
 
 export interface Travel {
@@ -133,9 +135,10 @@ export function mountWorkGl(
 
   let lastFrame: GlFrame | null = null;
 
-  // One halftone for the whole strip: `ink` is what's drawn (1 all dots),
-  // rising quickly to 1 while the strip moves, resolving once it stops
-  let ink = 0;
+  // One halftone for the whole strip: `ink` is what each card draws (1 all
+  // dots), rising quickly to 1 while the strip moves, resolving once it
+  // stops, each card a step after the one to its left
+  const ink = images.map(() => 0);
   let stillSince = -Infinity; // ms, when the strip last stopped (or loaded)
   let lastT = performance.now();
   let inkRaf = 0;
@@ -207,17 +210,27 @@ export function mountWorkGl(
     const dt = Math.min(Math.max(0, (now - lastT) / 1000), 0.1);
     lastT = now;
     if (Math.abs(frame.velocity) > MOVING && !frame.travel) stillSince = now;
-    const target = now < stillSince ? 1 : inkAt((now - stillSince) / 1000);
-    const was = ink;
-    ink = target > ink ? Math.min(target, ink + dt / INK_RISE) : target;
-    if (was > 0 && ink === 0) playInkSettle();
-    gl!.uniform1f(flag.u.uInk, ink);
+    const still = (now - stillSince) / 1000;
+    const shown = frame.cards
+      .map((r, i) => ({ r, i }))
+      .filter(({ r, i }) => textures[i] && r.x < view.w && r.x + r.w > 0)
+      .sort((a, b) => a.r.x - b.r.x);
+    const rank = new Map(shown.map(({ i }, k) => [i, k]));
+    const wasInking = ink.some((v) => v > 0);
+    let inking = false;
+    frame.cards.forEach((_, i) => {
+      const target = still < 0 ? 1 : inkAt(still - (rank.get(i) ?? 0) * INK_STAGGER);
+      ink[i] = target > ink[i] ? Math.min(target, ink[i] + dt / INK_RISE) : target;
+      if (ink[i] > 0 || target > 0) inking = true;
+    });
+    if (wasInking && !inking) playInkSettle();
 
     frame.cards.forEach((r, i) => {
       const t = textures[i];
       const alpha = r.alpha ?? 1;
       if (!t || alpha <= 0 || i === frame.travel?.index) return;
       if (r.x > view.w + 40 || r.x + r.w < -40) return;
+      gl!.uniform1f(flag.u.uInk, ink[i]);
       gl!.bindTexture(gl!.TEXTURE_2D, t.tex);
       gl!.uniform2f(flag.u.uImg, t.size[0], t.size[1]);
       gl!.uniform2f(flag.u.uBox, r.w, r.h);
@@ -227,7 +240,7 @@ export function mountWorkGl(
     });
 
     // The gallery only draws while it moves: keep drawing while dots resolve
-    if ((ink > 0 || target > 0) && !inkRaf) {
+    if (inking && !inkRaf) {
       inkRaf = requestAnimationFrame(() => {
         inkRaf = 0;
         if (lastFrame) render(lastFrame);

@@ -54,9 +54,22 @@ const links: { key: NavKey; label: string; href: string }[] = [
         </Brand>
 
         <Nav class="menu" aria-label={main ? 'Primary' : undefined} data-menu>
-          <p class="menu__title desktop-only" aria-hidden="true">
-            Menu
-          </p>
+          {/* Desktop: hides / shows the nav list (remembered for the visit) */}
+          {
+            main ? (
+              <button
+                class="menu__title menu__collapse desktop-only"
+                type="button"
+                aria-expanded="true"
+                aria-controls="menu-list"
+                data-menu-collapse
+              >
+                Menu
+              </button>
+            ) : (
+              <p class="menu__title desktop-only">Menu</p>
+            )
+          }
           <button
             class="menu__title menu__toggle mobile-only"
             type="button"
@@ -68,11 +81,11 @@ const links: { key: NavKey; label: string; href: string }[] = [
           </button>
 
           <div class="menu__panel" id={main ? 'menu-panel' : undefined}>
-            <ul class="menu__list">
-              {links.map(({ key, label, href }) => {
+            <ul class="menu__list" id={main ? 'menu-list' : undefined} data-menu-list>
+              {links.map(({ key, label, href }, i) => {
                 const active = key === current;
                 return (
-                  <li>
+                  <li style={`--i: ${i}`}>
                     <a
                       class:list={['menu__link', { 'is-active': active }]}
                       href={href}
@@ -175,6 +188,46 @@ const links: { key: NavKey; label: string; href: string }[] = [
       badge.addEventListener('mouseenter', () => playBadge(key));
     }
   });
+
+  // The desktop badge bumps once on every page load, once the header can be
+  // seen: after the home loader (header-pending) or a page transition's
+  // reveal (pt-arriving / pt-revealing, page-transition.ts)
+  const html = document.documentElement;
+  const covered = () => ['header-pending', 'pt-arriving', 'pt-revealing'].some((c) => html.classList.contains(c));
+  const bumpOnLoad = () => setTimeout(() => playBadge('desktop'), 250);
+  if (!covered()) bumpOnLoad();
+  else {
+    const watch = new MutationObserver(() => {
+      if (covered()) return;
+      watch.disconnect();
+      bumpOnLoad();
+    });
+    watch.observe(html, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  // Desktop "Menu": hides / shows the nav list on both header layers; the
+  // choice holds while browsing (sessionStorage)
+  const COLLAPSED_KEY = 'menu-collapsed';
+  const collapseBtn = document.querySelector<HTMLButtonElement>('[data-menu-collapse]');
+  const mainList = document.querySelector<HTMLElement>('[data-header="main"] [data-menu-list]');
+  const setCollapsed = (on: boolean) => {
+    document.querySelectorAll('.site-header').forEach((h) => h.classList.toggle('is-collapsed', on));
+    collapseBtn?.setAttribute('aria-expanded', String(!on));
+    // Hidden links leave the tab order (desktop only: mobile uses the panel)
+    if (mainList) mainList.inert = on && window.matchMedia('(min-width: 1024px)').matches;
+    try {
+      sessionStorage.setItem(COLLAPSED_KEY, on ? '1' : '0');
+    } catch {}
+  };
+  let startCollapsed = false;
+  try {
+    startCollapsed = sessionStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {}
+  if (startCollapsed) setCollapsed(true);
+  collapseBtn?.addEventListener('click', () => setCollapsed(!collapseBtn.closest('.is-collapsed')));
+  window.matchMedia('(min-width: 1024px)').addEventListener('change', () =>
+    setCollapsed(!!collapseBtn?.closest('.is-collapsed')),
+  );
 
   const mountVisibleBadges = () => badges.forEach((b) => b.mount());
   mountVisibleBadges();
@@ -377,6 +430,36 @@ const links: { key: NavKey; label: string; href: string }[] = [
     text-align: right;
   }
 
+  .menu__collapse {
+    transition: color 0.3s ease;
+  }
+
+  .menu__collapse:hover {
+    color: var(--hd-ink, var(--black));
+  }
+
+  /* Desktop "Menu" collapse: the links lift out one after another from the
+     bottom up, and drop back in from the top */
+  @media (min-width: 1024px) {
+    .menu__list > li {
+      transition:
+        opacity 0.4s ease calc(var(--i) * 0.06s),
+        translate 0.6s cubic-bezier(0.65, 0, 0.35, 1) calc(var(--i) * 0.06s),
+        visibility 0s linear 0s;
+    }
+
+    .site-header.is-collapsed .menu__list > li {
+      opacity: 0;
+      translate: 0 -0.8em;
+      visibility: hidden;
+      pointer-events: none;
+      transition:
+        opacity 0.3s ease calc((3 - var(--i)) * 0.06s),
+        translate 0.5s cubic-bezier(0.65, 0, 0.35, 1) calc((3 - var(--i)) * 0.06s),
+        visibility 0s linear calc(0.5s + (3 - var(--i)) * 0.06s);
+    }
+  }
+
   /* Desktop: the panel is just a pass-through wrapper */
   .menu__panel {
     display: contents;
@@ -568,6 +651,7 @@ const links: { key: NavKey; label: string; href: string }[] = [
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .menu__list > li,
     .menu__panel,
     .menu__label,
     .menu__pin,
