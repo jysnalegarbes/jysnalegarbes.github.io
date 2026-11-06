@@ -28,6 +28,6 @@ options:
     note: "The same, with the photo breaking into black ink dots as the clip opens and resolving from the top down under the wave (ink-halftone.ts). Without the loader (?loader=0 or a page transition) it plays on its own. The portrait canvas now mounts on touch screens too, without the dent."
   - name: "Mouse shift"
     status: chosen
-    note: "Each piece moves up to --depth Figma px against the cursor (UI/UX 26, visual 18, designer 30, footer 8; the portrait −12, with it), eased at 6% a frame, through the CSS translate property so the pieces keep their own transforms. Fine pointers only, off under reduced motion."
+    note: "Narrowed to the hero portrait only (Jayson, 2026-11-06): the text pieces no longer move. Originally each piece moved up to --depth Figma px against the cursor (UI/UX 26, visual 18, designer 30, footer 8; the portrait −12, with it), eased at 6% a frame, through the CSS translate property so the pieces keep their own transforms. Fine pointers only, off under reduced motion."
     credit: "After santionispirits.com's hero"
 ---

@@ -48,6 +48,10 @@ const {
             document.documentElement.setAttribute('data-pt', a.key);
           }
         } catch (e) {}
+        // Only the transition's hand-over uses the view transition
+        addEventListener('pagereveal', function (e) {
+          if (e.viewTransition && !document.documentElement.classList.contains('pt-arriving')) e.viewTransition.skipTransition();
+        });
       })();
     </script>
   </head>

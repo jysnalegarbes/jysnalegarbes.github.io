@@ -112,8 +112,8 @@ const screens: { key: NavKey; lead: string; word: string }[] = [
     translate: -50% 0;
   }
 
-  /* Archivo SemiBold caps turned 180°, its box at y 487 → 672; the mask
-     only clips while the word rises in */
+  /* Archivo SemiBold caps turned 180°, its box at y 487 → 672; it slides
+     through the goo along --fx-x (screen space, whatever the turn) */
   .pt__mask {
     position: absolute;
     top: calc(50% - 53 * var(--tpx));
@@ -121,22 +121,22 @@ const screens: { key: NavKey; lead: string; word: string }[] = [
     translate: -50% 0;
   }
 
-  .pt__mask:global(.is-masked) {
-    overflow: hidden;
-  }
-
-  /* Upside down = half a turn on x and half on y; the script runs both back
-     to 0, so it tumbles upright in place instead of sweeping round. The
-     rise is a separate translate, in screen space whatever the turn. */
-  .pt__mask {
-    perspective: 20em;
-  }
-
   .pt__word {
     display: block;
     font-weight: 600;
     text-transform: uppercase;
-    translate: 0 var(--rise, 0%);
-    transform: rotateX(var(--flip, 180deg)) rotateY(var(--flip, 180deg));
+    translate: var(--fx-x, 0px) 0;
+    rotate: 180deg;
+  }
+
+  /* The hand-over between pages (page-transition.ts): the old inked frame
+     stays until the new page's identical one is ready, then swaps */
+  @view-transition {
+    navigation: auto;
+  }
+
+  :global(::view-transition-old(root)),
+  :global(::view-transition-new(root)) {
+    animation: none;
   }
 </style>

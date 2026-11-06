@@ -11,7 +11,8 @@
 
   The project details (number, year, name, category) never move: they
   belong to the main slot and melt over to whichever project settles there
-  (gooey cross-fade in place, after Codrops' Gooey Text Hover, demo 1).
+  (gooey cross-fade in place, after Codrops' Gooey Text Hover, demo 1,
+  with About's ink goo: ink-goo.ts).
 
   Clicking a card outside the main slot glides it in; clicking the card in
   the main slot opens its case study. Keyboard: Tab to a card brings it in,
@@ -20,6 +21,7 @@
   Without JS the static, horizontally scrollable layout stays as is.
 */
 import gsap from 'gsap';
+import { makeInkGoo, motion, type InkGoo } from './ink-goo';
 
 export interface Rect {
   x: number;
@@ -54,7 +56,6 @@ interface Options {
 const LAST_PROJECT_KEY = 'work-project';
 export const RETURN_KEY = 'work-return';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
 /** Cards needed so the loop's wrap point never shows (2 left of the main slot, 4 right) */
 const MIN_CARDS = 7;
 
@@ -189,40 +190,10 @@ export function mountWorkGallery(root: HTMLElement, { reducedMotion, onFrame, on
     fields.map((f) => [f, details.querySelector<HTMLElement>(`[data-field="${f}"]`)!]),
   ) as Record<Field, HTMLElement>;
 
-  // One blur + alpha-threshold filter per field, pulsed during a swap
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('aria-hidden', 'true');
-  Object.assign(svg.style, { position: 'absolute', width: '0', height: '0' });
-  document.body.append(svg);
+  // One ink goo filter per field (ink-goo.ts), pulsed during a swap
   const goo = Object.fromEntries(
-    fields.map((field) => {
-      const filter = document.createElementNS(SVG_NS, 'filter');
-      filter.id = `work-goo-${field}`;
-      filter.setAttribute('x', '-20%');
-      filter.setAttribute('y', '-50%');
-      filter.setAttribute('width', '140%');
-      filter.setAttribute('height', '200%');
-      filter.setAttribute('color-interpolation-filters', 'sRGB');
-      const blur = document.createElementNS(SVG_NS, 'feGaussianBlur');
-      blur.setAttribute('in', 'SourceGraphic');
-      blur.setAttribute('stdDeviation', '0');
-      blur.setAttribute('result', 'blur');
-      const matrix = document.createElementNS(SVG_NS, 'feColorMatrix');
-      matrix.setAttribute('in', 'blur');
-      matrix.setAttribute('type', 'matrix');
-      // Lower threshold than Codrops' 18 -8: mid-fade both copies sit near
-      // 50% opacity, and Playfair hairlines / 14px strokes would vanish
-      matrix.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -6');
-      matrix.setAttribute('result', 'goo');
-      const composite = document.createElementNS(SVG_NS, 'feComposite');
-      composite.setAttribute('in', 'SourceGraphic');
-      composite.setAttribute('in2', 'goo');
-      composite.setAttribute('operator', 'atop');
-      filter.append(blur, matrix, composite);
-      svg.append(filter);
-      return [field, { id: filter.id, blur, tl: null as gsap.core.Timeline | null }];
-    }),
-  ) as Record<Field, { id: string; blur: SVGFEGaussianBlurElement; tl: gsap.core.Timeline | null }>;
+    fields.map((field) => [field, { ink: makeInkGoo(`work-goo-${field}`), tl: null as gsap.core.Timeline | null }]),
+  ) as Record<Field, { ink: InkGoo; tl: gsap.core.Timeline | null }>;
 
   function showDetails(project: number) {
     const data = items[project].dataset;
@@ -245,28 +216,29 @@ export function mountWorkGallery(root: HTMLElement, { reducedMotion, onFrame, on
         return;
       }
 
-      // Demo 1: the copies cross-fade in place (opacity linear; 0.9s rather
-      // than Codrops' 1.6s so the text lands with the card) while
-      // the blur pulses 0 → peak → 0, so the old text melts into the new.
-      // Peak blur: ~0.6px on 14px text, ~1.6px on the 80px number; more
-      // breaks Playfair's hairlines apart at the threshold
-      const peak = 0.4 + parseFloat(getComputedStyle(box).fontSize) * 0.015;
+      // Demo 1: the copies cross-fade in place (opacity linear) while the
+      // blur pulses 0 → peak → 0, so the old text melts into the new. The
+      // same goo as About's section titles (about-motion.json gooTitles,
+      // with its ink edge)
+      const em = parseFloat(getComputedStyle(box).fontSize);
+      const { duration, ...style } = motion.gooTitles;
+      const half = duration / 2;
       const state = { blur: 0 };
-      box.style.filter = `url(#${g.id})`;
+      box.style.filter = g.ink.filter;
       g.tl = gsap
         .timeline({
-          onUpdate: () => g.blur.setAttribute('stdDeviation', String(state.blur)),
+          onUpdate: () => g.ink.set(state.blur, em, style),
           onComplete: () => {
             box.style.filter = '';
-            g.blur.setAttribute('stdDeviation', '0');
+            g.ink.set(0, em, style);
             old.remove();
             g.tl = null;
           },
         })
-        .to(state, { blur: peak, duration: 0.45, ease: 'none' }, 0)
-        .to(state, { blur: 0, duration: 0.45, ease: 'none' }, 0.45)
-        .to(old, { opacity: 0, duration: 0.9, ease: 'none' }, 0)
-        .fromTo(next, { opacity: 0 }, { opacity: 1, duration: 0.9, ease: 'none' }, 0);
+        .to(state, { blur: style.blur * em, duration: half, ease: 'none' }, 0)
+        .to(state, { blur: 0, duration: half, ease: 'none' }, half)
+        .to(old, { opacity: 0, duration, ease: 'none' }, 0)
+        .fromTo(next, { opacity: 0 }, { opacity: 1, duration, ease: 'none' }, 0);
     });
     items.forEach((item, i) => item.classList.toggle('is-current', i % projects === project && Math.abs(offset(i, current)) < 0.5));
     shownProject = project;
@@ -472,7 +444,6 @@ export function mountWorkGallery(root: HTMLElement, { reducedMotion, onFrame, on
     projectOf: (i: number) => i % projects,
     destroy() {
       stop();
-      svg.remove();
       window.removeEventListener('wheel', onWheel);
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);

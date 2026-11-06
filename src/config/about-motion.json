@@ -10,26 +10,26 @@
     "highlightTo": 0.85
   },
   "gooTitles": {
-    "duration": 1,
-    "blur": 0.094,
-    "contrast": 16,
-    "threshold": -7,
+    "duration": 1.2,
+    "blur": 0.12,
+    "contrast": 28,
+    "threshold": -11,
     "slide": 0.5
   },
   "gooFade": {
-    "duration": 1.6,
-    "blur": 0.0625,
-    "contrast": 15,
-    "threshold": -8
+    "duration": 1.8,
+    "blur": 0.09,
+    "contrast": 26,
+    "threshold": -11
   },
   "gooEnding": {
     "duration": 2.6,
-    "blur": 1.5
+    "blur": 2.95
   },
   "inkEdge": {
-    "roughness": 0,
-    "grain": 0.9,
+    "roughness": 1.61,
+    "grain": 3.65,
     "octaves": 2,
-    "seed": 3
+    "seed": 63
   }
 }

@@ -117,9 +117,9 @@ const portraitFrames = await Promise.all(
     fxReady.then((fx) => fx?.ink());
   }
 
-  // Mouse shift (after santionispirits.com): the composition drifts a little
-  // against the cursor, each piece by its own depth (--depth in the CSS),
-  // easing after it. Desktop pointers only.
+  // Mouse shift (after santionispirits.com): the hero portrait drifts a
+  // little with the cursor (--depth in the CSS), easing after it. Desktop
+  // pointers only.
   const home = document.querySelector<HTMLElement>('.home');
   if (home && finePointer && !reducedMotion) {
     const target = { x: 0, y: 0 };
@@ -358,33 +358,12 @@ const portraitFrames = await Promise.all(
     order: 3;
   }
 
-  /* Mouse shift (script): each piece moves --depth Figma px at the screen's
-     edge, against the cursor; negative ones go with it, for depth. A
-     separate translate, so the pieces keep their own transforms. */
-  .home__title > span,
-  .home__portrait,
-  .home__foot > p {
-    translate: calc(var(--mx, 0) * var(--depth, 0) * -1 * var(--px)) calc(var(--my, 0) * var(--depth, 0) * -1 * var(--px));
-  }
-
-  .home__uiux {
-    --depth: 26;
-  }
-
-  .home__visual {
-    --depth: 18;
-  }
-
-  .home__designer {
-    --depth: 30;
-  }
-
+  /* Mouse shift (script): the hero portrait moves --depth Figma px at the
+     screen's edge, with the cursor (the text stays put, Jayson 2026-11-06).
+     A separate translate, so it keeps its own transform. */
   .home__portrait {
     --depth: -12;
-  }
-
-  .home__foot > p {
-    --depth: 8;
+    translate: calc(var(--mx, 0) * var(--depth) * -1 * var(--px)) calc(var(--my, 0) * var(--depth) * -1 * var(--px));
   }
 
   /* Desktop: the hero composition scales with whichever of width or height

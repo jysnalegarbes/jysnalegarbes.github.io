@@ -13,6 +13,6 @@ options:
     status: rejected
     note: "Round 1: covers drawn plain, rippling like cloth while the strip moves."
   - name: "Cards · flag + ink halftone on entry"
-    status: chosen
-    note: "The flag shader gets the shared halftone (ink-halftone.ts); a card's dots start when its rect enters the screen with its texture up, and the layer keeps drawing while any resolve. The liquid morph into a case study stays plain."
+    status: rejected
+    note: "The flag shader gets the shared halftone (ink-halftone.ts); a card's dots start when its rect enters the screen with its texture up, and the layer keeps drawing while any resolve. The liquid morph into a case study stays plain. Jayson: the per-card timing felt off; replaced by round 5 (all cards together) 2026-11-06."
 ---

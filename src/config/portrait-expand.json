@@ -1,16 +1,16 @@
 {
   "ripple": {
-    "speedForFull": 0.7,
+    "speedForFull": 1.15,
     "height": 5.3,
-    "frequency": 6,
+    "frequency": 16.1,
     "waveSpeed": 19,
-    "rgbSplit": 0.35
+    "rgbSplit": 0.36
   },
   "inkDevelop": {
     "startLevels": 3,
     "endLevels": 12,
     "grain": 0.07,
-    "coarseGrain": 0.05,
+    "coarseGrain": 0.155,
     "grainSize": 7.1,
     "fullTonesAt": 0.61,
     "photoAtEnd": 0

@@ -82,12 +82,12 @@ import { SplitText } from 'gsap/SplitText';
 import { CustomEase } from 'gsap/CustomEase';
 import { mountPhotoRipple } from './photo-ripple';
 import motionDefaults from '../config/about-motion.json';
+import { makeInkGoo, type InkGoo } from './ink-goo';
 
 export type AboutMotion = typeof motionDefaults;
 
 gsap.registerPlugin(SplitText, CustomEase);
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
 const OSMO_EASE = CustomEase.create('osmo-ease', '0.625, 0.05, 0, 1');
 
 const REST = 0.6; // screens, default breather
@@ -136,14 +136,7 @@ interface Block {
   span: number; // scrubbed blocks: screens to come in
   em: number;
   pieces: HTMLElement[]; // what the intro animates, if split
-  goo: {
-    blur: SVGFEGaussianBlurElement;
-    matrix: SVGFEColorMatrixElement;
-    noise: SVGFETurbulenceElement;
-    rough: SVGFEDisplacementMapElement;
-    filter: string;
-    ending: boolean;
-  } | null;
+  goo: { ink: InkGoo; filter: string; ending: boolean } | null;
   holdAt: [number, number] | null; // scrub-mask in a held section: shares of the hold
   scrub: { p: number; to: number }; // scrub-lines: eased progress and its target
   scrubTl: gsap.core.Timeline | null; // scrub-mask: the lines' rise, set by progress
@@ -191,37 +184,11 @@ export function mountAboutSections(story: HTMLElement, motion: AboutMotion = str
   let storyTop = 0;
   let ready = false;
 
-  // One goo filter per goo block: the blur peak depends on its size
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('aria-hidden', 'true');
-  Object.assign(svg.style, { position: 'absolute', width: '0', height: '0' });
-  document.body.append(svg);
-  let filterCount = 0;
-  function makeFilter() {
-    const id = `about-goo-${filterCount++}`;
-    const f = document.createElementNS(SVG_NS, 'filter');
-    f.id = id;
-    f.setAttribute('x', '-20%');
-    f.setAttribute('y', '-40%');
-    f.setAttribute('width', '140%');
-    f.setAttribute('height', '180%');
-    f.setAttribute('color-interpolation-filters', 'sRGB');
-    // The blur's edge is pushed about by noise (inkEdge) before the threshold
-    f.innerHTML = `
-      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="noise" />
-      <feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blur" />
-      <feDisplacementMap in="blur" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" result="rough" />
-      <feColorMatrix in="rough" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -7" result="goo" />
-      <feComposite in="SourceGraphic" in2="goo" operator="atop" />`;
-    svg.append(f);
-    return {
-      blur: f.querySelector('feGaussianBlur')!,
-      matrix: f.querySelector('feColorMatrix')!,
-      noise: f.querySelector('feTurbulence')!,
-      rough: f.querySelector('feDisplacementMap')!,
-      filter: `url(#${id})`,
-    };
-  }
+  // One goo filter per goo block (ink-goo.ts): the blur peak depends on its size
+  const newGoo = (ending: boolean) => {
+    const ink = makeInkGoo('about-goo');
+    return { ink, filter: ink.filter, ending };
+  };
 
   // A goo block's settings, read live from the config
   const gooOf = (b: Block) => {
@@ -238,16 +205,8 @@ export function mountAboutSections(story: HTMLElement, motion: AboutMotion = str
 
   // Sets the goo's blur (px) and, with it, how far the noise roughens the edge
   function setGoo(b: Block, blur: number) {
-    const g = b.goo!;
     const { peak, contrast, threshold } = gooOf(b);
-    const { roughness, grain, octaves, seed } = motion.inkEdge;
-    g.blur.setAttribute('stdDeviation', blur.toFixed(2));
-    g.matrix.setAttribute('values', `1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${contrast} ${threshold}`);
-    g.noise.setAttribute('baseFrequency', (grain / b.em).toFixed(4));
-    g.noise.setAttribute('numOctaves', String(Math.round(octaves)));
-    g.noise.setAttribute('seed', String(Math.round(seed)));
-    const k = peak > 0 ? blur / (peak * b.em) : 0;
-    g.rough.setAttribute('scale', (roughness * b.em * k).toFixed(2));
+    b.goo!.ink.set(blur, b.em, { blur: peak, contrast, threshold }, motion.inkEdge);
   }
 
   // Intro start / end states of a block's pieces
@@ -317,7 +276,7 @@ export function mountAboutSections(story: HTMLElement, motion: AboutMotion = str
         span: parseFloat(node.dataset.span ?? '0.5'),
         em: parseFloat(getComputedStyle(node).fontSize),
         pieces: [],
-        goo: fx === 'goo-1' || fx === 'goo-2' ? { ...makeFilter(), ending: node.dataset.goo === 'ending' } : null,
+        goo: fx === 'goo-1' || fx === 'goo-2' ? newGoo(node.dataset.goo === 'ending') : null,
         holdAt: null,
         scrub: { p: 0, to: 0 },
         scrubTl: null,

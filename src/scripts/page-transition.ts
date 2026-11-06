@@ -5,14 +5,18 @@
   Leaving, on a nav link click:
     - black ink rises over the page through the About wipe (Codrops noise
       wipe, bottom → top, about-wipe.ts)
-    - the italic word condenses out of goo (the About titles' goo-1)
-    - the caps word, upside down as in Figma, rises out of a mask
-    - then the browser goes to the page
-  Arriving (BaseLayout's head script has put the same screen up before
-  first paint):
-    - the caps word tumbles the right way up through a goo pulse
-    - both words melt back into goo as the ink lifts off the top of the
-      screen, uncovering the page from the bottom up
+    - the italic word condenses out of the ink goo, the caps word (upside
+      down, as in Figma) slides in through it: About's title goo, settings
+      from about-motion.json gooTitles + inkEdge (ink-goo.ts)
+    - the moment the words have formed, the browser goes to the page
+  Arriving: BaseLayout's head script puts the same finished screen up
+  before first paint, and a cross-document view transition keeps the old
+  frame on screen until then, so the hand-over doesn't flash. Straight
+  away the words melt back into goo (the caps word sliding on) while the
+  ink lifts off the top, uncovering the page from the bottom up.
+
+  The next page is prefetched when a nav link is hovered, focused or
+  touched (and at the click at the latest), so the hand-over is short.
 
   Nav links only (the logo goes home, which has its own loader; Work's
   cards morph into their case studies). Modified clicks, the current page
@@ -20,13 +24,14 @@
 */
 import gsap from 'gsap';
 import { mountAboutWipe, type AboutWipe } from './about-wipe';
+import { makeInkGoo, motion } from './ink-goo';
 
 export const TRANSITION_KEY = 'page-transition';
 
-const SVG_NS = 'http://www.w3.org/2000/svg';
-const GOO_BLUR = 0.08; // em at the peak
 const WIPE_IN = 0.9; // s
 const WIPE_OUT = 1.1; // s
+const LEAD_AT = 0.35; // s into the wipe the italic word starts
+const WORD_AT = 0.45; // ...and the caps word
 
 export function mountPageTransition() {
   const root = document.querySelector<HTMLElement>('[data-pt-root]');
@@ -35,19 +40,7 @@ export function mountPageTransition() {
   const black = root.querySelector<HTMLElement>('[data-pt-black]')!;
   const canvas = root.querySelector<HTMLCanvasElement>('[data-pt-wipe]')!;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // Goo filter for the words
-  const svg = document.createElementNS(SVG_NS, 'svg');
-  svg.setAttribute('aria-hidden', 'true');
-  Object.assign(svg.style, { position: 'absolute', width: '0', height: '0' });
-  svg.innerHTML = `
-    <filter id="pt-goo" x="-20%" y="-40%" width="140%" height="180%" color-interpolation-filters="sRGB">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="0" result="blur" />
-      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
-      <feComposite in="SourceGraphic" in2="goo" operator="atop" />
-    </filter>`;
-  document.body.append(svg);
-  const blurEl = svg.querySelector('feGaussianBlur')!;
+  let leaving = false;
 
   let wipe: AboutWipe | null | undefined;
   const getWipe = () => {
@@ -57,45 +50,67 @@ export function mountPageTransition() {
   };
 
   const screenOf = (key: string) => root.querySelector<HTMLElement>(`[data-pt-screen="${key}"]`);
-  const parts = (screen: HTMLElement) => ({
-    lead: screen.querySelector<HTMLElement>('[data-pt-lead]')!,
-    mask: screen.querySelector<HTMLElement>('.pt__mask')!,
-    word: screen.querySelector<HTMLElement>('[data-pt-word]')!,
-  });
 
-  // Blur (px) through the goo filter on the given elements
-  const goo = (els: HTMLElement[], em: number) => {
+  // Each word through its own ink goo, blur in px
+  function gooOn(el: HTMLElement, em: number) {
+    const ink = makeInkGoo('pt-goo');
+    const { duration, slide, ...style } = motion.gooTitles;
     const state = { v: 0 };
-    els.forEach((el) => (el.style.filter = 'url(#pt-goo)'));
+    el.style.filter = ink.filter;
     return {
       state,
-      peak: GOO_BLUR * em,
-      set: () => blurEl.setAttribute('stdDeviation', state.v.toFixed(2)),
-      clear: () => els.forEach((el) => (el.style.filter = '')),
+      duration,
+      slide: slide * em,
+      peak: style.blur * em,
+      set: () => ink.set(state.v, em, style),
+      clear: () => (el.style.filter = ''),
     };
-  };
+  }
 
   function reset() {
     root!.classList.remove('is-on');
     html.classList.remove('pt-arriving');
     html.removeAttribute('data-pt');
     root!.querySelectorAll('.is-current').forEach((el) => el.classList.remove('is-current'));
+    root!.querySelectorAll<HTMLElement>('[data-pt-lead], [data-pt-word]').forEach((el) => {
+      el.style.filter = '';
+      gsap.set(el, { clearProps: 'opacity,--fx-x' });
+    });
     black.style.opacity = '';
+    canvas.style.transform = '';
     wipe?.draw(0);
+    leaving = false;
   }
+
+  /* ---------- Prefetch ---------- */
+
+  const fetched = new Set<string>();
+  function prefetch(href: string) {
+    if (fetched.has(href)) return;
+    fetched.add(href);
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = href;
+    document.head.append(link);
+  }
+  const navLinks = [...document.querySelectorAll<HTMLAnchorElement>('[data-nav-link]')];
+  navLinks.forEach((a) =>
+    ['pointerenter', 'focus', 'touchstart'].forEach((t) => a.addEventListener(t, () => prefetch(a.href), { passive: true })),
+  );
 
   /* ---------- Leaving ---------- */
 
   function leave(key: string, href: string) {
     const screen = screenOf(key);
     if (!screen) return false;
-    const { lead, mask, word } = parts(screen);
+    const lead = screen.querySelector<HTMLElement>('[data-pt-lead]')!;
+    const word = screen.querySelector<HTMLElement>('[data-pt-word]')!;
     const em = parseFloat(getComputedStyle(screen).fontSize);
+    prefetch(href);
+    leaving = true;
     screen.classList.add('is-current');
     root!.classList.add('is-on');
-    mask.classList.add('is-masked');
-    gsap.set(lead, { opacity: 0 });
-    gsap.set(word, { '--rise': '-110%', '--flip': '180deg' }); // upside down: its foot is on top
+    gsap.set([lead, word], { opacity: 0 });
 
     const go = () => {
       try {
@@ -113,18 +128,24 @@ export function mountPageTransition() {
     } else {
       tl.to(black, { opacity: 1, duration: WIPE_IN * 0.7, ease: 'power1.inOut' }, 0);
     }
-    // The About ending's goo-1: condenses out of the blur while fading in
-    const g = goo([lead], em);
+
+    // Italic word: condenses out of the goo while fading in
+    const a = gooOn(lead, em);
     tl.fromTo(
-      g.state,
-      { v: g.peak },
-      { v: 0, duration: 1, ease: 'power1.out', onStart: g.set, onUpdate: g.set, onComplete: g.clear },
-      WIPE_IN * 0.55,
+      a.state,
+      { v: a.peak },
+      { v: 0, duration: a.duration, ease: 'power1.out', onStart: a.set, onUpdate: a.set, onComplete: a.clear },
+      LEAD_AT,
     );
-    tl.to(lead, { opacity: 1, duration: 1, ease: 'none' }, WIPE_IN * 0.55);
-    tl.to(word, { '--rise': '0%', duration: 0.9, ease: 'expo.out' }, WIPE_IN * 0.7);
-    tl.add(() => mask.classList.remove('is-masked'));
-    tl.to({}, { duration: 0.15 }); // a beat on the finished screen
+    tl.to(lead, { opacity: 1, duration: a.duration, ease: 'none' }, LEAD_AT);
+
+    // Caps word: the titles' goo-2, sliding in from the left through a blur pulse
+    const b = gooOn(word, em);
+    const half = b.duration / 2;
+    tl.fromTo(b.state, { v: 0 }, { v: b.peak, duration: half, ease: 'none', onStart: b.set, onUpdate: b.set }, WORD_AT);
+    tl.to(b.state, { v: 0, duration: half, ease: 'none', onUpdate: b.set, onComplete: b.clear }, WORD_AT + half);
+    tl.fromTo(word, { '--fx-x': `${-b.slide}px` }, { '--fx-x': '0px', duration: b.duration, ease: 'power2.inOut' }, WORD_AT);
+    tl.to(word, { opacity: 1, duration: b.duration, ease: 'none' }, WORD_AT);
     return true;
   }
 
@@ -138,13 +159,20 @@ export function mountPageTransition() {
     if (key && leave(key, link.href)) e.preventDefault();
   });
 
+  // Only our hand-over gets the view transition (it holds the inked frame)
+  window.addEventListener('pageswap', (e) => {
+    const vt = (e as Event & { viewTransition?: { skipTransition(): void } }).viewTransition;
+    if (!leaving) vt?.skipTransition();
+  });
+
   /* ---------- Arriving ---------- */
 
   function arrive() {
     const key = html.dataset.pt;
     const screen = key ? screenOf(key) : null;
     if (!html.classList.contains('pt-arriving') || !screen) return reset();
-    const { lead, word } = parts(screen);
+    const lead = screen.querySelector<HTMLElement>('[data-pt-lead]')!;
+    const word = screen.querySelector<HTMLElement>('[data-pt-word]')!;
     const em = parseFloat(getComputedStyle(screen).fontSize);
     screen.classList.add('is-current');
     root!.classList.add('is-on');
@@ -160,29 +188,24 @@ export function mountPageTransition() {
     canvas.style.transform = 'scaleY(-1)';
     w?.draw(0.999);
 
-    const tl = gsap.timeline({ delay: 0.15, onComplete: reset });
-    // Turn the right way up through a goo pulse
-    const g = goo([lead, word], em);
-    tl.to(word, { '--flip': '0deg', duration: 0.9, ease: 'power3.inOut' }, 0);
-    tl.to(g.state, { v: g.peak * 0.6, duration: 0.45, ease: 'power1.in', onStart: g.set, onUpdate: g.set }, 0);
-    tl.to(g.state, { v: 0, duration: 0.45, ease: 'power1.out', onUpdate: g.set }, 0.45);
-    // ...then melt away as the ink lifts
-    tl.to(g.state, { v: g.peak, duration: 0.6, ease: 'power1.in', onUpdate: g.set }, 1.05);
-    tl.to([lead, word], { opacity: 0, duration: 0.6, ease: 'none', onComplete: g.clear }, 1.05);
+    // Straight on from where the leaving page stopped: both words melt back
+    // into the goo (the caps word sliding on), the ink lifting as they go
+    const tl = gsap.timeline({ onComplete: reset });
+    const a = gooOn(lead, em);
+    const b = gooOn(word, em);
+    [a, b].forEach((g) => tl.to(g.state, { v: g.peak, duration: g.duration, ease: 'power1.in', onUpdate: g.set }, 0));
+    tl.to([lead, word], { opacity: 0, duration: a.duration, ease: 'none' }, 0);
+    tl.to(word, { '--fx-x': `${b.slide}px`, duration: b.duration, ease: 'power2.inOut' }, 0);
     if (w) {
       const p = { v: 0.999 };
       tl.to(
         p,
         { v: 0, duration: WIPE_OUT, ease: 'power2.inOut', onStart: () => (black.style.opacity = '0'), onUpdate: () => w.draw(p.v) },
-        1.1,
+        0.2,
       );
     } else {
-      tl.to(black, { opacity: 0, duration: WIPE_OUT * 0.7, ease: 'power1.inOut' }, 1.1);
+      tl.to(black, { opacity: 0, duration: WIPE_OUT * 0.7, ease: 'power1.inOut' }, 0.2);
     }
-    tl.add(() => {
-      canvas.style.transform = '';
-      gsap.set([lead, word], { clearProps: 'opacity,--flip' });
-    });
   }
 
   arrive();

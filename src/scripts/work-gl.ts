@@ -13,13 +13,19 @@
   The DOM image stays as the hit area and fallback, and is hidden once
   its texture is up. Clones of a project share one texture.
 
-  Each card comes on screen as black ink halftone dots and resolves back
-  into its cover (ink-halftone.ts, 2026-11-06): on load, and every time
-  scrolling the strip brings it back into view.
+  Ink halftone (ink-halftone.ts), all cards together (2026-11-06): once
+  every cover has loaded they break into black ink dots at once and
+  resolve back; scrolling breaks the whole strip into dots again, holds
+  them while it moves and resolves them once it comes to rest, with a
+  soft ink sound as they settle (ink-sound.ts).
 */
 import type { CardFrame, GalleryFrame, Rect } from './work-gallery';
 import { easeMorph, imageFragment, linkProgram, liquidVertex, planeGeometry, uploadTexture } from './liquid-morph';
-import { INK_DONE, inkAt, inkGlsl, setInkColors } from './ink-halftone';
+import { inkAt, inkGlsl, setInkColors } from './ink-halftone';
+import { playInkSettle } from './ink-sound';
+
+const INK_RISE = 0.15; // s for the photos to break into dots
+const MOVING = 0.03; // |velocity| above which the strip counts as moving
 
 export interface Travel {
   /** Card index (into the gallery's cards) being opened */
@@ -127,9 +133,11 @@ export function mountWorkGl(
 
   let lastFrame: GlFrame | null = null;
 
-  // Halftone per card: when it last came on screen (ms), and whether it's on now
-  const inkFrom = images.map(() => -Infinity);
-  const onScreen = images.map(() => false);
+  // One halftone for the whole strip: `ink` is what's drawn (1 all dots),
+  // rising quickly to 1 while the strip moves, resolving once it stops
+  let ink = 0;
+  let stillSince = -Infinity; // ms, when the strip last stopped (or loaded)
+  let lastT = performance.now();
   let inkRaf = 0;
 
   // Largest rendition of each cover, one texture per source
@@ -145,7 +153,7 @@ export function mountWorkGl(
   const bySrc = new Map<string, Promise<Tex>>();
   const textures: (Tex | null)[] = images.map(() => null);
 
-  images.forEach((img, i) => {
+  const loads = images.map((img, i) => {
     const src = largest(img);
     if (!bySrc.has(src)) {
       const source = new Image();
@@ -159,14 +167,17 @@ export function mountWorkGl(
         })),
       );
     }
-    bySrc
+    return bySrc
       .get(src)!
-      .then((t) => {
-        textures[i] = t;
-        if (lastFrame) render(lastFrame);
-        onReady(i);
-      })
-      .catch(() => {});
+      .then((t) => (textures[i] = t))
+      .catch(() => null);
+  });
+
+  // Every cover swaps to WebGL at once and breaks into dots together
+  Promise.all(loads).then(() => {
+    images.forEach((_, i) => textures[i] && onReady(i));
+    stillSince = performance.now() + INK_RISE * 1000;
+    if (lastFrame) render(lastFrame);
   });
 
   // The canvas covers the gallery stage, so card rects map 1:1 onto it
@@ -191,20 +202,22 @@ export function mountWorkGl(
     gl!.uniform1f(flag.u.uVelo, frame.velocity);
     gl!.uniform1f(flag.u.uTime, frame.time);
 
+    // Moving holds the dots; once still they hold a beat and resolve
     const now = performance.now();
-    let inking = false;
+    const dt = Math.min(Math.max(0, (now - lastT) / 1000), 0.1);
+    lastT = now;
+    if (Math.abs(frame.velocity) > MOVING && !frame.travel) stillSince = now;
+    const target = now < stillSince ? 1 : inkAt((now - stillSince) / 1000);
+    const was = ink;
+    ink = target > ink ? Math.min(target, ink + dt / INK_RISE) : target;
+    if (was > 0 && ink === 0) playInkSettle();
+    gl!.uniform1f(flag.u.uInk, ink);
+
     frame.cards.forEach((r, i) => {
       const t = textures[i];
       const alpha = r.alpha ?? 1;
-      // Coming (back) into view starts its halftone; counted once its texture is up
-      const seen = !!t && r.x < view.w && r.x + r.w > 0;
-      if (seen && !onScreen[i]) inkFrom[i] = now;
-      onScreen[i] = seen;
       if (!t || alpha <= 0 || i === frame.travel?.index) return;
       if (r.x > view.w + 40 || r.x + r.w < -40) return;
-      const since = (now - inkFrom[i]) / 1000;
-      if (since < INK_DONE) inking = true;
-      gl!.uniform1f(flag.u.uInk, inkAt(since));
       gl!.bindTexture(gl!.TEXTURE_2D, t.tex);
       gl!.uniform2f(flag.u.uImg, t.size[0], t.size[1]);
       gl!.uniform2f(flag.u.uBox, r.w, r.h);
@@ -214,7 +227,7 @@ export function mountWorkGl(
     });
 
     // The gallery only draws while it moves: keep drawing while dots resolve
-    if (inking && !inkRaf) {
+    if ((ink > 0 || target > 0) && !inkRaf) {
       inkRaf = requestAnimationFrame(() => {
         inkRaf = 0;
         if (lastFrame) render(lastFrame);
