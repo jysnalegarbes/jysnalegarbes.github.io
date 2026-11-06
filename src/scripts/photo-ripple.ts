@@ -10,7 +10,11 @@
   clip reveal with it; the perspective is worked out in the photo's own
   pixels (not the viewport's, as on home) for that reason. It only shows
   while a ripple plays; the img is the photo the rest of the time.
+
+  The photo also comes in as black ink halftone dots and resolves back
+  into itself under the wave (ink-halftone.ts, 2026-11-06).
 */
+import { INK_DONE, inkAt, inkGlsl, setInkColors } from './ink-halftone';
 
 const PAD = 32; // canvas margin around the photo, for the wave's spill
 const GRID = 32;
@@ -40,12 +44,15 @@ const vertexShader = `
 `;
 
 const fragmentShader = `
-  precision mediump float;
+  precision highp float;
   uniform sampler2D uTex;
   uniform vec2 uCover; // object-fit: cover, as a uv scale
   uniform float uSplit;
+  uniform vec2 uSize;
+  uniform float uInk;
   varying vec2 vUv;
   varying float vWave;
+  ${inkGlsl}
 
   void main () {
     vec2 t = 0.5 + (vUv - 0.5) * uCover;
@@ -56,7 +63,11 @@ const fragmentShader = `
       texture2D(uTex, t + w * 0.01).g,
       texture2D(uTex, t - w * 0.03).b
     );
-    gl_FragColor = vec4(mix(base, split, uSplit), 1.0);
+    vec3 color = mix(base, split, uSplit);
+    float ink = inkFront(uInk, vUv.y);
+    vec2 g = inkGrid(vUv, uSize, uInk);
+    vec3 c = texture2D(uTex, 0.5 + (inkCentre(g, uSize, uInk) - 0.5) * uCover).rgb;
+    gl_FragColor = vec4(mix(color, inkDots(g, uInk, c), smoothstep(0., 1., ink)), 1.0);
   }
 `;
 
@@ -129,6 +140,7 @@ export function mountPhotoRipple(photo: HTMLElement) {
   gl.useProgram(program);
   gl.uniform1i(u('uTex'), 0);
   gl.uniform1f(u('uSplit'), SPLIT);
+  setInkColors(gl, program);
 
   let uploaded = '';
   let raf = 0;
@@ -136,7 +148,8 @@ export function mountPhotoRipple(photo: HTMLElement) {
   let time = 0;
   let at = -1; // seconds into the ripple, -1 when idle
 
-  const amount = () => (at < RIPPLE_IN ? expoOut(at / RIPPLE_IN) : 1 - sineOut((at - RIPPLE_IN) / RIPPLE_OUT));
+  const amount = () =>
+    at < RIPPLE_IN ? expoOut(at / RIPPLE_IN) : at < RIPPLE_IN + RIPPLE_OUT ? 1 - sineOut((at - RIPPLE_IN) / RIPPLE_OUT) : 0;
 
   const setPlaying = (on: boolean) => {
     canvas.style.visibility = on ? 'visible' : 'hidden';
@@ -144,11 +157,11 @@ export function mountPhotoRipple(photo: HTMLElement) {
   };
 
   const tick = (now: number) => {
-    const dt = Math.min((now - last) / 1000, 0.25);
+    const dt = Math.min(Math.max(0, (now - last) / 1000), 0.25); // rAF stamps can predate ripple()
     last = now;
     time += dt;
     at += dt;
-    if (at >= RIPPLE_IN + RIPPLE_OUT) {
+    if (at >= Math.max(RIPPLE_IN + RIPPLE_OUT, INK_DONE)) {
       at = -1;
       raf = 0;
       setPlaying(false);
@@ -166,6 +179,7 @@ export function mountPhotoRipple(photo: HTMLElement) {
     const [ia, pa] = [img.naturalWidth / img.naturalHeight, w / h];
     gl.uniform2f(u('uCover'), ia > pa ? pa / ia : 1, ia > pa ? 1 : ia / pa);
     gl.uniform1f(u('uRipple'), amount());
+    gl.uniform1f(u('uInk'), inkAt(at));
     gl.uniform1f(u('uTime'), time);
     gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
     setPlaying(true); // swapped in once drawn, so the photo never blinks
@@ -175,7 +189,7 @@ export function mountPhotoRipple(photo: HTMLElement) {
   photo.append(canvas);
 
   return {
-    /** Play the wave once; skipped until the photo has loaded. */
+    /** Play the wave and the halftone once; skipped until the photo has loaded. */
     ripple() {
       if (!img.complete || !img.naturalWidth) return;
       if (img.currentSrc !== uploaded) {

@@ -5,11 +5,14 @@
   Interaction" pen. The image is a subdivided plane: hovering pushes a soft
   dent in under the cursor (seen in perspective) with a faint RGB split, and
   holding the mouse button grows the dent across the whole image. `ripple()`
-  plays the pen's intro wave (used by the page loader).
+  plays the pen's intro wave (used by the page loader), `ink()` the photo
+  breaking into black ink halftone dots and resolving back (ink-halftone.ts).
+  Touch screens get the canvas too (for those intros) without the dent.
 
   A canvas draws over the figure using whichever image is currently showing
   (the hero, or a frame from the hover cycle), so the cycle keeps working.
 */
+import { INK_DONE, inkAt, inkGlsl, setInkColors } from './ink-halftone';
 
 export interface PortraitFxSettings {
   /** Dent depth multiplier */
@@ -67,12 +70,15 @@ const vertexShader = `
 `;
 
 const fragmentShader = `
-  precision mediump float;
+  precision highp float;
   uniform sampler2D uTex;
   uniform vec4 uSrc; // where the image sits in figure uv (x, y, w, h)
   uniform float uSplit;
+  uniform vec2 uFigSize; // CSS px
+  uniform float uInk;
   varying vec2 vUv;
   varying float vWave;
+  ${inkGlsl}
 
   void main () {
     vec2 t = (vUv - uSrc.xy) / uSrc.zw;
@@ -83,14 +89,19 @@ const fragmentShader = `
       texture2D(uTex, t + w * 0.01).g,
       texture2D(uTex, t - w * 0.03).b
     );
-    gl_FragColor = vec4(mix(base, split, uSplit), 1.0);
+    vec3 color = mix(base, split, uSplit);
+    float ink = inkFront(uInk, vUv.y);
+    vec2 g = inkGrid(vUv, uFigSize, uInk);
+    vec3 c = texture2D(uTex, (inkCentre(g, uFigSize, uInk) - uSrc.xy) / uSrc.zw).rgb;
+    gl_FragColor = vec4(mix(color, inkDots(g, uInk, c), smoothstep(0., 1., ink)), 1.0);
   }
 `;
 
 const expoOut = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
 const sineOut = (t: number) => Math.sin((Math.min(t, 1) * Math.PI) / 2);
 
-export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSettings) {
+/** interactive: the hover dent (fine pointers); off, only the intros play */
+export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSettings, { interactive = true } = {}) {
   const hero = figure.querySelector<HTMLImageElement>('.home__hero');
   const frame = figure.querySelector<HTMLImageElement>('[data-portrait-frame]');
   if (!hero || !frame) return null;
@@ -156,6 +167,7 @@ export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSetting
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.useProgram(program);
   gl.uniform1i(u('uTex'), 0);
+  setInkColors(gl, program);
 
   // State
   let uploadedKey = '';
@@ -166,6 +178,7 @@ export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSetting
   let radius = settings.dentRadius;
   let time = 0;
   let rippleAt = -1; // seconds into the ripple, -1 when idle
+  let inkStart = -1; // seconds into the halftone, -1 when idle
 
   /** Upload whichever image is showing; returns false until it can be drawn. */
   const syncTexture = (fig: DOMRect) => {
@@ -210,6 +223,11 @@ export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSetting
       if (rippleAt >= RIPPLE_IN + RIPPLE_OUT) rippleAt = -1;
       else busy = true;
     }
+    if (inkStart >= 0) {
+      inkStart += realDt;
+      if (inkStart >= INK_DONE) inkStart = -1;
+      else busy = true;
+    }
     return busy;
   };
 
@@ -234,6 +252,8 @@ export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSetting
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.uniform4f(u('uSrc'), src.x, src.y, src.w, src.h);
     gl.uniform1f(u('uSplit'), settings.rgbSplit);
+    gl.uniform2f(u('uFigSize'), fig.width, fig.height);
+    gl.uniform1f(u('uInk'), inkStart < 0 ? 0 : inkAt(inkStart));
     gl.uniform2f(u('uMouse'), mouse.x, mouse.y);
     gl.uniform1f(u('uRadius'), radius);
     gl.uniform1f(u('uAmp'), amp * settings.dentDepth);
@@ -251,7 +271,8 @@ export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSetting
 
   const tick = (now: number) => {
     raf = 0;
-    const realDt = Math.min((now - last) / 1000, 0.25);
+    // rAF stamps can predate the wake() that asked for the frame: never negative
+    const realDt = Math.min(Math.max(0, (now - last) / 1000), 0.25);
     const dt = Math.min(realDt, 1 / 30);
     last = now;
     time += realDt;
@@ -285,13 +306,15 @@ export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSetting
   const onDown = () => ((pointer.down = true), wake());
   const onUp = () => ((pointer.down = false), wake());
 
-  window.addEventListener('pointermove', onMove, { passive: true });
-  window.addEventListener('pointerup', onUp);
+  if (interactive) {
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerup', onUp);
+    figure.addEventListener('pointerenter', onEnter);
+    figure.addEventListener('pointerleave', onLeave);
+    figure.addEventListener('pointerdown', onDown);
+  }
   window.addEventListener('resize', wake);
   window.addEventListener('scroll', wake, { passive: true });
-  figure.addEventListener('pointerenter', onEnter);
-  figure.addEventListener('pointerleave', onLeave);
-  figure.addEventListener('pointerdown', onDown);
   frame.addEventListener('load', wake);
   hero.addEventListener('load', wake);
   // The hover cycle toggles/retargets the frame image
@@ -305,6 +328,11 @@ export function mountPortraitFx(figure: HTMLElement, settings: PortraitFxSetting
     /** Play the intro wave once. */
     ripple() {
       rippleAt = 0;
+      wake();
+    },
+    /** Break into ink dots and resolve back once. */
+    ink() {
+      inkStart = 0;
       wake();
     },
     /** Settings are read live; this re-syncs the resting radius and redraws. */

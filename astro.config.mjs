@@ -47,6 +47,7 @@ function fluidConfigSaver() {
 }
 
 const portraitConfigPath = fileURLToPath(new URL('./src/config/portrait-expand.json', import.meta.url));
+const aboutMotionPath = fileURLToPath(new URL('./src/config/about-motion.json', import.meta.url));
 
 /**
  * Keeps `incoming` to exactly the shape of `current`: same keys, numbers
@@ -69,16 +70,19 @@ function sameShape(current, incoming, path = '') {
 }
 
 /**
- * Dev-only endpoint behind the About portrait tweak panel's "Save to
- * project" button (src/scripts/portrait-tweaks.ts).
+ * Dev-only endpoint behind a tweak panel's "Save to project" button: writes
+ * the JSON config at `path`, keeping it to the shape it already has. Used by
+ * the About portrait (portrait-tweaks.ts) and About motion (about-tweaks.ts)
+ * panels.
+ * @param {string} route @param {string} path
  * @returns {import('vite').Plugin}
  */
-function portraitConfigSaver() {
+function jsonConfigSaver(route, path) {
   return {
-    name: 'portrait-config-saver',
+    name: `config-saver${route}`,
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use('/__portrait-config', (req, res) => {
+      server.middlewares.use(route, (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;
           res.end();
@@ -88,9 +92,9 @@ function portraitConfigSaver() {
         req.on('data', (chunk) => (body += chunk));
         req.on('end', async () => {
           try {
-            const current = JSON.parse(await readFile(portraitConfigPath, 'utf8'));
+            const current = JSON.parse(await readFile(path, 'utf8'));
             const config = sameShape(current, JSON.parse(body));
-            await writeFile(portraitConfigPath, JSON.stringify(config, null, 2) + '\n');
+            await writeFile(path, JSON.stringify(config, null, 2) + '\n');
             res.statusCode = 204;
             res.end();
           } catch (err) {
@@ -107,6 +111,10 @@ export default defineConfig({
   site: 'https://jysnalegarbes.github.io',
   trailingSlash: 'ignore',
   vite: {
-    plugins: [fluidConfigSaver(), portraitConfigSaver()],
+    plugins: [
+      fluidConfigSaver(),
+      jsonConfigSaver('/__portrait-config', portraitConfigPath),
+      jsonConfigSaver('/__about-motion', aboutMotionPath),
+    ],
   },
 });

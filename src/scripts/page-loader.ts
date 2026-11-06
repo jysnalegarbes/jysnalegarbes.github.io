@@ -6,7 +6,8 @@
   while a counter tracks real work (fonts, the hero image, window load)
   with a minimum on-screen time. Then the fluid blows open from the centre,
   the title rises in, the portrait ripples, and the header condenses in
-  with the same goo. The leftover ink fades like the trail.
+  with the same goo. The leftover ink fades like the trail. The portrait
+  comes up as ink halftone dots and resolves back into the photo.
 
   Skip with ?loader=0. Reduced motion skips it entirely (see index.astro).
 */
@@ -209,6 +210,8 @@ export async function runLoader({ fluid, portraitFx, portrait, heroImg, baseDiss
       { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.1, ease: 'expo.inOut', clearProps: 'clipPath' },
       0.05,
     );
+    // Comes up as ink halftone dots, resolving back into the photo under the wave
+    tl.add(() => portraitFx?.ink(), 0.05);
     tl.add(() => portraitFx?.ripple(), 0.5);
     tl.fromTo('.home__copy', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, 0.35);
     tl.add(() => {

@@ -90,12 +90,15 @@ const portraitFrames = await Promise.all(
   const heroImg = portrait?.querySelector<HTMLImageElement>('.home__hero');
   const frames: string[] = JSON.parse(portrait?.dataset.frames ?? '[]');
 
-  // Portrait dent (WebGL): desktop pointer only, loaded after first paint
+  // Portrait WebGL, loaded after first paint: the dent on desktop pointers,
+  // and everywhere the intro wave and ink halftone
   const fxSettings: PortraitFxSettings = { dentDepth: 1, dentRadius: 0.08, rgbSplit: 0.12 };
   let portraitFx: PortraitFx | null = null;
   const fxReady: Promise<PortraitFx | null> =
-    portrait && finePointer && !reducedMotion
-      ? import('../scripts/portrait-fx').then(({ mountPortraitFx }) => (portraitFx = mountPortraitFx(portrait, fxSettings)))
+    portrait && !reducedMotion
+      ? import('../scripts/portrait-fx').then(
+          ({ mountPortraitFx }) => (portraitFx = mountPortraitFx(portrait, fxSettings, { interactive: finePointer })),
+        )
       : Promise.resolve(null);
 
   // Page loader: ink burst + gooey intros (see scripts/page-loader.ts)
@@ -109,6 +112,35 @@ const portraitFrames = await Promise.all(
         baseDissipation: fluidSettings.config.densityDissipation,
       }),
     );
+  } else {
+    // No loader (?loader=0, or arriving from a page transition): the halftone plays on its own
+    fxReady.then((fx) => fx?.ink());
+  }
+
+  // Mouse shift (after santionispirits.com): the composition drifts a little
+  // against the cursor, each piece by its own depth (--depth in the CSS),
+  // easing after it. Desktop pointers only.
+  const home = document.querySelector<HTMLElement>('.home');
+  if (home && finePointer && !reducedMotion) {
+    const target = { x: 0, y: 0 };
+    const shown = { x: 0, y: 0 };
+    let raf = 0;
+    const step = () => {
+      shown.x += (target.x - shown.x) * 0.06;
+      shown.y += (target.y - shown.y) * 0.06;
+      home.style.setProperty('--mx', shown.x.toFixed(4));
+      home.style.setProperty('--my', shown.y.toFixed(4));
+      raf = Math.abs(target.x - shown.x) + Math.abs(target.y - shown.y) > 1e-4 ? requestAnimationFrame(step) : 0;
+    };
+    const aim = (x: number, y: number) => {
+      [target.x, target.y] = [x, y];
+      if (!raf) raf = requestAnimationFrame(step);
+    };
+    // -1..1 from the centre of the screen
+    window.addEventListener('pointermove', (e) => aim((e.clientX / innerWidth) * 2 - 1, (e.clientY / innerHeight) * 2 - 1), {
+      passive: true,
+    });
+    document.documentElement.addEventListener('pointerleave', () => aim(0, 0));
   }
 
   // Tweak panel: add ?tweak to the URL to open it
@@ -279,12 +311,13 @@ const portraitFrames = await Promise.all(
     overflow: hidden;
   }
 
+  /* Crop of 1:14 (updated 2026-11-06) */
   .home__hero {
     position: absolute;
-    top: -11.32%;
-    left: -72.8%;
-    width: 190.23%;
-    height: 119.2%;
+    top: -14.58%;
+    left: -82%;
+    width: 205.84%;
+    height: 129.16%;
     max-width: none;
   }
 
@@ -323,6 +356,35 @@ const portraitFrames = await Promise.all(
 
   .home__copy {
     order: 3;
+  }
+
+  /* Mouse shift (script): each piece moves --depth Figma px at the screen's
+     edge, against the cursor; negative ones go with it, for depth. A
+     separate translate, so the pieces keep their own transforms. */
+  .home__title > span,
+  .home__portrait,
+  .home__foot > p {
+    translate: calc(var(--mx, 0) * var(--depth, 0) * -1 * var(--px)) calc(var(--my, 0) * var(--depth, 0) * -1 * var(--px));
+  }
+
+  .home__uiux {
+    --depth: 26;
+  }
+
+  .home__visual {
+    --depth: 18;
+  }
+
+  .home__designer {
+    --depth: 30;
+  }
+
+  .home__portrait {
+    --depth: -12;
+  }
+
+  .home__foot > p {
+    --depth: 8;
   }
 
   /* Desktop: the hero composition scales with whichever of width or height

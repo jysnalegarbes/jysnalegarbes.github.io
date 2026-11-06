@@ -1,0 +1,35 @@
+{
+  "approach": {
+    "hold": 2,
+    "revealFrom": 0.05,
+    "revealTo": 0.9
+  },
+  "beyond": {
+    "hold": 3.5,
+    "highlightFrom": 0.05,
+    "highlightTo": 0.85
+  },
+  "gooTitles": {
+    "duration": 1,
+    "blur": 0.094,
+    "contrast": 16,
+    "threshold": -7,
+    "slide": 0.5
+  },
+  "gooFade": {
+    "duration": 1.6,
+    "blur": 0.0625,
+    "contrast": 15,
+    "threshold": -8
+  },
+  "gooEnding": {
+    "duration": 2.6,
+    "blur": 1.5
+  },
+  "inkEdge": {
+    "roughness": 0,
+    "grain": 0.9,
+    "octaves": 2,
+    "seed": 3
+  }
+}

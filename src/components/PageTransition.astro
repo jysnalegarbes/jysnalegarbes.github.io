@@ -1,0 +1,142 @@
+---
+/*
+  Page transition screens (Figma 1:869, 1:927, 1:986, 1:1044, "Intro
+  Transition - Nav On Click"): clicking a nav link inks the screen black
+  and names the page coming up, its second word upside down. The page
+  then arrives under the same screen, the word turns the right way up and
+  the ink lifts. Motion in scripts/page-transition.ts; BaseLayout's head
+  script shows the screen before first paint on arrival.
+*/
+import type { NavKey } from './SiteHeader.astro';
+
+const screens: { key: NavKey; lead: string; word: string }[] = [
+  { key: 'work', lead: 'selected', word: 'Works' },
+  { key: 'about', lead: 'about', word: 'Jayson' },
+  { key: 'in-progress', lead: 'in', word: 'Progress' },
+  { key: 'contact', lead: 'let’s', word: 'Talk' },
+];
+---
+
+<div class="pt" data-pt-root aria-hidden="true">
+  <div class="pt__black" data-pt-black></div>
+  <canvas class="pt__wipe" data-pt-wipe></canvas>
+  {
+    screens.map(({ key, lead, word }) => (
+      <div class="pt__screen" data-pt-screen={key}>
+        <p class="pt__lead serif-italic" data-pt-lead>
+          {lead}
+        </p>
+        <p class="pt__mask">
+          <span class="pt__word" data-pt-word>
+            {word}
+          </span>
+        </p>
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  import { mountPageTransition } from '../scripts/page-transition';
+
+  mountPageTransition();
+</script>
+
+<style>
+  /* Figma sizes on 1920; mobile scales the 170px type down to fit
+     "PROGRESS" (966 wide) inside the gutters */
+  .pt {
+    --tpx: calc(100vw / 1100);
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    color: var(--white);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  @media (min-width: 1024px) {
+    .pt {
+      --tpx: var(--px);
+    }
+  }
+
+  .pt:global(.is-on),
+  :global(html.pt-arriving) .pt {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  .pt__black,
+  .pt__wipe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .pt__black {
+    background: var(--black);
+    opacity: 0;
+  }
+
+  /* Arriving: solid black until the script takes the screen over */
+  :global(html.pt-arriving) .pt__black {
+    opacity: 1;
+  }
+
+  .pt__screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    font-size: calc(170 * var(--tpx));
+    line-height: normal;
+    white-space: nowrap;
+  }
+
+  .pt__screen:global(.is-current),
+  :global(html[data-pt='work']) [data-pt-screen='work'],
+  :global(html[data-pt='about']) [data-pt-screen='about'],
+  :global(html[data-pt='in-progress']) [data-pt-screen='in-progress'],
+  :global(html[data-pt='contact']) [data-pt-screen='contact'] {
+    display: block;
+  }
+
+  /* Playfair SemiBold Italic, 14% tracking, its box top at y 313 */
+  .pt__lead {
+    position: absolute;
+    top: calc(50% - 227 * var(--tpx));
+    left: 50%;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    translate: -50% 0;
+  }
+
+  /* Archivo SemiBold caps turned 180°, its box at y 487 → 672; the mask
+     only clips while the word rises in */
+  .pt__mask {
+    position: absolute;
+    top: calc(50% - 53 * var(--tpx));
+    left: 50%;
+    translate: -50% 0;
+  }
+
+  .pt__mask:global(.is-masked) {
+    overflow: hidden;
+  }
+
+  /* Upside down = half a turn on x and half on y; the script runs both back
+     to 0, so it tumbles upright in place instead of sweeping round. The
+     rise is a separate translate, in screen space whatever the turn. */
+  .pt__mask {
+    perspective: 20em;
+  }
+
+  .pt__word {
+    display: block;
+    font-weight: 600;
+    text-transform: uppercase;
+    translate: 0 var(--rise, 0%);
+    transform: rotateX(var(--flip, 180deg)) rotateY(var(--flip, 180deg));
+  }
+</style>

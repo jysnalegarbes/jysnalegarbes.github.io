@@ -4,6 +4,7 @@ import '@fontsource-variable/playfair-display';
 import '@fontsource-variable/playfair-display/wght-italic.css';
 import '../styles/global.css';
 import SiteHeader, { type NavKey } from '../components/SiteHeader.astro';
+import PageTransition from '../components/PageTransition.astro';
 
 interface Props {
   title: string;
@@ -33,11 +34,28 @@ const {
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <link rel="icon" type="image/svg+xml" href="/images/brand/logo-mark.svg" />
     <title>{title}</title>
+    <!-- Arriving through a page transition: its screen goes up before first
+         paint (scripts/page-transition.ts takes it from there) -->
+    <script is:inline>
+      (function () {
+        try {
+          var raw = sessionStorage.getItem('page-transition');
+          sessionStorage.removeItem('page-transition');
+          var a = raw && JSON.parse(raw);
+          var path = location.pathname.replace(/\/?$/, '/');
+          if (a && Date.now() - a.t < 8000 && a.path.replace(/\/?$/, '/') === path) {
+            document.documentElement.classList.add('pt-arriving');
+            document.documentElement.setAttribute('data-pt', a.key);
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class={pageClass}>
     <SiteHeader current={current} />
     <main>
       <slot />
     </main>
+    <PageTransition />
   </body>
 </html>

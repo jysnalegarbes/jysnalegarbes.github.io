@@ -9,6 +9,8 @@ import hiking from '../assets/about/beyond-hiking.jpg';
 import serviceWeb from '../assets/about/services/web-ui-ux.webp';
 import serviceVisual from '../assets/about/services/visual-design.webp';
 import serviceBrand from '../assets/about/services/brand-digital.webp';
+// Hold lengths, highlight / reveal ranges and goo (live-tweakable with ?tweak)
+import motion from '../config/about-motion.json';
 
 const services = await Promise.all(
   [
@@ -67,7 +69,8 @@ const photos = [
     previous section's [data-content] leaving the screen to their own's.
     Content scrolls in (the intro paragraph's lines slide in as it does).
     Desktop places everything on the Figma coordinates of a 1920×1080 frame;
-    mobile stacks it. Without JS they're plain stacked sections.
+    mobile stacks it (1:1377–1:1521, 2026-11-06), titles pinned there too.
+    Without JS they're plain stacked sections.
   -->
   <div class="about-story" data-about-story>
     <div class="about-story__pin">
@@ -115,7 +118,14 @@ const photos = [
         </div>
       </section>
 
-      <section class="about-sec about-sec--approach" data-about-section data-flow>
+      <!-- Holds in place while its lines rise, then moves on (about-motion.json approach) -->
+      <section
+        class="about-sec about-sec--approach"
+        data-about-section
+        data-flow
+        data-hold="approach"
+        style={`--hold: ${motion.approach.hold}`}
+      >
         <div class="about-sec__frame">
           <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">my</span> APPROACH</h2>
           <div class="about-approach" data-content>
@@ -134,8 +144,14 @@ const photos = [
         </div>
       </section>
 
-      <!-- Desktop holds it in place 2.5 screens while the highlight lays the photos -->
-      <section class="about-sec about-sec--beyond" data-about-section data-flow data-hold style="--hold: 2.5">
+      <!-- Holds in place while the highlight lays the photos (about-motion.json beyond) -->
+      <section
+        class="about-sec about-sec--beyond"
+        data-about-section
+        data-flow
+        data-hold="beyond"
+        style={`--hold: ${motion.beyond.hold}`}
+      >
         <div class="about-sec__frame">
           <h2 class="about-heading" data-fx="goo-2" data-cue="0.3" data-pin><span class="serif-italic">beyond</span> DESIGN</h2>
           <div class="about-photos" data-photos data-content>
@@ -153,17 +169,10 @@ const photos = [
               ))
             }
           </div>
-          <!-- Highlight over 0.9 screens of scroll (mobile), or 5–85% of the hold (desktop).
+          <!-- Highlight over the hold (data-hl: over 0.9 screens of scroll, if it had none).
                Copy (2026-11-04): each photo's word comes 11 words after the last (words
                8, 19, 30), so the photos land evenly. -->
-          <p
-            class="about-body about-beyond__text"
-            data-fx="plain"
-            data-highlight
-            data-hl="0.1 1"
-            data-hl-hold="0.05 0.85"
-            data-content
-          >
+          <p class="about-body about-beyond__text" data-fx="plain" data-highlight data-hl="0.1 1" data-content>
             Outside design, I enjoy exploring new trails through hiking. I also love challenging my friends to a game of
             billiards whenever I get the chance. I spend unreasonable hours admiring aquariums on Reels. I don't have one
             yet, but apparently watching other people's tanks counts as research.
@@ -176,8 +185,8 @@ const photos = [
       <section class="about-sec about-sec--end" data-about-section data-flow data-about-end>
         <div class="about-sec__frame">
           <div class="about-end__head">
-            <!-- A longer, stronger goo than the other titles (1.6s → 2.6s, blur × 1.5) -->
-            <h2 class="about-end__title" data-fx="goo-1" data-cue="0.4" data-fx-dur="2.6" data-fx-blur="1.5">
+            <!-- A longer, stronger goo than the other titles (about-motion.json gooEnding) -->
+            <h2 class="about-end__title" data-fx="goo-1" data-cue="0.4" data-goo="ending">
               <span class="serif-italic">anyway,</span> <span class="about-end__nowrap">THAT’S ME.</span>
             </h2>
             <p class="about-end__lead" data-fx="magnetic" data-cue="0.4" data-fx-at="0.4">
@@ -267,12 +276,13 @@ const photos = [
     overflow: hidden;
   }
 
+  /* 1:1377: one line across the gutters */
   .about-intro__greeting {
     position: absolute;
     top: 50%;
     left: 50%;
     font-weight: 700;
-    font-size: calc(40 * var(--px));
+    font-size: calc(36 * var(--px));
     white-space: nowrap;
     transform: translate(-50%, -50%);
   }
@@ -430,13 +440,50 @@ const photos = [
 
   .about-heading {
     font-weight: 700;
-    font-size: calc(48 * var(--px));
+    font-size: calc(44 * var(--px));
     white-space: nowrap;
   }
 
   .about-body {
-    font-size: calc(20 * var(--px));
+    font-size: calc(22 * var(--px));
     text-indent: 3.76em;
+  }
+
+  /* Mobile with JS (1:1443–1:1521): each section takes a screen, its title
+     held at the top (centred on y 170.5) while the content, from y 267,
+     goes by under it */
+  .is-story :is(.about-sec--services, .about-sec--approach, .about-sec--beyond) .about-sec__frame {
+    justify-content: flex-start;
+    gap: 0;
+    min-height: 100svh;
+    padding-top: calc(267 * var(--px));
+  }
+
+  .is-story .about-heading[data-pin] {
+    position: fixed;
+    top: calc(170.5 * var(--px));
+    left: var(--gutter);
+    z-index: 3;
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+
+  /* data-hold: a spacer of --hold screens after the frame, which sticks to
+     the top of the screen meanwhile (clip, not hidden: hidden would make
+     the section a scroll container and stop the sticking) */
+  .is-story .about-sec[data-hold] {
+    overflow: clip;
+  }
+
+  .is-story .about-sec[data-hold]::after {
+    content: '';
+    display: block;
+    height: calc(var(--hold) * 100svh);
+  }
+
+  .is-story .about-sec[data-hold] .about-sec__frame {
+    position: sticky;
+    top: 0;
   }
 
   /* Layers, bottom up: a hovered row's band, the hover image canvas
@@ -455,19 +502,21 @@ const photos = [
     pointer-events: none;
   }
 
+  /* 1:1473: rows 342 wide, 80 apart, a 1px rule 16 under each */
   .about-services {
     display: flex;
     flex-direction: column;
-    gap: calc(28 * var(--px));
+    gap: calc(80 * var(--px));
+    width: calc(342 * var(--px));
   }
 
-  /* Each row: its text, a 1px rule 10 below it (Line 346, #D7DEDE) */
+  /* Each row: its text, a 1px rule under it (Line 346, #D7DEDE) */
   .about-service {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: calc(12 * var(--px));
-    padding-block: calc(10 * var(--px));
+    gap: calc(16 * var(--px));
+    padding-bottom: calc(16 * var(--px));
   }
 
   .about-service > * {
@@ -480,7 +529,7 @@ const photos = [
     content: '';
     position: absolute;
     right: 0;
-    bottom: calc(-10 * var(--px));
+    bottom: 0;
     left: 0;
     border-top: 1px solid var(--white);
     transition: opacity 0.35s ease;
@@ -514,26 +563,36 @@ const photos = [
 
   .about-service__title {
     font-weight: 700;
-    font-size: calc(22 * var(--px));
+    font-size: calc(24 * var(--px));
     text-transform: uppercase;
   }
 
   .about-service__text {
-    font-size: calc(14 * var(--px));
+    font-size: calc(12 * var(--px));
   }
 
   .about-approach {
     display: flex;
     flex-direction: column;
-    gap: calc(32 * var(--px));
+    gap: calc(80 * var(--px));
   }
 
+  /* 184:57: the photos share a 270×318 box centred on the screen, the text
+     66 under it */
   .about-photos {
     position: relative;
     flex: none;
-    width: calc(200 * var(--px));
-    height: calc(235 * var(--px));
+    width: calc(270.3 * var(--px));
+    height: calc(317.9 * var(--px));
     margin-inline: auto;
+  }
+
+  .is-story .about-photos {
+    margin-top: calc(10 * var(--px));
+  }
+
+  .is-story .about-beyond__text {
+    margin-top: calc(66 * var(--px));
   }
 
   .about-photo {
@@ -629,22 +688,18 @@ const photos = [
     /* Held in the same place on the screen while their section goes by
        (data-pin, about-sections.ts); over the content passing under them */
     .is-story .about-heading[data-pin] {
-      position: fixed;
-      z-index: 3;
-      pointer-events: none;
+      top: calc(286.5 * var(--px));
+      left: var(--gutter);
     }
 
-    /* data-hold: the section grows by --hold screens and its frame sticks to
-       the top of the screen meanwhile (clip, not hidden: hidden would make
-       the section a scroll container and stop the sticking) */
-    .is-story .about-sec[data-hold] {
-      height: calc(1080 * var(--px) + var(--hold) * 100svh);
-      overflow: clip;
+    .is-story :is(.about-sec--services, .about-sec--approach, .about-sec--beyond) .about-sec__frame {
+      min-height: 0;
+      padding-top: 0;
     }
 
-    .is-story .about-sec[data-hold] .about-sec__frame {
-      position: sticky;
-      top: 0;
+    .is-story .about-photos,
+    .is-story .about-beyond__text {
+      margin-top: 0;
     }
 
     .about-body {
@@ -664,6 +719,11 @@ const photos = [
       width: calc(1012 * var(--px));
       margin-left: calc((2 - var(--i)) * 90 * var(--px));
       gap: calc(20 * var(--px));
+      padding-block: calc(10 * var(--px));
+    }
+
+    .about-service::after {
+      bottom: calc(-10 * var(--px));
     }
 
     .about-service__title {

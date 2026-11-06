@@ -12,9 +12,14 @@
 
   The DOM image stays as the hit area and fallback, and is hidden once
   its texture is up. Clones of a project share one texture.
+
+  Each card comes on screen as black ink halftone dots and resolves back
+  into its cover (ink-halftone.ts, 2026-11-06): on load, and every time
+  scrolling the strip brings it back into view.
 */
 import type { CardFrame, GalleryFrame, Rect } from './work-gallery';
 import { easeMorph, imageFragment, linkProgram, liquidVertex, planeGeometry, uploadTexture } from './liquid-morph';
+import { INK_DONE, inkAt, inkGlsl, setInkColors } from './ink-halftone';
 
 export interface Travel {
   /** Card index (into the gallery's cards) being opened */
@@ -58,6 +63,35 @@ void main() {
 }
 `;
 
+// imageFragment (liquid-morph.ts) with the ink halftone over it
+const flagFragment = /* glsl */ `
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2 uImg;
+uniform vec2 uBox;
+uniform float uAlpha;
+uniform float uInk;
+varying vec2 vUv;
+varying float vShade;
+${inkGlsl}
+
+vec2 cover(vec2 uv) {
+  float rb = uBox.x / uBox.y;
+  float ri = uImg.x / uImg.y;
+  vec2 scale = rb > ri ? vec2(1.0, ri / rb) : vec2(rb / ri, 1.0);
+  return (uv - 0.5) * scale + 0.5;
+}
+
+void main() {
+  vec3 col = texture2D(uTex, cover(vUv)).rgb;
+  vec2 g = inkGrid(vUv, uBox, uInk);
+  vec3 c = texture2D(uTex, cover(inkCentre(g, uBox, uInk))).rgb;
+  col = mix(col, inkDots(g, uInk, c), smoothstep(0.0, 1.0, inkFront(uInk, vUv.y)));
+  col *= 1.0 + vShade * 0.12;
+  gl_FragColor = vec4(col * uAlpha, uAlpha);
+}
+`;
+
 interface Tex {
   tex: WebGLTexture;
   size: [number, number];
@@ -72,7 +106,8 @@ export function mountWorkGl(
   if (!gl) return null;
 
   const shared = ['uViewport', 'uTime', 'uTex', 'uImg', 'uBox', 'uAlpha'];
-  const flag = linkProgram(gl, flagVertex, imageFragment, [...shared, 'uRect', 'uVelo']);
+  const flag = linkProgram(gl, flagVertex, flagFragment, [...shared, 'uRect', 'uVelo', 'uInk']);
+  setInkColors(gl, flag.program);
   const liquid = linkProgram(gl, liquidVertex, imageFragment, [...shared, 'uFrom', 'uTo', 'uT']);
 
   const { verts, idx } = planeGeometry();
@@ -91,6 +126,11 @@ export function mountWorkGl(
   };
 
   let lastFrame: GlFrame | null = null;
+
+  // Halftone per card: when it last came on screen (ms), and whether it's on now
+  const inkFrom = images.map(() => -Infinity);
+  const onScreen = images.map(() => false);
+  let inkRaf = 0;
 
   // Largest rendition of each cover, one texture per source
   const largest = (img: HTMLImageElement) =>
@@ -151,11 +191,20 @@ export function mountWorkGl(
     gl!.uniform1f(flag.u.uVelo, frame.velocity);
     gl!.uniform1f(flag.u.uTime, frame.time);
 
+    const now = performance.now();
+    let inking = false;
     frame.cards.forEach((r, i) => {
       const t = textures[i];
       const alpha = r.alpha ?? 1;
+      // Coming (back) into view starts its halftone; counted once its texture is up
+      const seen = !!t && r.x < view.w && r.x + r.w > 0;
+      if (seen && !onScreen[i]) inkFrom[i] = now;
+      onScreen[i] = seen;
       if (!t || alpha <= 0 || i === frame.travel?.index) return;
       if (r.x > view.w + 40 || r.x + r.w < -40) return;
+      const since = (now - inkFrom[i]) / 1000;
+      if (since < INK_DONE) inking = true;
+      gl!.uniform1f(flag.u.uInk, inkAt(since));
       gl!.bindTexture(gl!.TEXTURE_2D, t.tex);
       gl!.uniform2f(flag.u.uImg, t.size[0], t.size[1]);
       gl!.uniform2f(flag.u.uBox, r.w, r.h);
@@ -163,6 +212,14 @@ export function mountWorkGl(
       gl!.uniform1f(flag.u.uAlpha, alpha);
       gl!.drawElements(gl!.TRIANGLES, idx.length, gl!.UNSIGNED_SHORT, 0);
     });
+
+    // The gallery only draws while it moves: keep drawing while dots resolve
+    if (inking && !inkRaf) {
+      inkRaf = requestAnimationFrame(() => {
+        inkRaf = 0;
+        if (lastFrame) render(lastFrame);
+      });
+    }
 
     const tr = frame.travel;
     const t = tr && textures[tr.index];

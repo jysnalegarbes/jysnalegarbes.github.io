@@ -1,0 +1,402 @@
+---
+import { Image, getImage } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import hero from '../assets/home/hero.png';
+
+// Hover sequence for the portrait, played in filename order
+const portraitModules = import.meta.glob<{ default: ImageMetadata }>('../assets/home/portraits/*.webp', {
+  eager: true,
+});
+const portraitFrames = await Promise.all(
+  Object.keys(portraitModules)
+    .sort()
+    .map(async (key) => (await getImage({ src: portraitModules[key].default, format: 'webp' })).src),
+);
+---
+
+<BaseLayout title="Jayson Alegarbes — UI/UX & Visual Designer" pageClass="has-ink">
+  <canvas class="fluid fluid--invert" data-fluid aria-hidden="true"></canvas>
+  <canvas class="fluid fluid--tint" data-fluid-tint aria-hidden="true"></canvas>
+
+  <!-- Ink-burst loader: set state before first paint (skip with ?loader=0) -->
+  <script is:inline>
+    (function () {
+      var skip = new URLSearchParams(location.search).get('loader') === '0';
+      if (!skip && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('is-loading', 'header-pending');
+      }
+    })();
+  </script>
+  <div class="loader" aria-hidden="true">
+    <div class="loader__cover" data-loader-cover></div>
+    <p class="loader__count serif-italic"><span data-loader-count>00</span></p>
+  </div>
+
+  <section class="home">
+    <h1 class="home__title">
+      <span class="home__uiux">UI/UX</span>
+      <span class="home__visual">visual</span>
+      <span class="home__designer serif-italic">designer</span>
+    </h1>
+
+    <figure class="home__portrait" data-portrait data-frames={JSON.stringify(portraitFrames)}>
+      <Image
+        class="home__hero"
+        src={hero}
+        alt="Jayson Alegarbes sitting on a studio floor in sunglasses and suspenders"
+        widths={[560, 800, 1024]}
+        sizes="(min-width: 1024px) 41vw, 120vw"
+        loading="eager"
+        fetchpriority="high"
+      />
+      <img class="home__frame" data-portrait-frame alt="" hidden />
+    </figure>
+
+    <div class="home__foot">
+      <p class="home__copy">© 2026<span class="mobile-only"> still making things</span></p>
+      <p class="home__based">Independent designer<br />based in Davao City, Philippines.</p>
+      <p class="home__love">I love creating digital experiences<br />that feel good to use.</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountFluidTrail, type FluidTrail } from '../scripts/fluid-trail';
+  import type { PortraitFx, PortraitFxSettings } from '../scripts/portrait-fx';
+  import fluidSettings from '../config/fluid-trail.json';
+
+  const params = new URLSearchParams(location.search);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const loading = document.documentElement.classList.contains('is-loading');
+
+  // Background: fluid ink trail in the site gray; the page inverts under it.
+  // Settings live in src/config/fluid-trail.json (edit via the tweak panel).
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-fluid]');
+  const tintCanvas = document.querySelector<HTMLCanvasElement>('[data-fluid-tint]');
+  let fluid: FluidTrail | null = null;
+  if (canvas && tintCanvas && !reducedMotion) {
+    fluid = mountFluidTrail({
+      canvas,
+      tintCanvas,
+      tint: fluidSettings.tint,
+      config: structuredClone(fluidSettings.config),
+    });
+  }
+
+  const portrait = document.querySelector<HTMLElement>('[data-portrait]');
+  const frameImg = portrait?.querySelector<HTMLImageElement>('[data-portrait-frame]');
+
+  const heroImg = portrait?.querySelector<HTMLImageElement>('.home__hero');
+  const frames: string[] = JSON.parse(portrait?.dataset.frames ?? '[]');
+
+  // Portrait dent (WebGL): desktop pointer only, loaded after first paint
+  const fxSettings: PortraitFxSettings = { dentDepth: 1, dentRadius: 0.08, rgbSplit: 0.12 };
+  let portraitFx: PortraitFx | null = null;
+  const fxReady: Promise<PortraitFx | null> =
+    portrait && finePointer && !reducedMotion
+      ? import('../scripts/portrait-fx').then(({ mountPortraitFx }) => (portraitFx = mountPortraitFx(portrait, fxSettings)))
+      : Promise.resolve(null);
+
+  // Page loader: ink burst + gooey intros (see scripts/page-loader.ts)
+  if (loading && portrait && heroImg) {
+    Promise.all([import('../scripts/page-loader'), fxReady]).then(([{ runLoader }, fx]) =>
+      runLoader({
+        fluid,
+        portraitFx: fx,
+        portrait,
+        heroImg,
+        baseDissipation: fluidSettings.config.densityDissipation,
+      }),
+    );
+  }
+
+  // Tweak panel: add ?tweak to the URL to open it
+  if (fluid && params.has('tweak')) {
+    import('../scripts/fluid-tweaks').then(({ mountFluidTweaks }) => {
+      const pane = mountFluidTweaks(fluid!, fluidSettings);
+      const folder = pane.addFolder({ title: 'Portrait dent', index: 3 });
+      folder.addBinding(fxSettings, 'dentDepth', { label: 'depth', min: 0, max: 3, step: 0.05 });
+      folder.addBinding(fxSettings, 'dentRadius', { label: 'radius', min: 0.01, max: 0.5, step: 0.01 });
+      folder.addBinding(fxSettings, 'rgbSplit', { label: 'rgb split', min: 0, max: 1, step: 0.01 });
+      folder.addButton({ title: 'Play intro ripple' }).on('click', () => portraitFx?.ripple());
+      folder.on('change', () => portraitFx?.refresh());
+    });
+  }
+
+  // Portrait: flick through the other portraits while hovered, back to the
+  // hero on leave. Mouse only; the frames preload once the page is idle.
+  if (portrait && frameImg && finePointer && !reducedMotion) {
+    const FRAME_MS = 100;
+    let index = -1; // -1 = the hero itself
+    let timer = 0;
+
+    const preload = () => frames.forEach((src) => (new Image().src = src));
+    if ('requestIdleCallback' in window) requestIdleCallback(preload, { timeout: 3000 });
+    else setTimeout(preload, 1500);
+
+    const show = (i: number) => {
+      index = i;
+      frameImg.hidden = i < 0;
+      if (i >= 0) frameImg.src = frames[i];
+    };
+
+    portrait.addEventListener('mouseenter', () => {
+      clearInterval(timer);
+      timer = window.setInterval(() => show(index + 1 < frames.length ? index + 1 : -1), FRAME_MS);
+    });
+
+    portrait.addEventListener('mouseleave', () => {
+      clearInterval(timer);
+      show(-1);
+    });
+  }
+</script>
+
+<style>
+  /* Fluid layers sit above the text (so it can invert) but below the portrait */
+  .fluid {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .fluid--invert {
+    mix-blend-mode: difference;
+  }
+
+  .fluid--tint {
+    mix-blend-mode: lighten;
+  }
+
+  /* Page loader. Hidden unless <html> is .is-loading. */
+  .loader {
+    display: none;
+  }
+
+  :global(html.is-loading) .loader {
+    display: block;
+  }
+
+  :global(html.is-loading) .home__title,
+  :global(html.is-loading) .home__copy,
+  :global(html.is-loading) .home__portrait,
+  :global(html.header-pending) :global(.site-header > *) {
+    visibility: hidden;
+  }
+
+  /* Static stand-in for the ink until WebGL takes over: the exact colour the
+     flooded ink composites to (inverted bg, lightened with the ink tint). */
+  .loader__cover {
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: #1e1918;
+  }
+
+  /* Counter sits under the ink, so it shows inverted (light); top-left on
+     mobile, where the footer lines take the bottom */
+  .loader__count {
+    position: fixed;
+    top: calc(24 * var(--px));
+    left: var(--gutter);
+    z-index: 29;
+    overflow: hidden;
+    font-size: calc(96 * var(--px));
+    line-height: 1;
+    color: var(--black);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .loader__count span {
+    display: block;
+  }
+
+  /* On the static cover, pre-invert the counter to match the inked look */
+  :global(html.is-loading:not(.loader-inked)) .loader__count {
+    color: #ebe6e7;
+  }
+
+  @media (min-width: 1024px) {
+    .loader__count {
+      top: auto;
+      bottom: calc(40 * var(--px));
+      font-size: calc(200 * var(--px));
+    }
+  }
+
+  /* The header has no stacking context on this page (green ink exemption),
+     so the full-height section must let clicks through to it. */
+  .home {
+    pointer-events: none;
+  }
+
+  .home > * {
+    pointer-events: auto;
+  }
+
+  .home {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100svh;
+    padding: calc(109 * var(--px)) var(--gutter) calc(24 * var(--px));
+  }
+
+  .home__title {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    font-weight: 600;
+    font-size: calc(100 * var(--px));
+    line-height: 0.89;
+  }
+
+  .home__visual {
+    text-transform: uppercase;
+  }
+
+  .home__designer {
+    align-self: center;
+    margin-top: calc(10 * var(--px));
+    font-size: calc(40 * var(--px));
+    line-height: normal;
+  }
+
+  /* The portrait is cropped exactly like the Figma frame: the source is
+     scaled past "cover" and offset, so it's positioned by hand. */
+  .home__portrait {
+    position: relative;
+    z-index: 31;
+    flex: none;
+    width: calc(277 * var(--px));
+    aspect-ratio: 411 / 655;
+    margin-top: calc(24 * var(--px));
+    overflow: hidden;
+  }
+
+  .home__hero {
+    position: absolute;
+    top: -11.32%;
+    left: -72.8%;
+    width: 190.23%;
+    height: 119.2%;
+    max-width: none;
+  }
+
+  /* Hover frames share the frame's 411:655 ratio, so they fill it as-is */
+  .home__frame {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .home__frame[hidden] {
+    display: none;
+  }
+
+  /* Portrait effect preview: the WebGL canvas draws the image instead */
+  .home__portrait:global(.has-fx) {
+    overflow: visible;
+  }
+
+  .home__portrait:global(.has-fx) > img {
+    visibility: hidden;
+  }
+
+  .home__foot {
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(14 * var(--px));
+    margin-top: calc(21 * var(--px));
+    text-align: center;
+  }
+
+  .home__copy {
+    order: 3;
+  }
+
+  /* Desktop: the hero composition scales with whichever of width or height
+     is tighter (--s), and stays centred vertically. */
+  @media (min-width: 1024px) {
+    .home {
+      --s: min(calc(100vw / 1920), calc(100svh / 1080));
+      display: block;
+      height: 100svh;
+      min-height: calc(640 * var(--px));
+      padding: 0;
+    }
+
+    .home__title {
+      display: block;
+      font-size: calc(170 * var(--s));
+      line-height: normal;
+    }
+
+    .home__uiux,
+    .home__visual {
+      position: absolute;
+      writing-mode: vertical-rl;
+      white-space: nowrap;
+    }
+
+    .home__uiux {
+      top: calc(50% - 327 * var(--s));
+      left: calc(var(--gutter) - 32 * var(--s));
+      transform: rotate(180deg);
+    }
+
+    .home__visual {
+      top: calc(50% - 331 * var(--s));
+      left: calc(var(--gutter) + 118 * var(--s));
+    }
+
+    .home__designer {
+      position: absolute;
+      top: calc(50% + 276 * var(--s));
+      left: var(--gutter);
+      margin: 0;
+      font-size: calc(78 * var(--s));
+    }
+
+    .home__portrait {
+      position: absolute;
+      top: 50%;
+      left: calc(888 * var(--px));
+      width: auto;
+      height: calc(655 * var(--s));
+      margin: 0;
+      transform: translateY(-50%);
+    }
+
+    .home__foot {
+      position: absolute;
+      right: var(--gutter);
+      bottom: calc(60 * var(--px));
+      left: var(--gutter);
+      display: grid;
+      grid-template-columns: calc(828 * var(--px)) 1fr auto;
+      align-items: end;
+      gap: 0;
+      margin: 0;
+      text-align: left;
+    }
+
+    .home__copy {
+      order: 0;
+    }
+
+    .home__love {
+      text-align: right;
+    }
+  }
+</style>
