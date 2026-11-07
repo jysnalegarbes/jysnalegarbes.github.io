@@ -1,8 +1,8 @@
 /*
   Fluid tweak panel
   -----------------
-  Live controls for the homepage fluid. Opens when the URL has `?tweak`
-  (e.g. http://localhost:4321/?tweak).
+  Live controls for a fluid ink trail: the homepage background (?tweak on
+  /) and the Contact name reveal (/contact/?tweak).
     - Save to project (dev only) writes src/config/fluid-trail.json
     - Copy JSON puts the same settings on the clipboard
 */
@@ -14,7 +14,17 @@ export interface FluidSettings {
   config: FluidConfig;
 }
 
-export function mountFluidTweaks(fluid: FluidTrail, saved: FluidSettings) {
+export interface FluidTweaksOptions {
+  title?: string;
+  /** Dev endpoint that writes the config (default: the home fluid's) */
+  saveUrl?: string;
+}
+
+export function mountFluidTweaks(
+  fluid: FluidTrail,
+  saved: FluidSettings,
+  { title = 'Fluid background', saveUrl = '/__fluid-config' }: FluidTweaksOptions = {},
+) {
   const state: FluidSettings = structuredClone(saved);
   const { config } = state;
 
@@ -31,7 +41,7 @@ export function mountFluidTweaks(fluid: FluidTrail, saved: FluidSettings) {
   });
   document.body.append(container);
 
-  const pane = new Pane({ container, title: 'Fluid background' });
+  const pane = new Pane({ container, title });
 
   const apply = () => fluid.update(config, state.tint);
 
@@ -74,7 +84,7 @@ export function mountFluidTweaks(fluid: FluidTrail, saved: FluidSettings) {
     save.on('click', async () => {
       save.title = 'Saving…';
       try {
-        const res = await fetch('/__fluid-config', { method: 'POST', body: json() });
+        const res = await fetch(saveUrl, { method: 'POST', body: json() });
         if (!res.ok) throw new Error(await res.text());
         save.title = 'Saved ✓';
       } catch (err) {

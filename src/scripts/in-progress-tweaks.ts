@@ -64,6 +64,16 @@ export function mountInProgressTweaks(api: InProgressApi, saved: InProgressSetti
   liquid.addBinding(s.liquid, 'strength', { label: 'smear', min: 0, max: 0.3, step: 0.005 });
   liquid.addBinding(s.liquid, 'split', { label: 'rgb split', min: 0, max: 3, step: 0.05 });
 
+  const wet = pane.addFolder({ title: 'Hover 4 · Liquid Halftone Trail' });
+  wet.addBinding(s.liquidTrail, 'brush', { label: 'brush (cells)', min: 0.5, max: 8, step: 0.1 });
+  wet.addBinding(s.liquidTrail, 'cell', { label: 'trail grain px', min: 3, max: 24, step: 0.5 });
+  wet.addBinding(s.liquidTrail, 'fade', { label: 'dry time s', min: 0.1, max: 4, step: 0.05 });
+  wet.addBinding(s.liquidTrail, 'edge', { label: 'ink edge', min: 0.02, max: 0.95, step: 0.01 });
+  wet.addBinding(s.liquidTrail, 'softness', { label: 'edge softness', min: 0, max: 0.4, step: 0.005 });
+  wet.addBinding(s.liquidTrail, 'wobble', { label: 'wobble', min: 0, max: 3, step: 0.05 });
+  wet.addBinding(s.liquidTrail, 'dot', { label: 'dot cell px', min: 3, max: 30, step: 0.5 });
+  wet.addBinding(s.liquidTrail, 'smear', { label: 'smear', min: 0, max: 0.3, step: 0.005 });
+
   pane.on('change', () => api.refresh());
 
   pane.addBlade({ view: 'separator' });

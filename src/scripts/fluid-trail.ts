@@ -13,6 +13,13 @@
        which turns the inverted background into the tint while the inverted
        text stays lighter than it.
   Off the ink both layers are black, which leaves the page untouched.
+
+  Reveal mode (`reveal`, Contact name, 2026-11-07): one opaque canvas over
+  an area of the page instead. Off the ink it paints `reveal.paper` (the
+  page background); on the ink it shows `reveal.source` (white-on-clear
+  type, drawn at the canvas size) in the tint. No tint canvas needed.
+  The pointer is read relative to the canvas, so it can be any box; the
+  home page's is the full screen.
 */
 
 export interface FluidConfig {
@@ -35,10 +42,13 @@ export interface FluidConfig {
 
 interface MountOptions {
   canvas: HTMLCanvasElement;
-  tintCanvas: HTMLCanvasElement;
+  /** Required unless `reveal` is set */
+  tintCanvas?: HTMLCanvasElement;
   /** Hex colour the ink shows as */
   tint: string;
   config: FluidConfig;
+  /** Reveal mode: the ink uncovers `source` (see the top of the file) */
+  reveal?: { source: TexImageSource; paper: string };
 }
 
 /**
@@ -329,12 +339,46 @@ const displayShader = `
   }
 `;
 
+/* Reveal mode: the ink mask (as display) uncovers the type in uText. */
+const revealShader = `
+  precision highp float;
+  precision highp sampler2D;
+  varying vec2 vUv;
+  varying vec2 vL;
+  varying vec2 vR;
+  varying vec2 vT;
+  varying vec2 vB;
+  uniform sampler2D uTexture;
+  uniform sampler2D uText;
+  uniform vec2 texelSize;
+  uniform vec3 uColor;
+  uniform vec3 uPaper;
+  uniform float uMode;
+  uniform float uEdge;
+  uniform float uSoftness;
+  uniform float uShading;
+
+  void main () {
+    float d = texture2D(uTexture, vUv).r;
+    float mask = uMode > 0.5
+      ? smoothstep(uEdge - uSoftness, uEdge + uSoftness, d)
+      : clamp(d, 0.0, 1.0);
+    float dx = min(texture2D(uTexture, vR).r, 1.0) - min(texture2D(uTexture, vL).r, 1.0);
+    float dy = min(texture2D(uTexture, vT).r, 1.0) - min(texture2D(uTexture, vB).r, 1.0);
+    vec3 n = normalize(vec3(dx, dy, length(texelSize)));
+    float shade = mix(1.0, clamp(n.z + 0.7, 0.7, 1.0), uShading);
+    // The type canvas is uploaded top row first: flip to the dye's uv
+    float text = texture2D(uText, vec2(vUv.x, 1.0 - vUv.y)).a;
+    gl_FragColor = vec4(mix(uPaper, uColor * shade, mask * text), 1.0);
+  }
+`;
+
 function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.replace('#', ''), 16);
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-export function mountFluidTrail({ canvas, tintCanvas, tint, config }: MountOptions) {
+export function mountFluidTrail({ canvas, tintCanvas, tint, config, reveal }: MountOptions) {
   const params: WebGLContextAttributes = {
     alpha: false,
     depth: false,
@@ -344,8 +388,8 @@ export function mountFluidTrail({ canvas, tintCanvas, tint, config }: MountOptio
   };
   const gl2 = canvas.getContext('webgl2', params);
   const gl: GL | null = gl2 ?? canvas.getContext('webgl', params);
-  const tintCtx = tintCanvas.getContext('2d', { alpha: false });
-  if (!gl || !tintCtx) return null;
+  const tintCtx = tintCanvas?.getContext('2d', { alpha: false }) ?? null;
+  if (!gl || (!tintCtx && !reveal)) return null;
   const isWebGL2 = !!gl2;
 
   // Half-float render targets
@@ -442,6 +486,7 @@ export function mountFluidTrail({ canvas, tintCanvas, tint, config }: MountOptio
       pressure: program(pressureShader),
       gradientSubtract: program(gradientSubtractShader),
       display: program(displayShader),
+      reveal: reveal ? program(revealShader) : null,
     };
   } catch (err) {
     console.warn('[fluid-trail]', err);
@@ -561,8 +606,12 @@ export function mountFluidTrail({ canvas, tintCanvas, tint, config }: MountOptio
     const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
     const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
     if (canvas.width === w && canvas.height === h && dye) return;
-    canvas.width = tintCanvas.width = w;
-    canvas.height = tintCanvas.height = h;
+    canvas.width = w;
+    canvas.height = h;
+    if (tintCanvas) {
+      tintCanvas.width = w;
+      tintCanvas.height = h;
+    }
     initFramebuffers();
   };
 
@@ -673,11 +722,51 @@ export function mountFluidTrail({ canvas, tintCanvas, tint, config }: MountOptio
     blit(null);
   };
 
+  // Reveal mode: the type texture, kept on its own unit (the sim uses 0 and 1)
+  const TEXT_UNIT = 2;
+  let textTexture: WebGLTexture | null = null;
+  let paperRgb = reveal ? hexToRgb(reveal.paper) : ([0, 0, 0] as [number, number, number]);
+  const setRevealSource = (source: TexImageSource) => {
+    gl.activeTexture(gl.TEXTURE0 + TEXT_UNIT);
+    if (!textTexture) {
+      textTexture = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, textTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, textTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+  };
+  if (reveal) setRevealSource(reveal.source);
+
+  const drawReveal = () => {
+    const r = programs.reveal!;
+    r.bind();
+    gl.uniform2f(r.u.texelSize, dye.texelSizeX, dye.texelSizeY);
+    gl.uniform1i(r.u.uTexture, dye.read.attach(0));
+    gl.activeTexture(gl.TEXTURE0 + TEXT_UNIT);
+    gl.bindTexture(gl.TEXTURE_2D, textTexture);
+    gl.uniform1i(r.u.uText, TEXT_UNIT);
+    gl.uniform3f(r.u.uColor, ...tintRgb);
+    gl.uniform3f(r.u.uPaper, ...paperRgb);
+    gl.uniform1f(r.u.uMode, config.mode);
+    gl.uniform1f(r.u.uEdge, config.inkEdge);
+    gl.uniform1f(r.u.uSoftness, config.inkSoftness);
+    gl.uniform1f(r.u.uShading, config.shading ? 1 : 0);
+    blit(null);
+  };
+
   const render = () => {
+    if (reveal) {
+      drawReveal();
+      return;
+    }
     // Tint pass first, copied out to the lighten layer, then the white
     // mask is what stays on the difference layer.
     drawMask(tintRgb, config.shading);
-    tintCtx.drawImage(canvas, 0, 0);
+    tintCtx!.drawImage(canvas, 0, 0);
     drawMask([1, 1, 1], false);
   };
 
@@ -690,8 +779,14 @@ export function mountFluidTrail({ canvas, tintCanvas, tint, config }: MountOptio
       pointer.inside = false; // no jump splat when input resumes
       return;
     }
-    const x = clientX / window.innerWidth;
-    const y = 1 - clientY / window.innerHeight;
+    // Relative to the canvas (the home one fills the screen)
+    const box = canvas.getBoundingClientRect();
+    const x = (clientX - box.left) / Math.max(1, box.width);
+    const y = 1 - (clientY - box.top) / Math.max(1, box.height);
+    if (x < -0.1 || x > 1.1 || y < -0.1 || y > 1.1) {
+      pointer.inside = false; // well outside: no splat, no jump on re-entry
+      return;
+    }
     if (pointer.inside) {
       const a = aspect();
       let dx = x - pointer.x;
@@ -827,6 +922,15 @@ export function mountFluidTrail({ canvas, tintCanvas, tint, config }: MountOptio
     /** Pause/resume the cursor trail (the loader owns the ink meanwhile). */
     setInput(enabled: boolean) {
       inputEnabled = enabled;
+    },
+
+    /** Reveal mode: new type to uncover (after a resize), and the paper colour */
+    setReveal(source: TexImageSource, paper?: string) {
+      if (!reveal) return;
+      setRevealSource(source);
+      if (paper) paperRgb = hexToRgb(paper);
+      resize();
+      render();
     },
 
     /** Draw the current state in this frame (for seamless DOM hand-offs). */

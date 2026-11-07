@@ -5,8 +5,8 @@
   0..1, stamped along the cursor's path and fading back to 0. Uploaded as a
   small LUMINANCE texture (NEAREST, so every cell stays a hard block), it
   masks a shader effect to the cursor's trail, Produx footer style
-  (produx.design). Used by the In Progress "Pixel Trail" hover and the
-  Contact name reveal.
+  (produx.design). Used by the In Progress "Pixel Trail" hover (NEAREST,
+  hard blocks) and "Liquid Halftone Trail" (LINEAR, a soft ink trail).
 */
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));

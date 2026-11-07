@@ -12,6 +12,10 @@
                      after the Produx project cards / footer (produx.design)
     3 Liquid RGB     the photo smears in the direction the cursor moves,
                      splitting into red / green / blue, and springs back
+    4 Liquid Halftone Trail  the cursor paints a soft, wobbling ink trail;
+                     inside it the photo turns into the ink halftone and
+                     smears along the cursor's motion, then the trail dries
+                     back into the photo
   The cards move under a still cursor too (the loop), so the card under it
   is looked up again on every scroll frame. Fine pointers only.
 */
@@ -51,6 +55,9 @@ const fragment = /* glsl */ `
   uniform vec2 vel;      // card uv / s
   uniform vec4 p;        // lens radius, lens cell px, pixel block px, liquid radius
   uniform vec2 q;        // liquid strength, rgb split
+  uniform vec4 lt;       // liquid trail: edge, softness, wobble, dot px
+  uniform float smear;   // liquid trail smear
+  uniform float time;
   varying vec2 vUv;
   ${inkGlsl}
 
@@ -87,9 +94,22 @@ const fragment = /* glsl */ `
     vec2 off = -vel * fall * q.x;
     vec3 c3 = vec3(photo(uv + off * (1.0 + q.y)).r, photo(uv + off).g, photo(uv + off * (1.0 - 0.5 * q.y)).b);
 
+    // 4 Liquid Halftone Trail: the soft trail (LINEAR), its edge wobbled
+    // and cut like the home ink, dots inside smeared along the motion
+    vec2 wob = lt.z * 0.012 * vec2(
+      sin(uv.y * 31.0 + time * 2.3) + sin(uv.x * 17.0 - time * 1.7),
+      cos(uv.x * 27.0 - time * 2.1) + cos(uv.y * 13.0 + time * 1.3));
+    float wet = texture2D(trail, uv + wob).r;
+    float inked = smoothstep(lt.x - lt.y, lt.x + lt.y, wet);
+    vec2 suv = uv - vel * wet * smear;
+    vec2 g4 = inkGridPx(suv, box, lt.w);
+    vec3 dots4 = inkDotsPx(g4, lt.w, photo(inkCentrePx(g4, box, lt.w)));
+    vec3 c4 = mix(base, dots4, inked);
+
     vec3 c = c1;
     c = mix(c, c2, step(1.5, mode));
     c = mix(c, c3, step(2.5, mode));
+    c = mix(c, c4, step(3.5, mode));
     gl_FragColor = vec4(c, 1.0);
   }
 `;
@@ -111,7 +131,7 @@ export function mountInProgressHover(root: HTMLElement, settings: InProgressSett
 
   let prog: ReturnType<typeof linkProgram>;
   try {
-    prog = linkProgram(gl, vertex, fragment, ['tex', 'trail', 'box', 'aspect', 'mode', 'amt', 'mouse', 'vel', 'p', 'q']);
+    prog = linkProgram(gl, vertex, fragment, ['tex', 'trail', 'box', 'aspect', 'mode', 'amt', 'mouse', 'vel', 'p', 'q', 'lt', 'smear', 'time']);
   } catch (err) {
     console.warn('[in-progress-hover]', err);
     return null;
@@ -169,9 +189,17 @@ export function mountInProgressHover(root: HTMLElement, settings: InProgressSett
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     gl!.viewport(0, 0, canvas.width, canvas.height);
-    const block = Math.max(4, settings.pixel.block);
-    trail.resize(w / block, h / block);
+    // Pixel Trail: hard blocks; Liquid Halftone Trail: a finer, soft grid
+    const liquid = settings.hoverFx === 4;
+    const cell = Math.max(3, liquid ? settings.liquidTrail.cell : settings.pixel.block);
+    trail.resize(w / cell, h / cell);
     trail.clear();
+    gl!.activeTexture(gl!.TEXTURE1);
+    gl!.bindTexture(gl!.TEXTURE_2D, trailTex);
+    const filter = liquid ? gl!.LINEAR : gl!.NEAREST;
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, filter);
+    gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, filter);
+    gl!.activeTexture(gl!.TEXTURE0);
     amt = 0;
     const at = local(el);
     mouse = { ...at };
@@ -209,13 +237,14 @@ export function mountInProgressHover(root: HTMLElement, settings: InProgressSett
         lastRaw = { ...raw, t: now };
       }
       if (settings.hoverFx === 2) trail.move(raw.x, raw.y, settings.pixel.radius, 0.6);
+      if (settings.hoverFx === 4) trail.move(raw.x, raw.y, settings.liquidTrail.brush, 0);
     }
     vel.x *= Math.exp(-dt / 0.18);
     vel.y *= Math.exp(-dt / 0.18);
     const follow = Math.max(0.001, settings.halftone.follow);
     mouse.x += (raw.x - mouse.x) * (1 - Math.exp(-dt / follow));
     mouse.y += (raw.y - mouse.y) * (1 - Math.exp(-dt / follow));
-    const trailOn = trail.decay(dt, settings.pixel.fade);
+    const trailOn = trail.decay(dt, settings.hoverFx === 4 ? settings.liquidTrail.fade : settings.pixel.fade);
 
     if (t) {
       gl!.activeTexture(gl!.TEXTURE1);
@@ -230,6 +259,10 @@ export function mountInProgressHover(root: HTMLElement, settings: InProgressSett
       gl!.uniform2f(u.vel, vel.x, vel.y);
       gl!.uniform4f(u.p, settings.halftone.radius, settings.halftone.cell, settings.pixel.block, settings.liquid.radius);
       gl!.uniform2f(u.q, settings.liquid.strength, settings.liquid.split);
+      const lt = settings.liquidTrail;
+      gl!.uniform4f(u.lt, lt.edge, lt.softness, lt.wobble, lt.dot);
+      gl!.uniform1f(u.smear, lt.smear);
+      gl!.uniform1f(u.time, performance.now() / 1000);
       gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
     }
 

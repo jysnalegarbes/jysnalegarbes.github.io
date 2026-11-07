@@ -6,16 +6,18 @@ import { defineConfig } from 'astro/config';
 const fluidConfigPath = fileURLToPath(new URL('./src/config/fluid-trail.json', import.meta.url));
 
 /**
- * Dev-only endpoint behind the fluid tweak panel's "Save to project" button.
- * Accepts only the keys already in the config file, with matching types.
+ * Dev-only endpoint behind a fluid tweak panel's "Save to project" button
+ * (home fluid, Contact name reveal). Accepts only the keys already in the
+ * config file, with matching types.
+ * @param {string} route @param {string} path
  * @returns {import('vite').Plugin}
  */
-function fluidConfigSaver() {
+function fluidConfigSaver(route = '/__fluid-config', path = fluidConfigPath) {
   return {
-    name: 'fluid-config-saver',
+    name: `fluid-config-saver${route}`,
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use('/__fluid-config', (req, res) => {
+      server.middlewares.use(route, (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405;
           res.end();
@@ -25,7 +27,7 @@ function fluidConfigSaver() {
         req.on('data', (chunk) => (body += chunk));
         req.on('end', async () => {
           try {
-            const current = JSON.parse(await readFile(fluidConfigPath, 'utf8'));
+            const current = JSON.parse(await readFile(path, 'utf8'));
             const incoming = JSON.parse(body);
             if (!/^#[0-9a-f]{6}$/i.test(incoming.tint)) throw new Error('tint must be a #rrggbb colour');
             const config = {};
@@ -33,7 +35,7 @@ function fluidConfigSaver() {
               if (typeof incoming.config?.[key] !== typeof value) throw new Error(`config.${key} has the wrong type`);
               config[key] = incoming.config[key];
             }
-            await writeFile(fluidConfigPath, JSON.stringify({ tint: incoming.tint, config }, null, 2) + '\n');
+            await writeFile(path, JSON.stringify({ tint: incoming.tint, config }, null, 2) + '\n');
             res.statusCode = 204;
             res.end();
           } catch (err) {
@@ -118,7 +120,7 @@ export default defineConfig({
       jsonConfigSaver('/__portrait-config', portraitConfigPath),
       jsonConfigSaver('/__about-motion', aboutMotionPath),
       jsonConfigSaver('/__in-progress', inProgressPath),
-      jsonConfigSaver('/__contact-reveal', contactRevealPath),
+      fluidConfigSaver('/__contact-reveal', contactRevealPath),
     ],
   },
 });

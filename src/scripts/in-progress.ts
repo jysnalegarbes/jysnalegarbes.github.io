@@ -21,7 +21,7 @@
                      bottom of the screen, as if on a turning drum
     3 Column Drift   the columns travel at different speeds and catch up
                      with different lags (left slow, right fast)
-  Hover effects live in in-progress-hover.ts. Settings:
+  Hover effects (?hfx=1..4) live in in-progress-hover.ts. Settings:
   src/config/in-progress.json; /in-progress/?tweak opens their panel.
   Reduced motion: no easing, no effects.
 */
@@ -31,7 +31,7 @@ import { mountInProgressHover, type InProgressHover } from './in-progress-hover'
 export type InProgressSettings = typeof defaults;
 
 export const SCROLL_FX = { 'Velocity Skew': 1, 'Drum Roll': 2, 'Column Drift': 3 };
-export const HOVER_FX = { 'Halftone Lens': 1, 'Pixel Trail': 2, 'Liquid RGB': 3 };
+export const HOVER_FX = { 'Halftone Lens': 1, 'Pixel Trail': 2, 'Liquid RGB': 3, 'Liquid Halftone Trail': 4 };
 
 export interface InProgressApi {
   settings: InProgressSettings;
