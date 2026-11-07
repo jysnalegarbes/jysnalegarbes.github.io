@@ -14,14 +14,14 @@
   end; scrolling back up stops at the rest layout (the Figma composition,
   nothing above the stepped first row).
 
-  Scroll effects on test (scrollFx, ?sfx=1..3):
-    1 Velocity Skew  cards lean and stretch with the scroll speed, and
-                     straighten as it settles
-    2 Drum Roll      cards tilt away (rotateX) and shrink toward the top and
-                     bottom of the screen, as if on a turning drum
-    3 Column Drift   the columns travel at different speeds and catch up
-                     with different lags (left slow, right fast)
-  Hover effects (?hfx=1..4) live in in-progress-hover.ts. Settings:
+  Scroll effect (chosen 2026-11-07, options in the effects library,
+  lab/portfolio/in-progress/01-loop-and-effects):
+    Drum Roll   cards tilt away (rotateX) and shrink toward the top and
+                bottom of the screen, as if on a turning drum
+    + skew      while scrolling, the cards also lean (skewY) and stretch
+                with the scroll speed, then ease back (settle), like the
+                About services image following the cursor
+  The hover (black liquid ink) lives in in-progress-hover.ts. Settings:
   src/config/in-progress.json; /in-progress/?tweak opens their panel.
   Reduced motion: no easing, no effects.
 */
@@ -29,9 +29,6 @@ import defaults from '../config/in-progress.json';
 import { mountInProgressHover, type InProgressHover } from './in-progress-hover';
 
 export type InProgressSettings = typeof defaults;
-
-export const SCROLL_FX = { 'Velocity Skew': 1, 'Drum Roll': 2, 'Column Drift': 3 };
-export const HOVER_FX = { 'Halftone Lens': 1, 'Pixel Trail': 2, 'Liquid RGB': 3, 'Liquid Halftone Trail': 4 };
 
 export interface InProgressApi {
   settings: InProgressSettings;
@@ -52,6 +49,7 @@ interface Column {
   shown: number; // eased scroll position, px
   last: number;
   speed: number; // px/s, smoothed
+  lean: number; // skew, deg, eased
 }
 
 export function mountInProgress(root: HTMLElement) {
@@ -63,12 +61,6 @@ export function mountInProgress(root: HTMLElement) {
   const desktop = window.matchMedia('(min-width: 1024px)');
   const settings: InProgressSettings = structuredClone(defaults);
   const params = new URLSearchParams(location.search);
-  const pick = (key: string, list: Record<string, number>) => {
-    const n = Number(params.get(key));
-    return Object.values(list).includes(n) ? n : null;
-  };
-  settings.scrollFx = pick('sfx', SCROLL_FX) ?? settings.scrollFx;
-  settings.hoverFx = pick('hfx', HOVER_FX) ?? settings.hoverFx;
 
   const columns: Column[] = colEls.map((el) => ({
     el,
@@ -80,6 +72,7 @@ export function mountInProgress(root: HTMLElement) {
     shown: 0,
     last: 0,
     speed: 0,
+    lean: 0,
   }));
 
   root.classList.add('is-live');
@@ -88,12 +81,6 @@ export function mountInProgress(root: HTMLElement) {
   let cardH = 0;
   let step = 1;
   let target = 0;
-
-  // Drift (3): each column's share of the scroll and its extra lag
-  const driftSpeed = (i: number) =>
-    settings.scrollFx === 3 ? [settings.drift.slow, 1, settings.drift.fast][i] ?? 1 : 1;
-  const lagOf = (i: number) =>
-    settings.scroll.smoothing + (settings.scrollFx === 3 ? settings.drift.lag * ([0.5, 0, 1][i] ?? 0) : 0);
 
   function build() {
     H = window.innerHeight;
@@ -135,22 +122,21 @@ export function mountInProgress(root: HTMLElement) {
   }
 
   function place(c: Column) {
-    const fx = reduced ? 0 : settings.scrollFx;
-    const { maxDeg, perSpeed, stretch } = settings.skew;
-    const lean = clamp(c.speed * perSpeed, -maxDeg, maxDeg);
-    const squash = 1 + (Math.abs(lean) / Math.max(0.01, maxDeg)) * stretch;
+    const { maxDeg, stretch } = settings.skew;
+    const squash = 1 + (Math.abs(c.lean) / Math.max(0.01, maxDeg)) * stretch;
     // Window the cards may sit in: from `above` over the top of the screen,
     // but never above the rest layout, so the top stays the Figma composition
     const low = Math.max(0, c.shown - c.above);
     c.cards.forEach((card, j) => {
       const y = mod(j * step - low, c.span) + low - c.shown;
       let t = `translate3d(0, ${y.toFixed(2)}px, 0)`;
-      if (fx === 1) {
-        t += ` skewY(${(-lean).toFixed(3)}deg) scaleY(${squash.toFixed(4)})`;
-      } else if (fx === 2) {
+      if (!reduced) {
+        // Drum: tilt and shrink away from the middle of the screen
         const mid = c.top + y + cardH / 2;
         const d = clamp((mid - H / 2) / (H / 2), -1.4, 1.4);
         t += ` rotateX(${(-d * settings.drum.angle).toFixed(3)}deg) scale(${(1 - Math.abs(d) * settings.drum.shrink).toFixed(4)})`;
+        // Skew: lean and stretch with the scroll
+        t += ` skewY(${(-c.lean).toFixed(3)}deg) scaleY(${squash.toFixed(4)})`;
       }
       card.style.transform = t;
     });
@@ -164,17 +150,24 @@ export function mountInProgress(root: HTMLElement) {
     const dt = Math.max(0, Math.min(0.1, (now - lastT) / 1000));
     lastT = now;
     let busy = false;
-    columns.forEach((c, i) => {
-      const goal = target * driftSpeed(i);
-      const lag = reduced ? 0 : lagOf(i);
-      c.shown = lag > 0 && dt > 0 ? c.shown + (goal - c.shown) * (1 - Math.exp(-dt / lag)) : goal;
+    columns.forEach((c) => {
+      const goal = target;
+      const lag = reduced ? 0 : settings.scroll.smoothing;
+      // A zero step (first frame after input) holds still rather than jumping
+      if (lag <= 0) c.shown = goal;
+      else c.shown += (goal - c.shown) * (1 - Math.exp(-dt / lag));
       if (Math.abs(goal - c.shown) < 0.05) c.shown = goal;
       const v = dt > 0 ? (c.shown - c.last) / dt : 0;
       c.speed += (v - c.speed) * Math.min(1, dt / 0.08);
       if (Math.abs(c.speed) < 2 && c.shown === goal) c.speed = 0;
       c.last = c.shown;
+      // The lean follows the speed and eases back over settle
+      const { maxDeg, perSpeed, settle } = settings.skew;
+      const leanGoal = clamp(c.speed * perSpeed, -maxDeg, maxDeg);
+      c.lean += (leanGoal - c.lean) * (settle > 0 ? 1 - Math.exp(-dt / settle) : 1);
+      if (Math.abs(c.lean) < 0.01 && leanGoal === 0) c.lean = 0;
       place(c);
-      if (c.shown !== goal || c.speed !== 0) busy = true;
+      if (c.shown !== goal || c.speed !== 0 || c.lean !== 0) busy = true;
     });
     hover?.frame(busy);
     raf = busy ? requestAnimationFrame(frame) : 0;
@@ -266,7 +259,7 @@ export function mountInProgress(root: HTMLElement) {
     settings,
     refresh() {
       build();
-      columns.forEach((c, i) => (c.shown = target * driftSpeed(i)));
+      columns.forEach((c) => (c.shown = target));
       columns.forEach(place);
       hover?.refresh();
     },
