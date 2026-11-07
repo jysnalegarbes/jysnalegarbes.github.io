@@ -1,27 +1,22 @@
 {
   "scroll": {
-    "smoothing": 0.12,
-    "wheel": 1
+    "smoothing": 0.15,
+    "wheel": 1.35
   },
   "drum": {
-    "angle": 38,
+    "angle": 80,
     "shrink": 0.16,
-    "perspective": 1300
+    "perspective": 4000
   },
   "skew": {
     "maxDeg": 6,
-    "perSpeed": 0.004,
-    "stretch": 0.06,
+    "perSpeed": 0.0035,
+    "stretch": 0.16,
     "settle": 0.35
   },
-  "ink": {
+  "liquid": {
     "radius": 0.28,
-    "smear": 0.06,
-    "amount": 1.4,
-    "edge": 0.35,
-    "softness": 0.02,
-    "wobble": 0.6,
-    "tail": 1.5,
-    "linger": 0.25
+    "strength": 0.06,
+    "split": 1
   }
 }

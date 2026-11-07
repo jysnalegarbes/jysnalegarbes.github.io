@@ -120,6 +120,7 @@ export default defineConfig({
       jsonConfigSaver('/__portrait-config', portraitConfigPath),
       jsonConfigSaver('/__about-motion', aboutMotionPath),
       jsonConfigSaver('/__in-progress', inProgressPath),
+      jsonConfigSaver('/__work-tooltip', fileURLToPath(new URL('./src/config/work-tooltip.json', import.meta.url))),
       fluidConfigSaver('/__contact-reveal', contactRevealPath),
     ],
   },

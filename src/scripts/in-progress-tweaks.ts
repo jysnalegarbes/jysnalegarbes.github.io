@@ -1,7 +1,7 @@
 /*
   In Progress tweak panel
   -----------------------
-  /in-progress/?tweak: tune the Drum Roll + skew scroll and the liquid ink
+  /in-progress/?tweak: tune the Drum Roll + skew scroll and the Liquid RGB
   hover live.
     - Save to project (dev server only) writes src/config/in-progress.json
     - Copy JSON puts the same settings on the clipboard
@@ -42,15 +42,10 @@ export function mountInProgressTweaks(api: InProgressApi, saved: InProgressSetti
   skew.addBinding(s.skew, 'stretch', { label: 'stretch', min: 0, max: 0.4, step: 0.01 });
   skew.addBinding(s.skew, 'settle', { label: 'settle s', min: 0, max: 1.5, step: 0.01 });
 
-  const ink = pane.addFolder({ title: 'Hover · Liquid Ink' });
-  ink.addBinding(s.ink, 'radius', { label: 'size (card h)', min: 0.05, max: 1, step: 0.01 });
-  ink.addBinding(s.ink, 'tail', { label: 'tail', min: 0, max: 6, step: 0.05 });
-  ink.addBinding(s.ink, 'amount', { label: 'ink per speed', min: 0, max: 6, step: 0.05 });
-  ink.addBinding(s.ink, 'edge', { label: 'ink edge', min: 0.02, max: 0.95, step: 0.01 });
-  ink.addBinding(s.ink, 'softness', { label: 'edge softness', min: 0, max: 0.4, step: 0.005 });
-  ink.addBinding(s.ink, 'wobble', { label: 'wobble', min: 0, max: 3, step: 0.05 });
-  ink.addBinding(s.ink, 'smear', { label: 'photo smear', min: 0, max: 0.3, step: 0.005 });
-  ink.addBinding(s.ink, 'linger', { label: 'linger s', min: 0.02, max: 1.5, step: 0.01 });
+  const liquid = pane.addFolder({ title: 'Hover · Liquid RGB' });
+  liquid.addBinding(s.liquid, 'radius', { label: 'radius (card h)', min: 0.05, max: 1, step: 0.01 });
+  liquid.addBinding(s.liquid, 'strength', { label: 'smear', min: 0, max: 0.3, step: 0.005 });
+  liquid.addBinding(s.liquid, 'split', { label: 'rgb split', min: 0, max: 3, step: 0.05 });
 
   pane.on('change', () => api.refresh());
 

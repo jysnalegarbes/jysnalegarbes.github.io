@@ -1,20 +1,18 @@
 /*
-  In Progress card hover: liquid ink
+  In Progress card hover: Liquid RGB
   ----------------------------------
   One WebGL canvas, moved into whichever card is under the cursor, so it
   takes on the card's scroll transform. It draws the card's photo exactly
-  over the <img> (object-fit: cover) and, where the cursor moves, smears
-  the photo along the motion and floods it with black ink (--black): a
-  blob around the cursor, drawn out into a tail behind it, its edge cut
-  sharp and wobbling like wet ink. It drains back into the photo when the
-  cursor slows ("linger"). Chosen 2026-11-07 from four hovers (Liquid RGB
-  turned black; options in lab/portfolio/in-progress/01-loop-and-effects).
+  over the <img> (object-fit: cover) and, around the cursor, smears it in
+  the direction the cursor moves, splitting it into red / green / blue,
+  then springs back. Chosen 2026-11-07 from four hovers
+  (lab/portfolio/in-progress/01-loop-and-effects); a black liquid-ink take
+  on it was tried and set aside (02-drum-skew-ink).
 
   The cards move under a still cursor too (the loop), so the card under it
   is looked up again on every scroll frame. Fine pointers only.
 */
 import { linkProgram, uploadTexture } from './liquid-morph';
-import { INK_COLOR } from './ink-halftone';
 import type { InProgressSettings } from './in-progress';
 
 export interface InProgressHover {
@@ -44,10 +42,7 @@ const fragment = /* glsl */ `
   uniform float amt;     // 0 → 1 while hovered
   uniform vec2 mouse;    // card uv
   uniform vec2 vel;      // card uv / s
-  uniform vec4 p;        // radius, smear, amount, tail
-  uniform vec3 e;        // edge, softness, wobble
-  uniform vec3 ink;
-  uniform float time;
+  uniform vec3 p;        // radius, smear strength, rgb split
   varying vec2 vUv;
 
   vec2 coverUv(vec2 uv) {
@@ -60,26 +55,13 @@ const fragment = /* glsl */ `
   void main() {
     vec2 uv = vUv;
     vec2 d = (uv - mouse) * vec2(box.x / box.y, 1.0); // in card heights
-    float speed = length(vel);
-    vec2 dir = vel / max(speed, 0.0001);
-
-    // Behind the cursor the blob is drawn out into a tail
-    float along = dot(d, dir);
-    vec2 across = d - along * dir;
-    float stretch = mix(1.0, 1.0 / (1.0 + speed * p.w), step(along, 0.0));
-    float r2 = dot(across, across) + pow(along * stretch, 2.0);
-    float fall = exp(-r2 / max(0.0001, p.x * p.x)) * amt;
-
-    // The photo smears along the motion
-    vec3 c = photo(uv - vel * fall * p.y);
-
-    // Ink: how wet it is here, the edge cut sharp and wobbling
-    float wet = fall * clamp(speed * p.z, 0.0, 1.0);
-    float wob = e.z * 0.06 * (
-      sin(uv.x * 23.0 + time * 2.7) * sin(uv.y * 19.0 - time * 2.1) +
-      0.5 * sin((uv.x + uv.y) * 41.0 + time * 3.3));
-    float inked = smoothstep(e.x - e.y, e.x + e.y, wet + wob * wet);
-    gl_FragColor = vec4(mix(c, ink, inked), 1.0);
+    float fall = exp(-dot(d, d) / max(0.0001, p.x * p.x)) * amt;
+    vec2 off = -vel * fall * p.y;
+    gl_FragColor = vec4(
+      photo(uv + off * (1.0 + p.z)).r,
+      photo(uv + off).g,
+      photo(uv + off * (1.0 - 0.5 * p.z)).b,
+      1.0);
   }
 `;
 
@@ -100,7 +82,7 @@ export function mountInProgressHover(root: HTMLElement, settings: InProgressSett
 
   let prog: ReturnType<typeof linkProgram>;
   try {
-    prog = linkProgram(gl, vertex, fragment, ['tex', 'box', 'aspect', 'amt', 'mouse', 'vel', 'p', 'e', 'ink', 'time']);
+    prog = linkProgram(gl, vertex, fragment, ['tex', 'box', 'aspect', 'amt', 'mouse', 'vel', 'p']);
   } catch (err) {
     console.warn('[in-progress-hover]', err);
     return null;
@@ -112,7 +94,6 @@ export function mountInProgressHover(root: HTMLElement, settings: InProgressSett
   gl.enableVertexAttribArray(prog.aUv);
   gl.vertexAttribPointer(prog.aUv, 2, gl.FLOAT, false, 0, 0);
   gl.uniform1i(u.tex, 0);
-  gl.uniform3fv(u.ink, INK_COLOR);
 
   // One texture per photo, kept
   const textures = new Map<string, { tex: WebGLTexture; aspect: number }>();
@@ -187,21 +168,18 @@ export function mountInProgressHover(root: HTMLElement, settings: InProgressSett
         lastRaw = { ...raw, t: now };
       }
     }
-    const linger = Math.max(0.02, settings.ink.linger);
-    vel.x *= Math.exp(-dt / linger);
-    vel.y *= Math.exp(-dt / linger);
+    vel.x *= Math.exp(-dt / 0.18);
+    vel.y *= Math.exp(-dt / 0.18);
 
     if (t) {
-      const k = settings.ink;
+      const k = settings.liquid;
       gl!.bindTexture(gl!.TEXTURE_2D, t.tex);
       gl!.uniform2f(u.box, w, h);
       gl!.uniform1f(u.aspect, t.aspect);
       gl!.uniform1f(u.amt, amt);
       gl!.uniform2f(u.mouse, raw.x, raw.y);
       gl!.uniform2f(u.vel, vel.x, vel.y);
-      gl!.uniform4f(u.p, k.radius, k.smear, k.amount, k.tail);
-      gl!.uniform3f(u.e, k.edge, k.softness, k.wobble);
-      gl!.uniform1f(u.time, (performance.now() / 1000) % 1000);
+      gl!.uniform3f(u.p, k.radius, k.strength, k.split);
       gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
     }
 

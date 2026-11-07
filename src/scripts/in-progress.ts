@@ -21,7 +21,7 @@
     + skew      while scrolling, the cards also lean (skewY) and stretch
                 with the scroll speed, then ease back (settle), like the
                 About services image following the cursor
-  The hover (black liquid ink) lives in in-progress-hover.ts. Settings:
+  The hover (Liquid RGB) lives in in-progress-hover.ts. Settings:
   src/config/in-progress.json; /in-progress/?tweak opens their panel.
   Reduced motion: no easing, no effects.
 */
