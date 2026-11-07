@@ -10,7 +10,7 @@
     "highlightTo": 0.85
   },
   "gooTitles": {
-    "duration": 1.2,
+    "duration": 0.75,
     "blur": 0.12,
     "contrast": 28,
     "threshold": -11,

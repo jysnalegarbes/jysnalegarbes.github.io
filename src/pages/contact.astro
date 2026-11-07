@@ -12,17 +12,17 @@ const socials = [
 ---
 
 <BaseLayout title="Contact — Jayson Alegarbes" current="contact">
-  <section class="contact">
-    <div class="contact__hero">
+  <section class="contact" data-contact>
+    <div class="contact__hero" data-contact-hero>
       <p class="contact__lead">Let’s make something good.</p>
       <h1 class="contact__title">
         GOT <span class="serif-italic">a project</span><br class="mobile-only" /> IN MIND?
       </h1>
     </div>
 
-    <p class="contact__name desktop-only" aria-hidden="true">Jayson Alegarbes</p>
+    <p class="contact__name desktop-only" aria-hidden="true" data-contact-name>Jayson Alegarbes</p>
 
-    <div class="contact__foot">
+    <div class="contact__foot" data-contact-foot>
       <div class="contact__col">
         <p class="label">Say something</p>
         <a class="contact__email" href={`mailto:${email}`}>{email}</a>
@@ -45,6 +45,13 @@ const socials = [
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  import { mountContactReveal } from '../scripts/contact-reveal';
+
+  const section = document.querySelector<HTMLElement>('[data-contact]');
+  if (section) mountContactReveal(section);
+</script>
 
 <style>
   .contact {
@@ -132,7 +139,8 @@ const socials = [
       font-size: calc(110 * var(--px));
     }
 
-    /* Present in the frame at the background colour: reserved for an upcoming effect */
+    /* The name (1:552), at the background colour: the canvas uncovers it in
+       green along the cursor trail (contact-reveal.ts) */
     .contact__name {
       position: absolute;
       top: calc(50% + 192 * var(--px));

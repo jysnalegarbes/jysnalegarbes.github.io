@@ -6,29 +6,18 @@
     "waveSpeed": 19,
     "rgbSplit": 0.36
   },
-  "inkDevelop": {
-    "startLevels": 3,
-    "endLevels": 12,
-    "grain": 0.07,
-    "coarseGrain": 0.155,
-    "grainSize": 7.1,
-    "fullTonesAt": 0.61,
-    "photoAtEnd": 0
-  },
   "settle": 0.3,
-  "variant": 0,
   "halftone": {
-    "cellStart": 16,
-    "cellEnd": 6,
+    "cellStart": 4,
+    "cellEnd": 7,
     "resolveFrom": 0.6,
-    "dotsAtEnd": 0,
-    "speedForDots": 0.9
+    "dotsAtEnd": 0.65
   },
   "wipe": {
-    "width": 2.8,
-    "scaleX": 16.21,
-    "scaleY": 11.66,
-    "start": 0.7,
-    "end": 0.97
+    "width": 2.79,
+    "scaleX": 28.310000000000002,
+    "scaleY": 17.96,
+    "start": 0.69,
+    "end": 1
   }
 }

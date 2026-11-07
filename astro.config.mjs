@@ -48,6 +48,8 @@ function fluidConfigSaver() {
 
 const portraitConfigPath = fileURLToPath(new URL('./src/config/portrait-expand.json', import.meta.url));
 const aboutMotionPath = fileURLToPath(new URL('./src/config/about-motion.json', import.meta.url));
+const inProgressPath = fileURLToPath(new URL('./src/config/in-progress.json', import.meta.url));
+const contactRevealPath = fileURLToPath(new URL('./src/config/contact-reveal.json', import.meta.url));
 
 /**
  * Keeps `incoming` to exactly the shape of `current`: same keys, numbers
@@ -115,6 +117,8 @@ export default defineConfig({
       fluidConfigSaver(),
       jsonConfigSaver('/__portrait-config', portraitConfigPath),
       jsonConfigSaver('/__about-motion', aboutMotionPath),
+      jsonConfigSaver('/__in-progress', inProgressPath),
+      jsonConfigSaver('/__contact-reveal', contactRevealPath),
     ],
   },
 });

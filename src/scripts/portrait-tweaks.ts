@@ -1,7 +1,7 @@
 /*
   Portrait-expand tweak panel
   ---------------------------
-  Live controls for the About portrait effect (Ripple + Ink Develop). Opens
+  Live controls for the About portrait effect (Ripple + Halftone Develop). Opens
   when the URL has `?tweak` (e.g. http://localhost:4321/about/?tweak);
   scroll the page to see the change.
     - Save to project (dev server only) writes src/config/portrait-expand.json
@@ -9,7 +9,7 @@
     - Reset puts everything back to the saved values
 */
 import { Pane } from 'tweakpane';
-import { PORTRAIT_VARIANTS, type PortraitExpand, type PortraitSettings } from './portrait-expand';
+import type { PortraitExpand, PortraitSettings } from './portrait-expand';
 
 /** saveUrl: the dev endpoint that writes the config file, or null (no Save) */
 export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings, saveUrl: string | null) {
@@ -25,10 +25,9 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
   });
   document.body.append(container);
 
-  const { ripple, inkDevelop, halftone, wipe } = fx.settings;
+  const { ripple, halftone, wipe } = fx.settings;
   const pane = new Pane({ container, title: 'Portrait effect' });
 
-  pane.addBinding(fx.settings, 'variant', { label: 'variant', options: PORTRAIT_VARIANTS });
 
   const wave = pane.addFolder({ title: 'Ripple' });
   wave.addBinding(ripple, 'speedForFull', { label: 'speed for full', min: 0.2, max: 5, step: 0.05 });
@@ -38,21 +37,11 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
   wave.addBinding(ripple, 'rgbSplit', { label: 'rgb split', min: 0, max: 1, step: 0.01 });
   wave.addBinding(fx.settings, 'settle', { label: 'settle time s', min: 0.05, max: 2, step: 0.05 });
 
-  const ink = pane.addFolder({ title: 'Ink Develop' });
-  ink.addBinding(inkDevelop, 'startLevels', { label: 'start tones', min: 2, max: 6, step: 1 });
-  ink.addBinding(inkDevelop, 'endLevels', { label: 'end tones', min: 3, max: 24, step: 1 });
-  ink.addBinding(inkDevelop, 'grain', { label: 'fine grain', min: 0, max: 0.3, step: 0.005 });
-  ink.addBinding(inkDevelop, 'coarseGrain', { label: 'coarse grain', min: 0, max: 0.3, step: 0.005 });
-  ink.addBinding(inkDevelop, 'grainSize', { label: 'grain size', min: 0.5, max: 8, step: 0.1 });
-  ink.addBinding(inkDevelop, 'photoAtEnd', { label: 'photo at end', min: 0, max: 1, step: 0.01 });
-  ink.addBinding(inkDevelop, 'fullTonesAt', { label: 'photo blend from', min: 0, max: 0.95, step: 0.01 });
-
-  const dots = pane.addFolder({ title: 'Halftone (variants 1–3)' });
+  const dots = pane.addFolder({ title: 'Halftone Develop' });
   dots.addBinding(halftone, 'cellStart', { label: 'dot size small', min: 3, max: 40, step: 0.5 });
   dots.addBinding(halftone, 'cellEnd', { label: 'dot size full', min: 2, max: 30, step: 0.5 });
-  dots.addBinding(halftone, 'resolveFrom', { label: 'resolve from (1)', min: 0, max: 0.99, step: 0.01 });
-  dots.addBinding(halftone, 'dotsAtEnd', { label: 'dots at end (1)', min: 0, max: 1, step: 0.01 });
-  dots.addBinding(halftone, 'speedForDots', { label: 'speed for dots (2,3)', min: 0.1, max: 4, step: 0.05 });
+  dots.addBinding(halftone, 'resolveFrom', { label: 'resolve from', min: 0, max: 0.99, step: 0.01 });
+  dots.addBinding(halftone, 'dotsAtEnd', { label: 'dots at end', min: 0, max: 1, step: 0.01 });
 
   const edge = pane.addFolder({ title: 'Ink wipe (after full screen)' });
   edge.addBinding(wipe, 'width', { label: 'edge width', min: 0.1, max: 6, step: 0.01 });
@@ -96,11 +85,9 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
 
   pane.addButton({ title: 'Reset to saved' }).on('click', () => {
     Object.assign(ripple, structuredClone(saved.ripple));
-    Object.assign(inkDevelop, structuredClone(saved.inkDevelop));
     Object.assign(halftone, structuredClone(saved.halftone));
     Object.assign(wipe, structuredClone(saved.wipe));
     fx.settings.settle = saved.settle;
-    fx.settings.variant = saved.variant;
     pane.refresh();
     fx.refresh();
   });
