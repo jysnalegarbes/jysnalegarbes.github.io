@@ -171,9 +171,17 @@ const fragment = /* glsl */ `
   }
 `;
 
+export interface WipeShape {
+  width: number;
+  scaleX: number;
+  scaleY: number;
+}
+
 export interface AboutWipe {
   resize(width: number, height: number): void;
   draw(progress: number): void;
+  /** Edge width and noise scale (the About ?tweak panel); defaults above */
+  shape(s: WipeShape): void;
 }
 
 /** Null without WebGL (the caller falls back to a plain CSS wipe). */
@@ -209,6 +217,11 @@ export function mountAboutWipe(canvas: HTMLCanvasElement): AboutWipe | null {
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
+    },
+    shape(s) {
+      gl.uniform1f(u.width, s.width);
+      gl.uniform1f(u.scaleX, s.scaleX);
+      gl.uniform1f(u.scaleY, s.scaleY);
     },
     draw(progress) {
       gl.clear(gl.COLOR_BUFFER_BIT);

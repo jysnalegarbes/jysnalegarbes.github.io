@@ -459,6 +459,14 @@ const photos = [
     padding-top: calc(267 * var(--px));
   }
 
+  /* Mobile intro (192:2): the statement gets a screen to itself, centred on
+     it (the services title comes in only after it) */
+  @media (max-width: 1023px) {
+    .about-flow .about-sec--intro .about-sec__frame {
+      min-height: 100svh;
+    }
+  }
+
   .is-story .about-heading[data-pin] {
     position: fixed;
     top: calc(170.5 * var(--px));

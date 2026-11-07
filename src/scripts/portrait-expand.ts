@@ -12,11 +12,32 @@
   The ripple fades out over the growth, so the full-screen print sits flat.
   The box geometry stays about-intro.ts's.
 
+  Halftone variants on test (2026-11-07, `variant` in the config; 0 is the
+  live look above). All keep the ripple and use the site's shared halftone
+  (ink-halftone.ts), its cells growing finer as the portrait grows
+  (halftone.cellStart → cellEnd, CSS px):
+    1 Halftone Develop  the portrait is ink dots while it grows; from
+                        "resolve from" it resolves top-down into the photo
+                        ("dots at end" keeps some dots at full screen)
+    2 Print + Scroll Dots  the Ink Develop print, breaking into dots while
+                        you scroll (speed, "speed for dots") and settling
+                        back into the print when you stop
+    3 Photo + Scroll Dots  the photo, breaking into dots while you scroll,
+                        like the Work strip
+
   Every value lives in src/config/portrait-expand.json. ?tweak opens a panel
   (portrait-tweaks.ts); on the dev server its "Save to project" writes it.
 */
 import { linkProgram } from './liquid-morph';
+import { inkGlsl, setInkColors } from './ink-halftone';
 import defaults from '../config/portrait-expand.json';
+
+export const PORTRAIT_VARIANTS = {
+  'Ink Develop (live)': 0,
+  'Halftone Develop': 1,
+  'Print + Scroll Dots': 2,
+  'Photo + Scroll Dots': 3,
+};
 
 export type PortraitSettings = typeof defaults;
 
@@ -59,8 +80,12 @@ const fragment = /* glsl */ `
   uniform float u;       // progress through the growth, 0 → 1
   uniform vec4 ink;      // start tones, end tones, fine grain, coarse grain
   uniform vec3 inkB;     // grain size, photo blend from, photo at end
+  uniform float mode;    // variant, see the top of the file
+  uniform vec4 ht;       // cell start, cell end, resolve from, dots at end
+  uniform float dotsAmt; // scroll-speed dots, 0..1
   varying vec2 vUv;
   varying float vWave;
+  ${inkGlsl}
 
   // 2D simplex noise (Ashima / Stefan Gustavson)
   vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
@@ -107,7 +132,29 @@ const fragment = /* glsl */ `
     float n = mix(ink.x, ink.y, pow(dev, 1.5));
     float q = clamp(floor((l + grain) * n) / (n - 1.0), 0.0, 1.0);
     vec3 tone = mix(vec3(0.078, 0.098, 0.094), vec3(0.843, 0.871, 0.871), q);
-    gl_FragColor = vec4(mix(tone, col, smoothstep(inkB.y, 1.0, dev) * inkB.z), 1.0);
+    vec3 print = mix(tone, col, smoothstep(inkB.y, 1.0, dev) * inkB.z);
+
+    // Halftone over the portrait box, finer as it grows. The sample is
+    // unconditional: no texture read under per-pixel branching.
+    float cell = mix(ht.x, ht.y, u);
+    vec2 g = inkGridPx(vUv, rect.zw, cell);
+    vec3 dots = inkDotsPx(g, cell, cover(inkCentrePx(g, rect.zw, cell)));
+    // Per-cell threshold, so scroll dots scatter in and out cell by cell
+    float h = fract(sin(dot(floor(g), vec2(12.9898, 78.233))) * 43758.5453);
+
+    // 1: dots, resolving top-down into the photo from "resolve from"
+    float k1 = inkFront(mix(1.0, ht.w, smoothstep(ht.z, 1.0, u)), vUv.y);
+    vec3 v1 = mix(col, dots, smoothstep(0.0, 1.0, k1));
+    // 2 / 3: the print or the photo, breaking into dots with scroll speed
+    float kS = smoothstep(h * 0.8, h * 0.8 + 0.2, dotsAmt);
+    vec3 v2 = mix(print, dots, kS);
+    vec3 v3 = mix(col, dots, kS);
+
+    vec3 outC = print;
+    outC = mix(outC, v1, step(0.5, mode) * step(mode, 1.5));
+    outC = mix(outC, v2, step(1.5, mode) * step(mode, 2.5));
+    outC = mix(outC, v3, step(2.5, mode));
+    gl_FragColor = vec4(outC, 1.0);
   }
 `;
 
@@ -160,7 +207,7 @@ export function mountPortraitExpand(media: HTMLElement, rerender: () => void): P
   try {
     prog = linkProgram(gl, vertex, fragment, [
       'tex', 'rect', 'view', 'aspect', 'amp', 'phase', 'height', 'freq', 'split',
-      'res', 'dpr', 'amt', 'u', 'ink', 'inkB',
+      'res', 'dpr', 'amt', 'u', 'ink', 'inkB', 'mode', 'ht', 'dotsAmt',
     ]);
   } catch (err) {
     console.warn('[portrait-expand]', err);
@@ -169,10 +216,13 @@ export function mountPortraitExpand(media: HTMLElement, rerender: () => void): P
   media.after(canvas);
 
   const settings: PortraitSettings = structuredClone(defaults);
+  // ?pv=1..3 opens a variant without the panel (for side-by-side tests)
+  const pv = Number(new URLSearchParams(location.search).get('pv'));
+  if (Object.values(PORTRAIT_VARIANTS).includes(pv) && pv > 0) settings.variant = pv;
   const verts = gridTriangles(GRID);
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
   gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
-  gl.useProgram(prog.program);
+  setInkColors(gl, prog.program); // also makes it the current program
   gl.enableVertexAttribArray(prog.aUv);
   gl.vertexAttribPointer(prog.aUv, 2, gl.FLOAT, false, 0, 0);
   gl.clearColor(0, 0, 0, 0);
@@ -213,11 +263,12 @@ export function mountPortraitExpand(media: HTMLElement, rerender: () => void): P
 
   // 1 → 0 over the growth, held near 1 at first
   const amount = (u: number) => 1 - u * u * (3 - 2 * u);
-  const settles = () => speed > 0.01 && amount(lastU) > 0.002;
+  // The scroll-dot variants keep settling at full screen too, so the dots fade
+  const settles = () => speed > 0.01 && (amount(lastU) > 0.002 || settings.variant >= 2);
 
   // After the scroll stops, let the speed die down and keep drawing
   function settle(now: number) {
-    const dt = Math.min(0.1, (now - lastT) / 1000);
+    const dt = Math.max(0, Math.min(0.1, (now - lastT) / 1000));
     if (now - lastT > 50) speed *= Math.exp(-dt / Math.max(0.01, settings.settle));
     if (speed < 0.01) speed = 0;
     draw();
@@ -226,7 +277,7 @@ export function mountPortraitExpand(media: HTMLElement, rerender: () => void): P
 
   function draw() {
     const now = performance.now();
-    phase += Math.min(0.1, (now - drawnAt) / 1000) * settings.ripple.waveSpeed;
+    phase += Math.max(0, Math.min(0.1, (now - drawnAt) / 1000)) * settings.ripple.waveSpeed;
     drawnAt = now;
     const u = Math.max(0, lastU);
     const box = lastBox;
@@ -256,6 +307,10 @@ export function mountPortraitExpand(media: HTMLElement, rerender: () => void): P
     gl!.uniform1f(un.u, u);
     gl!.uniform4f(un.ink, d.startLevels, d.endLevels, d.grain, d.coarseGrain);
     gl!.uniform3f(un.inkB, d.grainSize, d.fullTonesAt, d.photoAtEnd);
+    const ht = settings.halftone;
+    gl!.uniform1f(un.mode, settings.variant);
+    gl!.uniform4f(un.ht, ht.cellStart, ht.cellEnd, ht.resolveFrom, ht.dotsAtEnd);
+    gl!.uniform1f(un.dotsAmt, clamp(speed / Math.max(0.05, ht.speedForDots)));
     gl!.drawArrays(gl!.TRIANGLES, 0, verts.length / 2);
   }
 

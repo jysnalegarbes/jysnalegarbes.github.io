@@ -47,22 +47,28 @@ export const inkGlsl = /* glsl */ `
   }
   float inkCell(float ink) { return mix(4., 12., ink); } // CSS px
 
-  // Position in the 45° screen, in cells
-  vec2 inkGrid(vec2 uv, vec2 size, float ink) {
-    return INK_ROT * (uv * size) / inkCell(ink);
+  // The same screen with the cell size given directly (CSS px), for effects
+  // that drive it themselves (the About portrait)
+  vec2 inkGridPx(vec2 uv, vec2 size, float cell) {
+    return INK_ROT * (uv * size) / cell;
   }
-  // The cell's centre, back in 0..1 image uv: sample the photo there
-  vec2 inkCentre(vec2 g, vec2 size, float ink) {
-    return (floor(g) + 0.5) * inkCell(ink) * INK_ROT / size;
+  vec2 inkCentrePx(vec2 g, vec2 size, float cell) {
+    return (floor(g) + 0.5) * cell * INK_ROT / size;
   }
-  // The dot for a cell whose centre colour is c
-  vec3 inkDots(vec2 g, float ink, vec3 c) {
+  vec3 inkDotsPx(vec2 g, float cell, vec3 c) {
     float dark = 1. - dot(c, vec3(0.299, 0.587, 0.114));
     float r = sqrt(dark) * 0.62; // dot area follows darkness
-    float aa = 1.2 / inkCell(ink);
+    float aa = 1.2 / cell;
     float dotMask = 1. - smoothstep(r - aa, r + aa, length(fract(g) - 0.5));
     return mix(uPaper, uInkColor, dotMask);
   }
+
+  // Position in the 45° screen, in cells
+  vec2 inkGrid(vec2 uv, vec2 size, float ink) { return inkGridPx(uv, size, inkCell(ink)); }
+  // The cell's centre, back in 0..1 image uv: sample the photo there
+  vec2 inkCentre(vec2 g, vec2 size, float ink) { return inkCentrePx(g, size, inkCell(ink)); }
+  // The dot for a cell whose centre colour is c
+  vec3 inkDots(vec2 g, float ink, vec3 c) { return inkDotsPx(g, inkCell(ink), c); }
 `;
 
 /** Sets the ink and paper colours on a linked program */

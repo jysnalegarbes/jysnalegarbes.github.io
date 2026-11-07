@@ -15,5 +15,20 @@
     "fullTonesAt": 0.61,
     "photoAtEnd": 0
   },
-  "settle": 0.3
+  "settle": 0.3,
+  "variant": 0,
+  "halftone": {
+    "cellStart": 16,
+    "cellEnd": 6,
+    "resolveFrom": 0.6,
+    "dotsAtEnd": 0,
+    "speedForDots": 0.9
+  },
+  "wipe": {
+    "width": 2.8,
+    "scaleX": 16.21,
+    "scaleY": 11.66,
+    "start": 0.7,
+    "end": 0.97
+  }
 }

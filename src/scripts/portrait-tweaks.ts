@@ -9,7 +9,7 @@
     - Reset puts everything back to the saved values
 */
 import { Pane } from 'tweakpane';
-import type { PortraitExpand, PortraitSettings } from './portrait-expand';
+import { PORTRAIT_VARIANTS, type PortraitExpand, type PortraitSettings } from './portrait-expand';
 
 /** saveUrl: the dev endpoint that writes the config file, or null (no Save) */
 export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings, saveUrl: string | null) {
@@ -25,8 +25,10 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
   });
   document.body.append(container);
 
-  const { ripple, inkDevelop } = fx.settings;
+  const { ripple, inkDevelop, halftone, wipe } = fx.settings;
   const pane = new Pane({ container, title: 'Portrait effect' });
+
+  pane.addBinding(fx.settings, 'variant', { label: 'variant', options: PORTRAIT_VARIANTS });
 
   const wave = pane.addFolder({ title: 'Ripple' });
   wave.addBinding(ripple, 'speedForFull', { label: 'speed for full', min: 0.2, max: 5, step: 0.05 });
@@ -44,6 +46,20 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
   ink.addBinding(inkDevelop, 'grainSize', { label: 'grain size', min: 0.5, max: 8, step: 0.1 });
   ink.addBinding(inkDevelop, 'photoAtEnd', { label: 'photo at end', min: 0, max: 1, step: 0.01 });
   ink.addBinding(inkDevelop, 'fullTonesAt', { label: 'photo blend from', min: 0, max: 0.95, step: 0.01 });
+
+  const dots = pane.addFolder({ title: 'Halftone (variants 1–3)' });
+  dots.addBinding(halftone, 'cellStart', { label: 'dot size small', min: 3, max: 40, step: 0.5 });
+  dots.addBinding(halftone, 'cellEnd', { label: 'dot size full', min: 2, max: 30, step: 0.5 });
+  dots.addBinding(halftone, 'resolveFrom', { label: 'resolve from (1)', min: 0, max: 0.99, step: 0.01 });
+  dots.addBinding(halftone, 'dotsAtEnd', { label: 'dots at end (1)', min: 0, max: 1, step: 0.01 });
+  dots.addBinding(halftone, 'speedForDots', { label: 'speed for dots (2,3)', min: 0.1, max: 4, step: 0.05 });
+
+  const edge = pane.addFolder({ title: 'Ink wipe (after full screen)' });
+  edge.addBinding(wipe, 'width', { label: 'edge width', min: 0.1, max: 6, step: 0.01 });
+  edge.addBinding(wipe, 'scaleX', { label: 'noise scale x', min: 0.5, max: 60, step: 0.01 });
+  edge.addBinding(wipe, 'scaleY', { label: 'noise scale y', min: 0.5, max: 60, step: 0.01 });
+  edge.addBinding(wipe, 'start', { label: 'starts at scroll', min: 0.5, max: 0.95, step: 0.005 });
+  edge.addBinding(wipe, 'end', { label: 'ends at scroll', min: 0.6, max: 1, step: 0.005 });
 
   pane.on('change', () => fx.refresh());
 
@@ -81,7 +97,10 @@ export function mountPortraitTweaks(fx: PortraitExpand, saved: PortraitSettings,
   pane.addButton({ title: 'Reset to saved' }).on('click', () => {
     Object.assign(ripple, structuredClone(saved.ripple));
     Object.assign(inkDevelop, structuredClone(saved.inkDevelop));
+    Object.assign(halftone, structuredClone(saved.halftone));
+    Object.assign(wipe, structuredClone(saved.wipe));
     fx.settings.settle = saved.settle;
+    fx.settings.variant = saved.variant;
     pane.refresh();
     fx.refresh();
   });

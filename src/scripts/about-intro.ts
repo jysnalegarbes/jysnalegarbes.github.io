@@ -18,13 +18,14 @@
 */
 import { mountAboutWipe } from './about-wipe';
 import { mountPortraitExpand } from './portrait-expand';
+import portraitDefaults from '../config/portrait-expand.json';
 
 // Scroll progress at which each state is reached
 const K_SPLIT = 0.15;
 const K_EXPAND = 0.42;
 const K_FULL = 0.66;
-const K_WIPE_START = 0.7;
-const K_WIPE_END = 0.97;
+// The wipe's start and end, edge width and noise scale come from
+// portrait-expand.json (wipe), live in the /about/?tweak panel
 
 // Gaps between the portrait and the text, in em (Figma 1:190 and 62:2)
 const GAP_SPLIT = { left: 0.205, right: 0.36 };
@@ -155,7 +156,10 @@ export function mountAboutIntro(section: HTMLElement) {
 
     // Wipe: the canvas while it runs, then a plain black layer (also the
     // no-WebGL fallback, as a straight edge rising from the bottom)
-    const w = seg(p, K_WIPE_START, K_WIPE_END);
+    const ws = fx?.settings.wipe ?? portraitDefaults.wipe;
+    wipe?.shape(ws);
+    const wStart = ws.start;
+    const w = seg(p, wStart, Math.max(wStart + 0.01, ws.end));
     const running = w > 0 && w < 1;
     if (canvas) canvas.style.visibility = wipe && running ? 'visible' : 'hidden';
     if (wipe && running) wipe.draw(w);
@@ -189,7 +193,9 @@ export function mountAboutIntro(section: HTMLElement) {
   let last = 0;
 
   function tick(now: number) {
-    const dt = Math.min(0.1, (now - last) / 1000);
+    // rAF stamps can come a hair before the performance.now() that asked
+    // for them: never step backwards
+    const dt = Math.max(0, Math.min(0.1, (now - last) / 1000));
     last = now;
     shown += (goal - shown) * (1 - Math.exp(-dt / SMOOTHING));
     if (Math.abs(goal - shown) < 0.0005) shown = goal;
