@@ -22,7 +22,7 @@
   (ink-sound.ts) is off for now (Jayson, 2026-11-06).
 */
 import type { CardFrame, GalleryFrame, Rect } from './work-gallery';
-import { easeMorph, imageFragment, linkProgram, liquidVertex, planeGeometry, uploadTexture } from './liquid-morph';
+import { easeMorph, imageFragment, linkProgram, liquidVertex, morphInk, planeGeometry, uploadTexture } from './liquid-morph';
 import { inkAt, inkGlsl, setInkColors } from './ink-halftone';
 
 const INK_RISE = 0.15; // s for the photos to break into dots
@@ -118,7 +118,8 @@ export function mountWorkGl(
   const shared = ['uViewport', 'uTime', 'uTex', 'uImg', 'uBox', 'uAlpha'];
   const flag = linkProgram(gl, flagVertex, flagFragment, [...shared, 'uRect', 'uVelo', 'uInk']);
   setInkColors(gl, flag.program);
-  const liquid = linkProgram(gl, liquidVertex, imageFragment, [...shared, 'uFrom', 'uTo', 'uT']);
+  const liquid = linkProgram(gl, liquidVertex, imageFragment, [...shared, 'uFrom', 'uTo', 'uT', 'uInk']);
+  setInkColors(gl, liquid.program);
 
   const { verts, idx } = planeGeometry();
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
@@ -259,6 +260,7 @@ export function mountWorkGl(
     gl!.uniform4f(liquid.u.uFrom, tr.from.x, tr.from.y, tr.from.w, tr.from.h);
     gl!.uniform4f(liquid.u.uTo, tr.to.x, tr.to.y, tr.to.w, tr.to.h);
     gl!.uniform1f(liquid.u.uT, tr.t);
+    gl!.uniform1f(liquid.u.uInk, morphInk(tr.t));
     gl!.uniform1f(liquid.u.uAlpha, 1);
     gl!.bindTexture(gl!.TEXTURE_2D, t.tex);
     gl!.drawElements(gl!.TRIANGLES, idx.length, gl!.UNSIGNED_SHORT, 0);

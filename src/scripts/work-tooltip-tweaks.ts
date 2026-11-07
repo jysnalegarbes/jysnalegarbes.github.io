@@ -5,7 +5,7 @@
     - Reset puts everything back to the saved values
 */
 import { Pane } from 'tweakpane';
-import { TOOLTIP_STYLES, type WorkTooltip, type WorkTooltipSettings } from './work-tooltip';
+import type { WorkTooltip, WorkTooltipSettings } from './work-tooltip';
 
 export function mountWorkTooltipTweaks(tip: WorkTooltip, saved: WorkTooltipSettings, saveUrl: string | null) {
   const container = document.createElement('div');
@@ -20,11 +20,10 @@ export function mountWorkTooltipTweaks(tip: WorkTooltip, saved: WorkTooltipSetti
 
   const s = tip.settings;
   const pane = new Pane({ container, title: 'View Project tooltip' });
-  pane.addBinding(s, 'style', { label: 'style', options: TOOLTIP_STYLES });
   pane.addBinding(s, 'size', { label: 'size', min: 0.6, max: 2, step: 0.05 });
   pane.addBinding(s, 'follow', { label: 'follow lag s', min: 0, max: 0.5, step: 0.01 });
-  pane.addBinding(s, 'offsetX', { label: 'offset x (1, 3)', min: -60, max: 80, step: 1 });
-  pane.addBinding(s, 'offsetY', { label: 'offset y (1, 3)', min: -60, max: 80, step: 1 });
+  pane.addBinding(s, 'offsetX', { label: 'offset x', min: -60, max: 80, step: 1 });
+  pane.addBinding(s, 'offsetY', { label: 'offset y', min: -60, max: 80, step: 1 });
   pane.on('change', () => tip.refresh());
 
   pane.addBlade({ view: 'separator' });

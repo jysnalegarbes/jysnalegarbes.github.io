@@ -12,6 +12,7 @@
   without one (the case study's next-project link).
 */
 import type { Rect } from './work-gallery';
+import { inkGlsl, setInkColors } from './ink-halftone';
 
 export const MORPH_DURATION = 1.3;
 
@@ -59,15 +60,33 @@ void main() {
 }
 `;
 
-/** Image with object-fit: cover in a box of uBox, cloth shading, alpha */
+/**
+  How much ink halftone the morphing image shows at morph time t (0..1):
+  it breaks into dots as it lifts off, flies as dots, and resolves back
+  into the photo (top first) before it lands, so the hand-over to the case
+  page's plain cover has no seam. Set uInk with it (setInkColors once).
+*/
+export const MORPH_INK = { in: [0, 0.22], out: [0.5, 0.92] };
+export function morphInk(t: number) {
+  const s = (a: number, b: number) => {
+    const k = Math.min(1, Math.max(0, (t - a) / (b - a)));
+    return k * k * (3 - 2 * k);
+  };
+  return s(MORPH_INK.in[0], MORPH_INK.in[1]) * (1 - s(MORPH_INK.out[0], MORPH_INK.out[1]));
+}
+
+/** Image with object-fit: cover in a box of uBox, cloth shading, alpha,
+    and the site's ink halftone (uInk, morphInk) */
 export const imageFragment = /* glsl */ `
 precision highp float;
 uniform sampler2D uTex;
 uniform vec2 uImg;
 uniform vec2 uBox;
 uniform float uAlpha;
+uniform float uInk;
 varying vec2 vUv;
 varying float vShade;
+${inkGlsl}
 
 vec2 cover(vec2 uv) {
   float rb = uBox.x / uBox.y;
@@ -78,6 +97,10 @@ vec2 cover(vec2 uv) {
 
 void main() {
   vec3 col = texture2D(uTex, cover(vUv)).rgb;
+  // Unconditional sample: no texture reads under per-pixel branching
+  vec2 g = inkGrid(vUv, uBox, uInk);
+  vec3 c = texture2D(uTex, cover(inkCentre(g, uBox, uInk))).rgb;
+  col = mix(col, inkDots(g, uInk, c), smoothstep(0.0, 1.0, inkFront(uInk, vUv.y)));
   col *= 1.0 + vShade * 0.12;
   gl_FragColor = vec4(col * uAlpha, uAlpha);
 }
@@ -152,8 +175,9 @@ export async function mountMorphOverlay(img: HTMLImageElement, { zIndex = 25 } =
   }
 
   const p = linkProgram(gl, liquidVertex, imageFragment, [
-    'uViewport', 'uFrom', 'uTo', 'uT', 'uTime', 'uTex', 'uImg', 'uBox', 'uAlpha',
+    'uViewport', 'uFrom', 'uTo', 'uT', 'uTime', 'uTex', 'uImg', 'uBox', 'uAlpha', 'uInk',
   ]);
+  setInkColors(gl, p.program);
   const { verts, idx } = planeGeometry();
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
   gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
@@ -187,6 +211,7 @@ export async function mountMorphOverlay(img: HTMLImageElement, { zIndex = 25 } =
       gl.uniform4f(p.u.uTo, to.x, to.y, to.w, to.h);
       gl.uniform2f(p.u.uBox, from.w + (to.w - from.w) * e, from.h + (to.h - from.h) * e);
       gl.uniform1f(p.u.uT, t);
+      gl.uniform1f(p.u.uInk, morphInk(t));
       gl.uniform1f(p.u.uTime, performance.now() / 1000);
       gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
     },
