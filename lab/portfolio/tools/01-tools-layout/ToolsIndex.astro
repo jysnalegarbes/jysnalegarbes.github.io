@@ -1,0 +1,179 @@
+---
+/*
+  Option 1 · Index. Typography-led, in the site's editorial voice: one big
+  row per tool, the name as the focal point. On a fine pointer the tool's
+  real screenshot follows the cursor (tools-layout.ts); on touch each row
+  carries a small thumbnail instead.
+*/
+import { Image } from 'astro:assets';
+import { num, tools } from './tools-data';
+---
+
+<section class="tv tv-index" data-variant="1">
+  <header class="tv__intro">
+    <h1 class="tv__title"><span class="serif-italic">free</span> TOOLS</h1>
+    <p class="tv__text">Small tools I built for my own work, free to use. They run in your browser, so your files stay on your device.</p>
+  </header>
+
+  <ul class="tv-index__list" data-index-list>
+    {
+      tools.map((t, i) => (
+        <li>
+          <a class="tv-index__row" href={t.href} data-shot={i}>
+            <span class="tv-index__num serif-italic">{num(i + 1)}</span>
+            <span class="tv-index__name">{t.name}</span>
+            <span class="tv-index__verb">{t.verb}</span>
+            <span class="tv-index__input">{t.input === 'pdf' ? 'PDF' : 'Image'}</span>
+            <Image class="tv-index__thumb" src={t.shot} alt="" widths={[160, 320]} sizes="96px" />
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <figure class="tv-index__preview" aria-hidden="true" data-index-preview>
+    {tools.map((t) => <Image src={t.shot} alt="" widths={[480, 960]} sizes="480px" loading="eager" />)}
+  </figure>
+</section>
+
+<style>
+  .tv-index__list {
+    margin-top: calc(72 * var(--px));
+    border-bottom: 1px solid var(--line);
+  }
+
+  .tv-index__row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'num name thumb'
+      'num verb thumb';
+    align-items: center;
+    gap: 2px calc(18 * var(--px));
+    padding-block: calc(22 * var(--px));
+    border-top: 1px solid var(--line);
+  }
+
+  .tv-index__num {
+    grid-area: num;
+    font-size: calc(22 * var(--px));
+    align-self: start;
+    padding-top: 4px;
+  }
+
+  .tv-index__name {
+    grid-area: name;
+    font-weight: 700;
+    font-size: calc(28 * var(--px));
+    line-height: 1;
+    text-transform: uppercase;
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .tv-index__verb {
+    grid-area: verb;
+    font-size: var(--fs-sm);
+    color: var(--gray);
+  }
+
+  .tv-index__input {
+    display: none;
+  }
+
+  .tv-index__thumb {
+    grid-area: thumb;
+    width: 96px;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: left top;
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+  }
+
+  .tv-index__preview {
+    display: none;
+  }
+
+  @media (min-width: 1024px) and (pointer: fine) {
+    .tv-index__row {
+      grid-template-columns: calc(120 * var(--px)) 1fr calc(340 * var(--px)) calc(90 * var(--px));
+      grid-template-areas: 'num name verb input';
+      padding-block: calc(30 * var(--px));
+    }
+
+    .tv-index__num {
+      font-size: calc(36 * var(--px));
+      padding-top: 0;
+      align-self: center;
+    }
+
+    .tv-index__name {
+      font-size: calc(66 * var(--px));
+      white-space: nowrap;
+    }
+
+    .tv-index__verb {
+      font-size: var(--fs-body);
+      color: var(--black);
+    }
+
+    .tv-index__input {
+      display: block;
+      grid-area: input;
+      justify-self: end;
+      font-size: var(--fs-sm);
+      font-weight: 700;
+      color: var(--gray);
+    }
+
+    .tv-index__thumb {
+      display: none;
+    }
+
+    .tv-index__row:hover .tv-index__name,
+    .tv-index__row:focus-visible .tv-index__name {
+      transform: translateX(calc(24 * var(--px)));
+    }
+
+    /* The floating screenshot */
+    .tv-index__preview {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 20;
+      width: calc(440 * var(--px));
+      aspect-ratio: 16 / 10;
+      margin: 0;
+      pointer-events: none;
+      clip-path: inset(50% 50% 50% 50%);
+      transition: clip-path 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 18px 50px color-mix(in srgb, var(--black) 22%, transparent);
+    }
+
+    .tv-index__preview.is-on {
+      clip-path: inset(0 0 0 0);
+    }
+
+    .tv-index__preview img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: left top;
+      opacity: 0;
+    }
+
+    .tv-index__preview img.is-on {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tv-index__name,
+    .tv-index__preview {
+      transition: none;
+    }
+  }
+</style>

@@ -8,7 +8,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const PAGE_ORDER = ['Home', 'Work', 'Case study', 'About', 'In Progress', 'Contact'];
+const PAGE_ORDER = ['Home', 'Work', 'Case study', 'About', 'In Progress', 'Contact', 'Tools'];
 const pageRank = (p: string) => (PAGE_ORDER.indexOf(p) + 1 || 99);
 
 const rounds = (await getCollection('lab'))

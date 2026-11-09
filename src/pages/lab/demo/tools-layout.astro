@@ -1,0 +1,80 @@
+---
+/*
+  Demo: Tools page layout (lab/portfolio/tools/01-tools-layout). Three
+  layouts for /tools/, using the library's frozen copies. ?pfx=1 Index,
+  2 Workbench, 3 Showcase. The site header isn't part of demos, so the
+  right-hand padding that clears the nav is kept for a faithful layout.
+*/
+import LabDemo from '../../../layouts/LabDemo.astro';
+import ToolsIndex from '../../../../lab/portfolio/tools/01-tools-layout/ToolsIndex.astro';
+import ToolsWorkbench from '../../../../lab/portfolio/tools/01-tools-layout/ToolsWorkbench.astro';
+import ToolsShowcase from '../../../../lab/portfolio/tools/01-tools-layout/ToolsShowcase.astro';
+---
+
+<LabDemo title="Tools page layout">
+  <div class="tv-root" data-tools-layout data-show="1">
+    <ToolsIndex />
+    <ToolsWorkbench />
+    <ToolsShowcase />
+  </div>
+</LabDemo>
+
+<script>
+  import { mountToolsLayout } from '../../../../lab/portfolio/tools/01-tools-layout/tools-layout';
+
+  const root = document.querySelector<HTMLElement>('[data-tools-layout]');
+  if (root) mountToolsLayout(root);
+</script>
+
+<style is:global>
+  .tv-root {
+    --line: color-mix(in srgb, var(--black) 14%, transparent);
+    --tint: color-mix(in srgb, var(--black) 6%, var(--bg));
+  }
+
+  .tv-root .tv {
+    display: none;
+    padding: calc(141 * var(--px)) var(--gutter) calc(160 * var(--px));
+  }
+
+  .tv-root[data-show='1'] [data-variant='1'],
+  .tv-root[data-show='2'] [data-variant='2'],
+  .tv-root[data-show='3'] [data-variant='3'] {
+    display: block;
+  }
+
+  .tv__title {
+    font-weight: 700;
+    font-size: calc(44 * var(--px));
+    white-space: nowrap;
+  }
+
+  .tv__text {
+    font-size: var(--fs-sm);
+    max-width: calc(432 * var(--px));
+    margin-top: calc(40 * var(--px));
+  }
+
+  @media (min-width: 1024px) {
+    .tv-root .tv {
+      padding-top: calc(186 * var(--px));
+      padding-right: calc(259 * var(--px));
+    }
+
+    .tv__intro {
+      display: grid;
+      grid-template-columns: calc(531 * var(--px)) auto;
+      align-items: start;
+    }
+
+    .tv__title {
+      grid-column: 1 / -1;
+      font-size: calc(110 * var(--px));
+    }
+
+    .tv__text {
+      grid-column: 2;
+      margin-top: calc(48 * var(--px));
+    }
+  }
+</style>

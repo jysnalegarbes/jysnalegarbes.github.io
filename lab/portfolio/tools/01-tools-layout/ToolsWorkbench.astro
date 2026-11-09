@@ -1,0 +1,203 @@
+---
+/*
+  Option 2 · Workbench. Task-first: people arrive with a file, not a tool
+  name. Drop (or choose) a file and the tools that take it light up; the
+  rest dim. Below, the tools grouped by what goes in, headed by what they
+  do. In this demo the file only routes; if chosen, the live page could hand
+  the file straight to the tool (IndexedDB) so it opens loaded.
+*/
+import { tools } from './tools-data';
+
+const groups = [
+  { input: 'pdf', title: 'For PDFs' },
+  { input: 'image', title: 'For images' },
+] as const;
+---
+
+<section class="tv tv-bench" data-variant="2">
+  <header class="tv__intro">
+    <h1 class="tv__title"><span class="serif-italic">free</span> TOOLS</h1>
+    <p class="tv__text">Small tools I built for my own work, free to use. They run in your browser, so your files stay on your device.</p>
+  </header>
+
+  <label class="tv-bench__drop" data-bench-drop>
+    <input type="file" class="visually-hidden" data-bench-input />
+    <span class="tv-bench__ask" data-bench-ask>Drop a file to see what you can do with it</span>
+    <span class="tv-bench__hint" data-bench-hint>or <span class="tv-bench__link">choose one</span>, or pick a tool below</span>
+  </label>
+
+  <div class="tv-bench__groups">
+    {
+      groups.map((g) => (
+        <section class="tv-bench__group" data-input={g.input}>
+          <h2 class="tv-bench__group-title">
+            <span class="serif-italic">{g.title.split(' ')[0].toLowerCase()}</span> {g.title.split(' ')[1].toUpperCase()}
+          </h2>
+          <ul>
+            {tools
+              .filter((t) => t.input === g.input)
+              .map((t) => (
+                <li>
+                  <a class="tv-bench__tool" href={t.href} data-tool-input={t.input}>
+                    <span class="tv-bench__verb">{t.verb}</span>
+                    <span class="tv-bench__name">{t.name}</span>
+                    <span class="tv-bench__open" aria-hidden="true">→</span>
+                  </a>
+                </li>
+              ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</section>
+
+<style>
+  .tv-bench__drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: calc(56 * var(--px));
+    min-height: calc(220 * var(--px));
+    padding: 24px;
+    border: 1px dashed var(--gray);
+    text-align: center;
+    cursor: pointer;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
+  }
+
+  .tv-bench__drop:hover,
+  .tv-bench__drop.is-over {
+    background: var(--tint);
+    border-color: var(--black);
+  }
+
+  .tv-bench__drop:has(input:focus-visible) {
+    outline: 2px solid var(--green);
+    outline-offset: 4px;
+  }
+
+  .tv-bench__drop.has-file {
+    border-style: solid;
+    border-color: var(--black);
+  }
+
+  .tv-bench__ask {
+    font-weight: 700;
+    font-size: calc(24 * var(--px));
+    text-transform: uppercase;
+  }
+
+  .tv-bench__hint {
+    font-size: var(--fs-sm);
+    color: var(--gray);
+  }
+
+  .tv-bench__link {
+    color: var(--black);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1px;
+  }
+
+  .tv-bench__groups {
+    display: grid;
+    gap: calc(48 * var(--px));
+    margin-top: calc(64 * var(--px));
+  }
+
+  .tv-bench__group-title {
+    font-weight: 700;
+    font-size: calc(28 * var(--px));
+    padding-bottom: 12px;
+  }
+
+  .tv-bench__tool {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'verb open'
+      'name open';
+    align-items: center;
+    gap: 2px 16px;
+    padding-block: 18px;
+    border-top: 1px solid var(--line);
+    transition: opacity 0.3s;
+  }
+
+  .tv-bench__group li:last-child .tv-bench__tool {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .tv-bench__verb {
+    grid-area: verb;
+    font-weight: 700;
+    font-size: max(17px, calc(22 * var(--px)));
+  }
+
+  .tv-bench__name {
+    grid-area: name;
+    font-size: var(--fs-sm);
+    color: var(--gray);
+  }
+
+  .tv-bench__open {
+    grid-area: open;
+    font-weight: 700;
+    font-size: max(17px, calc(22 * var(--px)));
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .tv-bench__tool:hover .tv-bench__open,
+  .tv-bench__tool:focus-visible .tv-bench__open {
+    transform: translateX(6px);
+  }
+
+  .tv-bench__tool:hover .tv-bench__verb {
+    color: color-mix(in srgb, var(--green) 75%, var(--black));
+  }
+
+  /* After a file is dropped: matching tools stay, the others step back */
+  .tv-bench.has-file .tv-bench__tool:not(.is-match) {
+    opacity: 0.3;
+  }
+
+  .tv-bench__tool.is-match .tv-bench__verb::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    vertical-align: middle;
+  }
+
+  @media (min-width: 1024px) {
+    .tv-bench__groups {
+      grid-template-columns: 2fr 3fr;
+      gap: calc(80 * var(--px));
+      align-items: start;
+    }
+
+    .tv-bench__group-title {
+      font-size: calc(44 * var(--px));
+    }
+
+    .tv-bench__ask {
+      font-size: calc(34 * var(--px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tv-bench__tool,
+    .tv-bench__open {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,207 @@
+---
+/*
+  Option 3 · Showcase. Product-led: each tool shown by a real screenshot of
+  it at work, in an uneven grid (PDF Studio leads, Mockup Generator closes
+  as a wide band) instead of equal icon tiles.
+*/
+import { Image } from 'astro:assets';
+import { num, tools } from './tools-data';
+
+const spans: Record<string, string> = {
+  pdf: 'wide',
+  compress: 'narrow',
+  image: 'third',
+  background: 'third',
+  upscale: 'third',
+  mockup: 'band',
+};
+---
+
+<section class="tv tv-show" data-variant="3">
+  <header class="tv__intro">
+    <h1 class="tv__title"><span class="serif-italic">free</span> TOOLS</h1>
+    <p class="tv__text">Small tools I built for my own work, free to use. They run in your browser, so your files stay on your device.</p>
+  </header>
+
+  <ul class="tv-show__grid">
+    {
+      tools.map((t, i) => (
+        <li class={`tv-show__item tv-show__item--${spans[t.key]}`}>
+          <a class="tv-show__card" href={t.href}>
+            <span class="tv-show__media">
+              <Image src={t.shot} alt={`${t.name} in use`} widths={[480, 800, 1200]} sizes="(min-width: 1024px) 60vw, 100vw" />
+            </span>
+            <span class="tv-show__caption">
+              <span class="tv-show__num serif-italic">{num(i + 1)}</span>
+              <span class="tv-show__name">{t.name}</span>
+              <span class="tv-show__open" aria-hidden="true">Open →</span>
+              <span class="tv-show__verb">{t.verb}</span>
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .tv-show__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: calc(40 * var(--px)) calc(24 * var(--px));
+    margin-top: calc(72 * var(--px));
+  }
+
+  .tv-show__card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .tv-show__media {
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--tint);
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
+  }
+
+  .tv-show__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: left top;
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .tv-show__card:hover .tv-show__media img {
+    transform: scale(1.035);
+  }
+
+  .tv-show__caption {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'num name open'
+      '. verb verb';
+    align-items: baseline;
+    gap: 4px 10px;
+    font-size: var(--fs-sm);
+  }
+
+  .tv-show__num {
+    grid-area: num;
+    font-size: calc(22 * var(--px));
+    line-height: 1;
+  }
+
+  .tv-show__name {
+    grid-area: name;
+    font-weight: 700;
+    font-size: max(16px, calc(22 * var(--px)));
+    text-transform: uppercase;
+  }
+
+  .tv-show__verb {
+    grid-area: verb;
+    color: var(--gray);
+  }
+
+  .tv-show__open {
+    grid-area: open;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition:
+      opacity 0.3s,
+      transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .tv-show__card:hover .tv-show__open,
+  .tv-show__card:focus-visible .tv-show__open {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (pointer: coarse) {
+    .tv-show__open {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (min-width: 640px) {
+    .tv-show__grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .tv-show__item--wide,
+    .tv-show__item--band {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .tv-show__grid {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: calc(56 * var(--px)) calc(28 * var(--px));
+    }
+
+    .tv-show__item--wide {
+      grid-column: span 8;
+    }
+
+    .tv-show__item--narrow {
+      grid-column: span 4;
+    }
+
+    .tv-show__item--third {
+      grid-column: span 4;
+    }
+
+    .tv-show__item--band {
+      grid-column: 1 / -1;
+    }
+
+    /* The narrow card matches the wide one's height; the band is a letterbox */
+    .tv-show__item--narrow .tv-show__media {
+      aspect-ratio: 8 / 10;
+    }
+
+    /* Its screenshot is short and wide: shown whole, centred, never blown up */
+    .tv-show__item--narrow .tv-show__media img {
+      object-fit: contain;
+      object-position: center;
+      padding: 0 4%;
+    }
+
+    .tv-show__item--band .tv-show__media {
+      aspect-ratio: 21 / 10;
+    }
+
+    .tv-show__item--band .tv-show__media img {
+      object-position: center;
+    }
+
+    .tv-show__num {
+      font-size: calc(30 * var(--px));
+    }
+
+    .tv-show__name {
+      font-size: calc(30 * var(--px));
+    }
+
+    .tv-show__item--wide .tv-show__name,
+    .tv-show__item--band .tv-show__name {
+      font-size: calc(44 * var(--px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tv-show__media img,
+    .tv-show__open {
+      transition: none;
+    }
+  }
+</style>
