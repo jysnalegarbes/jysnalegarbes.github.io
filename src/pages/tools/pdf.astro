@@ -123,13 +123,50 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <button type="button" data-ed="match">Match page</button>
         <span class="pdf-editor__hint">Hides, doesn’t delete</span>
       </div>
-      <button type="button" class="pdf-editor__remove" data-ed="remove" disabled>Remove</button>
+      <button type="button" class="pdf-editor__remove" data-ed="crop" disabled title="Crop the selected image (or double-click it)">Crop</button>
+      <button type="button" data-ed="remove" disabled>Remove</button>
     </div>
     <div class="pdf-editor__stage-wrap" data-stage-wrap>
       <div class="pdf-stage" data-stage>
         <canvas class="pdf-stage__canvas"></canvas>
         <div class="pdf-stage__layer" data-layer></div>
       </div>
+    </div>
+  </dialog>
+
+  <dialog class="pdf-crop" data-crop aria-labelledby="pdf-crop-title">
+    <div class="pdf-crop__bar">
+      <p class="pdf-crop__title" id="pdf-crop-title">Crop image</p>
+      <div class="pdf-crop__ratios" role="group" aria-label="Aspect ratio">
+        <button type="button" data-ratio="free" aria-pressed="true">Free</button>
+        <button type="button" data-ratio="original" aria-pressed="false">Original</button>
+        <button type="button" data-ratio="1" aria-pressed="false">1:1</button>
+        <button type="button" data-ratio="1.3333" aria-pressed="false">4:3</button>
+        <button type="button" data-ratio="1.7778" aria-pressed="false">16:9</button>
+        <button type="button" data-ratio="0.8" aria-pressed="false">4:5</button>
+      </div>
+    </div>
+    <div class="pdf-crop__stage">
+      <div class="pdf-crop__frame" data-crop-frame>
+        <img alt="" draggable="false" data-crop-img />
+        <div class="pdf-crop__box" data-crop-box tabindex="0" role="group" aria-label="Crop area. Arrow keys move it; Shift and arrow keys resize it.">
+          <span class="pdf-crop__grid" aria-hidden="true"></span>
+          <span class="pdf-crop__handle" data-h="nw" aria-hidden="true"></span>
+          <span class="pdf-crop__handle" data-h="ne" aria-hidden="true"></span>
+          <span class="pdf-crop__handle" data-h="sw" aria-hidden="true"></span>
+          <span class="pdf-crop__handle" data-h="se" aria-hidden="true"></span>
+          <span class="pdf-crop__handle pdf-crop__handle--edge" data-h="n" aria-hidden="true"></span>
+          <span class="pdf-crop__handle pdf-crop__handle--edge" data-h="e" aria-hidden="true"></span>
+          <span class="pdf-crop__handle pdf-crop__handle--edge" data-h="s" aria-hidden="true"></span>
+          <span class="pdf-crop__handle pdf-crop__handle--edge" data-h="w" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+    <div class="pdf-crop__actions">
+      <span class="pdf-crop__size" data-crop-size></span>
+      <button type="button" data-cr="reset">Reset</button>
+      <button type="button" data-cr="cancel">Cancel</button>
+      <button type="button" class="pdf-btn pdf-btn--primary" data-cr="apply">Apply crop</button>
     </div>
   </dialog>
 
@@ -913,6 +950,151 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       bottom: -10px;
       opacity: 1;
     }
+  }
+
+  /* ---------- Crop ---------- */
+
+  .pdf-crop {
+    width: min(960px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 20px;
+    border: 1px solid var(--black);
+    background: var(--bg);
+    color: var(--black);
+    font-size: var(--fs-sm);
+  }
+
+  .pdf-crop[open] {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pdf-crop::backdrop {
+    background: color-mix(in srgb, var(--black) 45%, transparent);
+  }
+
+  .pdf-crop__bar,
+  .pdf-crop__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    font-weight: 700;
+  }
+
+  .pdf-crop__ratios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-left: auto;
+  }
+
+  .pdf-crop__ratios button {
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+    transition:
+      background-color 0.2s,
+      color 0.2s;
+  }
+
+  .pdf-crop__ratios button:hover {
+    border-color: var(--black);
+  }
+
+  .pdf-crop__ratios button[aria-pressed='true'] {
+    background: var(--black);
+    border-color: var(--black);
+    color: var(--bg);
+  }
+
+  .pdf-crop__stage {
+    display: grid;
+    place-items: center;
+    min-height: 0;
+    padding: 12px;
+    background: repeating-conic-gradient(#d4d9d9 0 25%, #f4f6f6 0 50%) 0 0 / 16px 16px;
+    overflow: hidden;
+  }
+
+  .pdf-crop__frame {
+    position: relative;
+    line-height: 0;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .pdf-crop__frame img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100dvh - 240px);
+    width: auto;
+    height: auto;
+  }
+
+  /* The box dims everything outside it with one big shadow */
+  .pdf-crop__box {
+    position: absolute;
+    outline: 1px solid #fff;
+    box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--black) 55%, transparent);
+    cursor: move;
+    touch-action: none;
+  }
+
+  .pdf-crop__box:focus-visible {
+    outline: 2px solid var(--green);
+  }
+
+  .pdf-crop__grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.5) 0 calc(33.333% + 0.5px), transparent 0 calc(66.666% - 0.5px), rgba(255, 255, 255, 0.5) 0 calc(66.666% + 0.5px), transparent 0),
+      linear-gradient(transparent calc(33.333% - 0.5px), rgba(255, 255, 255, 0.5) 0 calc(33.333% + 0.5px), transparent 0 calc(66.666% - 0.5px), rgba(255, 255, 255, 0.5) 0 calc(66.666% + 0.5px), transparent 0);
+  }
+
+  .pdf-crop__handle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin: -7px;
+    background: #fff;
+    border: 2px solid var(--black);
+    touch-action: none;
+  }
+
+  .pdf-crop__handle[data-h='nw'] { left: 0; top: 0; cursor: nwse-resize; }
+  .pdf-crop__handle[data-h='ne'] { right: 0; top: 0; cursor: nesw-resize; }
+  .pdf-crop__handle[data-h='sw'] { left: 0; bottom: 0; cursor: nesw-resize; }
+  .pdf-crop__handle[data-h='se'] { right: 0; bottom: 0; cursor: nwse-resize; }
+  .pdf-crop__handle[data-h='n'] { left: 50%; top: 0; cursor: ns-resize; }
+  .pdf-crop__handle[data-h='s'] { left: 50%; bottom: 0; cursor: ns-resize; }
+  .pdf-crop__handle[data-h='e'] { right: 0; top: 50%; cursor: ew-resize; }
+  .pdf-crop__handle[data-h='w'] { left: 0; top: 50%; cursor: ew-resize; }
+
+  .pdf-crop__handle[hidden] {
+    display: none;
+  }
+
+  @media (pointer: coarse) {
+    .pdf-crop__handle {
+      width: 24px;
+      height: 24px;
+      margin: -12px;
+    }
+  }
+
+  .pdf-crop__size {
+    margin-right: auto;
+    font-weight: 400;
+    color: var(--gray);
+  }
+
+  .pdf-crop__actions [data-cr='reset'],
+  .pdf-crop__actions [data-cr='cancel'] {
+    min-height: 40px;
   }
 
   /* ---------- Signature ---------- */

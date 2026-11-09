@@ -123,6 +123,17 @@ interface ImageOverlay extends OverlayBase {
   bytes: Uint8Array;
   format: 'png' | 'jpg';
   img: HTMLImageElement;
+  /** The uncropped image, kept so a crop can be widened again later */
+  original?: { bytes: Uint8Array; format: 'png' | 'jpg'; img: HTMLImageElement };
+  /** Current crop, in the original image's pixels */
+  crop?: CropRect;
+}
+
+interface CropRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
 }
 
 /** A filled box, mainly for covering existing content (it hides it; it doesn't delete it) */
@@ -455,6 +466,7 @@ export function mountPdfTool(root: HTMLElement) {
   const propBold = $<HTMLButtonElement>('[data-prop="bold"]', editor);
   const propColor = $<HTMLInputElement>('[data-prop="color"]', editor);
   const removeBtn = $<HTMLButtonElement>('[data-ed="remove"]', editor);
+  const cropBtn = $<HTMLButtonElement>('[data-ed="crop"]', editor);
   const coverProps = $<HTMLElement>('[data-cover-props]', editor);
   const coverColor = $<HTMLInputElement>('[data-cover-color]', editor);
 
@@ -1030,6 +1042,7 @@ export function mountPdfTool(root: HTMLElement) {
           el.append(img);
           el.addEventListener('pointerdown', (e) => startDrag(e, o, 'move'));
           el.addEventListener('focus', () => select(o));
+          el.addEventListener('dblclick', () => openCrop(o));
         } else {
           const grip = document.createElement('span');
           grip.className = 'pdf-ov__grip';
@@ -1079,6 +1092,7 @@ export function mountPdfTool(root: HTMLElement) {
   function syncProps() {
     const o = ed.selected;
     removeBtn.disabled = !o;
+    cropBtn.disabled = o?.kind !== 'image';
     props.hidden = o?.kind === 'image' || o?.kind === 'rect';
     coverProps.hidden = o?.kind !== 'rect';
     if (o?.kind === 'rect') coverColor.value = o.color;
@@ -1278,6 +1292,9 @@ export function mountPdfTool(root: HTMLElement) {
       case 'remove':
         removeSelected();
         break;
+      case 'crop':
+        if (ed.selected?.kind === 'image') openCrop(ed.selected);
+        break;
       case 'prev':
         if (i > 0) openEditor(pages[i - 1]);
         break;
@@ -1341,6 +1358,233 @@ export function mountPdfTool(root: HTMLElement) {
       say(`Couldn’t add that image: ${errorText(err)}`);
     }
   });
+
+  // ---------- Image crop ----------
+
+  /*
+    The crop window shows the uncropped image with a box over it. The box is
+    kept in the original image's pixels; the screen only scales it. Applying
+    re-encodes just that region (original kept for later), and moves the
+    overlay so the part you kept stays where it was on the page.
+  */
+  const cropDialog = document.querySelector<HTMLDialogElement>('[data-crop]')!;
+  const cropFrame = $<HTMLElement>('[data-crop-frame]', cropDialog);
+  const cropImg = $<HTMLImageElement>('[data-crop-img]', cropDialog);
+  const cropBox = $<HTMLElement>('[data-crop-box]', cropDialog);
+  const cropSize = $<HTMLElement>('[data-crop-size]', cropDialog);
+  const MIN_CROP = 16;
+  const crop: { o: ImageOverlay | null; src: HTMLImageElement | null; rect: CropRect; ratio: number | null } = {
+    o: null,
+    src: null,
+    rect: { x: 0, y: 0, w: 1, h: 1 },
+    ratio: null,
+  };
+
+  const cropScale = () => (crop.src ? cropImg.getBoundingClientRect().width / crop.src.naturalWidth : 1);
+
+  function drawCropBox() {
+    const s = cropScale();
+    const { x, y, w, h } = crop.rect;
+    cropBox.style.left = `${x * s}px`;
+    cropBox.style.top = `${y * s}px`;
+    cropBox.style.width = `${w * s}px`;
+    cropBox.style.height = `${h * s}px`;
+    cropSize.textContent = `${Math.round(w)} × ${Math.round(h)} px`;
+    cropDialog.querySelectorAll<HTMLElement>('.pdf-crop__handle--edge').forEach((el) => (el.hidden = crop.ratio !== null));
+  }
+
+  /** Largest rect of the chosen ratio inside the current one, same centre */
+  function applyRatio(r: number | null) {
+    crop.ratio = r;
+    cropDialog.querySelectorAll<HTMLElement>('[data-ratio]').forEach((b) => {
+      const v = b.dataset.ratio!;
+      const br = v === 'free' ? null : v === 'original' ? crop.src!.naturalWidth / crop.src!.naturalHeight : Number(v);
+      b.setAttribute('aria-pressed', String(br === r || (v === 'free' && r === null)));
+    });
+    if (r) {
+      const { x, y, w, h } = crop.rect;
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const nw = w / h > r ? h * r : w;
+      const nh = nw / r;
+      crop.rect = { x: cx - nw / 2, y: cy - nh / 2, w: nw, h: nh };
+    }
+    drawCropBox();
+  }
+
+  function openCrop(o: ImageOverlay) {
+    crop.o = o;
+    crop.src = o.original?.img ?? o.img;
+    crop.rect = o.crop ? { ...o.crop } : { x: 0, y: 0, w: crop.src.naturalWidth, h: crop.src.naturalHeight };
+    crop.ratio = null;
+    cropImg.src = crop.src.src;
+    cropDialog.showModal();
+    // The image has to be loaded and laid out before the box can be scaled to it
+    cropImg
+      .decode()
+      .catch(() => {})
+      .then(() => requestAnimationFrame(() => applyRatio(null)));
+  }
+
+  function startCropDrag(e: PointerEvent, handle: string) {
+    if (e.button !== 0 || !crop.src) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    const W = crop.src.naturalWidth;
+    const H = crop.src.naturalHeight;
+    const s = cropScale();
+    const start = { ...crop.rect };
+    const sx = e.clientX;
+    const sy = e.clientY;
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = (ev.clientX - sx) / s;
+      const dy = (ev.clientY - sy) / s;
+      if (handle === 'move') {
+        crop.rect.x = Math.min(Math.max(0, start.x + dx), W - start.w);
+        crop.rect.y = Math.min(Math.max(0, start.y + dy), H - start.h);
+      } else {
+        let L = start.x;
+        let T = start.y;
+        let R = start.x + start.w;
+        let B = start.y + start.h;
+        if (handle.includes('w')) L = Math.min(Math.max(0, L + dx), R - MIN_CROP);
+        if (handle.includes('e')) R = Math.max(Math.min(W, R + dx), L + MIN_CROP);
+        if (handle.includes('n')) T = Math.min(Math.max(0, T + dy), B - MIN_CROP);
+        if (handle.includes('s')) B = Math.max(Math.min(H, B + dy), T + MIN_CROP);
+        if (crop.ratio) {
+          // Width leads; height follows the ratio, then both shrink to fit the image
+          let w = R - L;
+          let h = w / crop.ratio;
+          const roomH = handle.includes('n') ? B : H - T;
+          if (h > roomH) {
+            h = roomH;
+            w = h * crop.ratio;
+          }
+          if (handle.includes('w')) L = R - w;
+          else R = L + w;
+          if (handle.includes('n')) T = B - h;
+          else B = T + h;
+        }
+        crop.rect = { x: L, y: T, w: R - L, h: B - T };
+      }
+      drawCropBox();
+    };
+    const onUp = () => {
+      target.removeEventListener('pointermove', onMove);
+      target.removeEventListener('pointerup', onUp);
+      target.removeEventListener('pointercancel', onUp);
+    };
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', onUp);
+    target.addEventListener('pointercancel', onUp);
+  }
+
+  cropBox.addEventListener('pointerdown', (e) => startCropDrag(e, 'move'));
+  cropDialog.querySelectorAll<HTMLElement>('[data-h]').forEach((h) => h.addEventListener('pointerdown', (e) => startCropDrag(e, h.dataset.h!)));
+
+  // Arrow keys move the box; with Shift they resize it (from the bottom-right)
+  cropBox.addEventListener('keydown', (e) => {
+    if (!crop.src || !e.key.startsWith('Arrow')) return;
+    e.preventDefault();
+    const W = crop.src.naturalWidth;
+    const H = crop.src.naturalHeight;
+    const step = Math.max(1, 4 / cropScale());
+    const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+    const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
+    const r = crop.rect;
+    if (e.shiftKey) {
+      r.w = Math.min(Math.max(MIN_CROP, r.w + dx), W - r.x);
+      r.h = crop.ratio ? r.w / crop.ratio : Math.min(Math.max(MIN_CROP, r.h + dy), H - r.y);
+      if (r.y + r.h > H) {
+        r.h = H - r.y;
+        if (crop.ratio) r.w = r.h * crop.ratio;
+      }
+    } else {
+      r.x = Math.min(Math.max(0, r.x + dx), W - r.w);
+      r.y = Math.min(Math.max(0, r.y + dy), H - r.h);
+    }
+    drawCropBox();
+  });
+
+  async function applyCrop() {
+    const o = crop.o;
+    const src = crop.src;
+    if (!o || !src) return;
+    const W = src.naturalWidth;
+    const H = src.naturalHeight;
+    const r = {
+      x: Math.round(crop.rect.x),
+      y: Math.round(crop.rect.y),
+      w: Math.max(1, Math.round(crop.rect.w)),
+      h: Math.max(1, Math.round(crop.rect.h)),
+    };
+    const prev = o.crop ?? { x: 0, y: 0, w: W, h: H };
+    const full = r.x === 0 && r.y === 0 && r.w === W && r.h === H;
+    o.original ??= { bytes: o.bytes, format: o.format, img: o.img };
+    const old = o.img;
+
+    if (full) {
+      // Back to the whole image: no re-encode
+      o.bytes = o.original.bytes;
+      o.format = o.original.format;
+      o.img = o.original.img;
+      o.crop = undefined;
+    } else {
+      const c = document.createElement('canvas');
+      c.width = r.w;
+      c.height = r.h;
+      c.getContext('2d')!.drawImage(src, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      const format = o.original.format;
+      const blob = await new Promise<Blob | null>((res) => c.toBlob(res, format === 'jpg' ? 'image/jpeg' : 'image/png', 0.92));
+      if (!blob) return say('Couldn’t crop that image.');
+      const img = new Image();
+      img.src = URL.createObjectURL(blob);
+      await img.decode();
+      o.bytes = new Uint8Array(await blob.arrayBuffer());
+      o.format = format;
+      o.img = img;
+      o.crop = r;
+    }
+    if (old !== o.img && old !== o.original.img) URL.revokeObjectURL(old.src);
+
+    // Same size per pixel as before, and what you kept stays put on the page
+    const k = o.w / prev.w;
+    o.x += (r.x - prev.x) * k;
+    o.y += (r.y - prev.y) * k;
+    o.w = r.w * k;
+    o.h = r.h * k;
+    cropDialog.close();
+    renderLayer();
+    select(o);
+    overlayEl(o)?.focus({ preventScroll: true });
+  }
+
+  cropDialog.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-cr], [data-ratio]');
+    if (!btn || !crop.src) return;
+    if (btn.dataset.ratio) {
+      const v = btn.dataset.ratio;
+      applyRatio(v === 'free' ? null : v === 'original' ? crop.src.naturalWidth / crop.src.naturalHeight : Number(v));
+      return;
+    }
+    switch (btn.dataset.cr) {
+      case 'reset':
+        crop.rect = { x: 0, y: 0, w: crop.src.naturalWidth, h: crop.src.naturalHeight };
+        applyRatio(null);
+        break;
+      case 'cancel':
+        cropDialog.close();
+        break;
+      case 'apply':
+        applyCrop();
+        break;
+    }
+  });
+
+  window.addEventListener('resize', () => cropDialog.open && drawCropBox());
 
   // ---------- Signature pad ----------
 
