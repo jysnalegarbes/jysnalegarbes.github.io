@@ -1,171 +1,70 @@
 ---
 /*
-  Tools (hidden like /lab/: not in the nav, noindex). Every tool as a card,
-  grouped. Add a tool by adding an entry to `groups`; `art` picks one of the
-  small line illustrations below.
+  Tools (hidden like /lab/: not in the nav, noindex). Layout: "Index" from
+  lab round tools/01-tools-layout. One big row per tool; on a fine pointer
+  the tool's real screenshot follows the cursor (scripts/tools-index.ts), on
+  touch each row shows a thumbnail. Screenshots: src/assets/tools/,
+  captured from the tools in use. Add a tool by adding an entry to `tools`.
 */
+import { Image } from 'astro:assets';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import pdf from '../../assets/tools/pdf.png';
+import compress from '../../assets/tools/compress.png';
+import convert from '../../assets/tools/convert.png';
+import background from '../../assets/tools/background.png';
+import upscale from '../../assets/tools/upscale.png';
+import mockup from '../../assets/tools/mockup.png';
 
-type Art = 'pdf' | 'compress' | 'convert' | 'cutout' | 'upscale' | 'mockup';
-
-const groups: { name: string; tools: { href: string; name: string; summary: string; tags: string[]; art: Art }[] }[] = [
-  {
-    name: 'Documents',
-    tools: [
-      {
-        href: '/tools/pdf/',
-        name: 'PDF Studio',
-        summary: 'Merge, reorder, rotate and split PDFs. Add text, images and signatures, cover and retype, fill in forms.',
-        tags: ['Merge', 'Sign', 'Forms', 'Cover & retype'],
-        art: 'pdf',
-      },
-      {
-        href: '/tools/pdf-compress/',
-        name: 'PDF Compressor',
-        summary: 'Shrink PDFs to email or upload them. Keeps text sharp, or flattens pages for the smallest file.',
-        tags: ['Balanced', 'Strong', 'Maximum', 'Batch'],
-        art: 'compress',
-      },
-    ],
-  },
-  {
-    name: 'Images',
-    tools: [
-      {
-        href: '/tools/image/',
-        name: 'Image Converter',
-        summary: 'PNG, JPG, WebP, traced SVG, favicon ICO or one PDF. Resize and compress a whole batch.',
-        tags: ['WebP', 'SVG trace', 'ICO', 'Batch .zip'],
-        art: 'convert',
-      },
-      {
-        href: '/tools/background/',
-        name: 'Background Remover',
-        summary: 'AI cut-outs of people, products and pets. Transparent, on a colour, or on a blurred backdrop.',
-        tags: ['AI', 'Transparent PNG', 'Fast or HQ'],
-        art: 'cutout',
-      },
-      {
-        href: '/tools/upscale/',
-        name: 'Image Upscaler',
-        summary: 'Enlarge small or soft images 2× or 4×. The AI rebuilds edges and texture instead of stretching pixels.',
-        tags: ['AI', '2× / 4×', 'Up to 8K'],
-        art: 'upscale',
-      },
-    ],
-  },
-  {
-    name: 'Design',
-    tools: [
-      {
-        href: '/tools/mockup/',
-        name: 'Mockup Generator',
-        summary: 'Browser, phone, laptop, business card, poster and paper mockups, with tilt, shadow and backgrounds.',
-        tags: ['Screens', 'Print', '4K export'],
-        art: 'mockup',
-      },
-    ],
-  },
+const tools = [
+  { href: '/tools/pdf/', name: 'PDF Studio', verb: 'Edit, merge and sign PDFs', input: 'PDF', shot: pdf },
+  { href: '/tools/pdf-compress/', name: 'PDF Compressor', verb: 'Shrink a PDF to send it', input: 'PDF', shot: compress },
+  { href: '/tools/image/', name: 'Image Converter', verb: 'Change an image’s format or size', input: 'Image', shot: convert },
+  { href: '/tools/background/', name: 'Background Remover', verb: 'Cut the subject out of a photo', input: 'Image', shot: background },
+  { href: '/tools/upscale/', name: 'Image Upscaler', verb: 'Enlarge a small image with AI', input: 'Image', shot: upscale },
+  { href: '/tools/mockup/', name: 'Mockup Generator', verb: 'Put a design on a screen or in print', input: 'Image', shot: mockup },
 ];
 
-const count = groups.reduce((n, g) => n + g.tools.length, 0);
 const num = (n: number) => String(n).padStart(2, '0');
-let index = 0;
 ---
 
 <BaseLayout title="Tools — Jayson Alegarbes" description="Small, free tools that run in your browser." noindex>
-  <section class="tools">
+  <section class="tools" data-tools>
     <header class="tools__intro">
       <h1 class="tools__title"><span class="serif-italic">free</span> TOOLS</h1>
       <div class="tools__text">
-        <p>Small tools I built for my own work, free to use. They all run in your browser, so your files stay on your device.</p>
-        <p class="tools__count">{num(count)} tools</p>
+        <p>Small tools I built for my own work, free to use. They run in your browser, so your files stay on your device.</p>
+        <p class="tools__count">{num(tools.length)} tools</p>
       </div>
     </header>
 
-    {
-      groups.map((g) => (
-        <section class="tools__group" aria-label={g.name}>
-          <h2 class="tools__group-name">
-            <span class="serif-italic">{g.name.toLowerCase()}</span>
-          </h2>
-          <ul class="tools__grid">
-            {g.tools.map((t) => (
-              <li>
-                <a class="tool-card" href={t.href}>
-                  <span class="tool-card__art" aria-hidden="true">
-                    {t.art === 'pdf' && (
-                      <svg viewBox="0 0 120 80">
-                        <rect x="34" y="10" width="40" height="54" rx="2" />
-                        <rect x="46" y="16" width="40" height="54" rx="2" class="fill" />
-                        <path d="M53 30h26M53 37h26M53 44h16" />
-                        <path d="M55 58c4-6 7 2 10-2s5-3 8 0" class="accent" />
-                      </svg>
-                    )}
-                    {t.art === 'compress' && (
-                      <svg viewBox="0 0 120 80">
-                        <rect x="42" y="14" width="36" height="52" rx="2" class="fill" />
-                        <path d="M50 28h20M50 35h20M50 42h12" />
-                        <path d="M24 40h12m-5-5 5 5-5 5M96 40H84m5-5-5 5 5 5" class="accent" />
-                      </svg>
-                    )}
-                    {t.art === 'convert' && (
-                      <svg viewBox="0 0 120 80">
-                        <rect x="18" y="20" width="34" height="40" rx="2" />
-                        <path d="M22 54l9-11 7 7 5-5 6 9" />
-                        <rect x="68" y="20" width="34" height="40" rx="2" class="fill" />
-                        <path d="M72 54l9-11 7 7 5-5 6 9" />
-                        <path d="M55 40h10m-4-4 4 4-4 4" class="accent" />
-                      </svg>
-                    )}
-                    {t.art === 'cutout' && (
-                      <svg viewBox="0 0 120 80">
-                        <rect x="30" y="12" width="60" height="58" rx="2" class="checker" />
-                        <circle cx="60" cy="32" r="9" class="fill" />
-                        <path d="M44 70c0-14 7-22 16-22s16 8 16 22" class="fill" />
-                        <path d="M30 12h60v58H30z" class="accent dash" />
-                      </svg>
-                    )}
-                    {t.art === 'upscale' && (
-                      <svg viewBox="0 0 120 80">
-                        <rect x="22" y="40" width="24" height="24" rx="1.5" />
-                        <path d="M22 46h24M22 52h24M22 58h24M28 40v24M34 40v24M40 40v24" class="thin" />
-                        <rect x="56" y="12" width="44" height="52" rx="2" class="fill" />
-                        <path d="M62 56l11-14 8 9 6-6 8 11" />
-                        <path d="M46 40l10-10m-7 0h7v7" class="accent" />
-                      </svg>
-                    )}
-                    {t.art === 'mockup' && (
-                      <svg viewBox="0 0 120 80">
-                        <rect x="16" y="16" width="64" height="42" rx="3" class="fill" />
-                        <path d="M16 23h64" />
-                        <circle cx="21" cy="19.5" r="1.2" />
-                        <circle cx="25" cy="19.5" r="1.2" />
-                        <rect x="84" y="28" width="20" height="38" rx="4" class="fill" />
-                        <rect x="24" y="30" width="22" height="4" class="accent-fill" />
-                      </svg>
-                    )}
-                  </span>
-                  <span class="tool-card__head">
-                    <span class="tool-card__num serif-italic">{num(++index)}</span>
-                    <span class="tool-card__name">{t.name}</span>
-                  </span>
-                  <span class="tool-card__summary">{t.summary}</span>
-                  <span class="tool-card__tags">
-                    {t.tags.map((tag) => (
-                      <span>{tag}</span>
-                    ))}
-                  </span>
-                  <span class="tool-card__open">Open →</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))
-    }
+    <ul class="tools__list" data-index-list>
+      {
+        tools.map((t, i) => (
+          <li>
+            <a class="tools__row" href={t.href} data-shot={i}>
+              <span class="tools__num serif-italic">{num(i + 1)}</span>
+              <span class="tools__name">{t.name}</span>
+              <span class="tools__verb">{t.verb}</span>
+              <span class="tools__input">{t.input}</span>
+              <Image class="tools__thumb" src={t.shot} alt="" widths={[160, 320]} sizes="96px" />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <figure class="tools__preview" aria-hidden="true" data-index-preview>
+      {tools.map((t) => <Image src={t.shot} alt="" widths={[480, 960]} sizes="(min-width: 1024px) 23vw, 1px" />)}
+    </figure>
   </section>
 </BaseLayout>
+
+<script>
+  import { mountToolsIndex } from '../../scripts/tools-index';
+
+  const root = document.querySelector<HTMLElement>('[data-tools]');
+  if (root) mountToolsIndex(root);
+</script>
 
 <style>
   .tools {
@@ -192,140 +91,62 @@ let index = 0;
     font-weight: 700;
   }
 
-  .tools__group {
+  .tools__list {
     margin-top: calc(72 * var(--px));
-  }
-
-  .tools__group-name {
-    font-size: calc(32 * var(--px));
-    padding-bottom: 12px;
     border-bottom: 1px solid var(--line);
   }
 
-  .tools__grid {
+  .tools__row {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin-top: 20px;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      'num name thumb'
+      'num verb thumb';
+    align-items: center;
+    gap: 2px calc(18 * var(--px));
+    padding-block: calc(22 * var(--px));
+    border-top: 1px solid var(--line);
   }
 
-  .tool-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    height: 100%;
-    padding: 0 0 18px;
-    font-size: var(--fs-sm);
-  }
-
-  .tool-card__art {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 3 / 2;
-    margin-bottom: 6px;
-    background: color-mix(in srgb, var(--black) 5%, var(--bg));
-    outline: 1px solid var(--line);
-    outline-offset: -1px;
-    transition:
-      background-color 0.3s,
-      outline-color 0.3s;
-  }
-
-  .tool-card__art svg {
-    width: 62%;
-    fill: none;
-    stroke: var(--black);
-    stroke-width: 1.4;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  .tool-card__art .fill {
-    fill: var(--bg);
-  }
-
-  .tool-card__art .accent {
-    stroke: var(--green);
-    stroke-width: 2;
-  }
-
-  .tool-card__art .accent-fill {
-    fill: var(--green);
-    stroke: none;
-  }
-
-  .tool-card__art .checker {
-    fill: color-mix(in srgb, var(--black) 10%, var(--bg));
-    stroke: none;
-  }
-
-  .tool-card__art .thin {
-    stroke-width: 0.6;
-    opacity: 0.5;
-  }
-
-  .tool-card__art .dash {
-    stroke-dasharray: 3 3;
-  }
-
-  .tool-card:hover .tool-card__art {
-    outline-color: var(--black);
-  }
-
-  .tool-card:hover .tool-card__art svg {
-    transform: scale(1.06);
-  }
-
-  .tool-card__head {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-
-  .tool-card__num {
+  .tools__num {
+    grid-area: num;
+    align-self: start;
+    padding-top: 4px;
     font-size: calc(22 * var(--px));
-    line-height: 1;
   }
 
-  .tool-card__name {
+  .tools__name {
+    grid-area: name;
     font-weight: 700;
-    font-size: max(16px, calc(20 * var(--px)));
+    font-size: calc(28 * var(--px));
+    line-height: 1;
     text-transform: uppercase;
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  .tool-card__summary {
-    max-width: 44ch;
-  }
-
-  .tool-card__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 12px;
+  .tools__verb {
+    grid-area: verb;
+    font-size: var(--fs-sm);
     color: var(--gray);
   }
 
-  .tool-card__open {
-    margin-top: auto;
-    padding-top: 4px;
-    font-weight: 700;
+  .tools__input {
+    display: none;
   }
 
-  .tool-card:hover .tool-card__open {
-    color: color-mix(in srgb, var(--green) 75%, var(--black));
+  .tools__thumb {
+    grid-area: thumb;
+    width: 96px;
+    height: auto; /* the image's own height attribute would win over aspect-ratio */
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    object-position: left top;
+    outline: 1px solid var(--line);
+    outline-offset: -1px;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .tool-card__art svg {
-      transition: none;
-    }
-  }
-
-  @media (min-width: 640px) {
-    .tools__grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 28px 20px;
-    }
+  .tools__preview {
+    display: none;
   }
 
   @media (min-width: 1024px) {
@@ -349,18 +170,88 @@ let index = 0;
       grid-column: 2;
       margin-top: calc(48 * var(--px));
     }
+  }
 
-    .tools__group-name {
-      font-size: calc(48 * var(--px));
+  /* Desktop with a mouse: big type, the screenshot follows the cursor */
+  @media (min-width: 1024px) and (pointer: fine) {
+    .tools__row {
+      grid-template-columns: calc(120 * var(--px)) 1fr calc(340 * var(--px)) calc(90 * var(--px));
+      grid-template-areas: 'num name verb input';
+      padding-block: calc(30 * var(--px));
     }
 
-    .tools__grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: calc(40 * var(--px)) calc(28 * var(--px));
+    .tools__num {
+      align-self: center;
+      padding-top: 0;
+      font-size: calc(36 * var(--px));
     }
 
-    .tool-card__num {
-      font-size: calc(30 * var(--px));
+    .tools__name {
+      font-size: calc(66 * var(--px));
+      white-space: nowrap;
+    }
+
+    .tools__verb {
+      font-size: var(--fs-body);
+      color: var(--black);
+    }
+
+    .tools__input {
+      display: block;
+      grid-area: input;
+      justify-self: end;
+      font-size: var(--fs-sm);
+      font-weight: 700;
+      color: var(--gray);
+    }
+
+    .tools__thumb {
+      display: none;
+    }
+
+    .tools__row:hover .tools__name,
+    .tools__row:focus-visible .tools__name {
+      transform: translateX(calc(24 * var(--px)));
+    }
+
+    .tools__preview {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 20;
+      width: calc(440 * var(--px));
+      aspect-ratio: 16 / 10;
+      margin: 0;
+      pointer-events: none;
+      clip-path: inset(50% 50% 50% 50%);
+      transition: clip-path 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 18px 50px color-mix(in srgb, var(--black) 22%, transparent);
+    }
+
+    .tools__preview.is-on {
+      clip-path: inset(0 0 0 0);
+    }
+
+    .tools__preview :global(img) {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: left top;
+      opacity: 0;
+    }
+
+    .tools__preview :global(img.is-on) {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tools__name,
+    .tools__preview {
+      transition: none;
     }
   }
 </style>

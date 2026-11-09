@@ -4,7 +4,7 @@ project: Portfolio
 page: Tools
 order: 1
 date: 2026-11-09
-summary: "Three layouts for the /tools/ page, replacing equal cards with hand-drawn icon tiles. All three show each tool by what it does; two of them use real screenshots of the tools in use (Jayson's own projects and portrait as content)."
+summary: "Three layouts for the /tools/ page, replacing equal cards with hand-drawn icon tiles. All three show each tool by what it does, with real screenshots of the tools in use (Jayson's own projects and portrait as content). Jayson chose Index 'for now' (2026-11-09); Workbench and Showcase stay on review."
 demo: tools-layout
 files:
   - ToolsIndex.astro
@@ -14,7 +14,7 @@ files:
   - tools-data.ts
 options:
   - name: "Index"
-    status: review
+    status: chosen
     note: "Typography-led, in the site's editorial voice: one big row per tool with its name as the focal point. On a fine pointer the tool's real screenshot follows the cursor; on touch each row carries a small thumbnail."
   - name: "Workbench"
     status: review
