@@ -123,7 +123,17 @@ interface ImageOverlay extends OverlayBase {
   img: HTMLImageElement;
 }
 
-type Overlay = TextOverlay | ImageOverlay;
+/** A filled box, mainly for covering existing content (it hides it; it doesn't delete it) */
+interface RectOverlay extends OverlayBase {
+  kind: 'rect';
+  w: number;
+  h: number;
+  color: string;
+  /** Re-match the page colour after each move, until a colour is picked by hand */
+  auto: boolean;
+}
+
+type Overlay = TextOverlay | ImageOverlay | RectOverlay;
 
 interface Page {
   id: number;
@@ -347,6 +357,17 @@ async function buildPdf(list: Page[]): Promise<{ bytes: Uint8Array; replaced: nu
         page.drawImage(image, { ...at(o.r0, o.x, o.y + o.h), width: o.w, height: o.h, rotate: degrees(o.r0) });
         continue;
       }
+      if (o.kind === 'rect') {
+        page.drawRectangle({
+          ...at(o.r0, o.x, o.y + o.h),
+          width: o.w,
+          height: o.h,
+          color: hexToRgb(o.color),
+          borderWidth: 0,
+          rotate: degrees(o.r0),
+        });
+        continue;
+      }
       const f = await font(o.font, o.bold);
       const charset = new Set(f.getCharacterSet());
       const lines = o.text
@@ -389,6 +410,9 @@ function drawOverlays(ctx: CanvasRenderingContext2D, p: Page, s: number) {
     ctx.rotate((angle * Math.PI) / 180);
     if (o.kind === 'image') {
       ctx.drawImage(o.img, 0, 0, o.w * s, o.h * s);
+    } else if (o.kind === 'rect') {
+      ctx.fillStyle = o.color;
+      ctx.fillRect(0, 0, o.w * s, o.h * s);
     } else {
       ctx.fillStyle = o.color;
       ctx.font = `${o.bold ? 700 : 400} ${o.size * s}px ${FONTS[o.font].css}`;
@@ -428,6 +452,8 @@ export function mountPdfTool(root: HTMLElement) {
   const propBold = $<HTMLButtonElement>('[data-prop="bold"]', editor);
   const propColor = $<HTMLInputElement>('[data-prop="color"]', editor);
   const removeBtn = $<HTMLButtonElement>('[data-ed="remove"]', editor);
+  const coverProps = $<HTMLElement>('[data-cover-props]', editor);
+  const coverColor = $<HTMLInputElement>('[data-cover-color]', editor);
 
   const signDialog = document.querySelector<HTMLDialogElement>('[data-sign]')!;
   const signPad = $<HTMLCanvasElement>('[data-sign-pad]', signDialog);
@@ -956,9 +982,10 @@ export function mountPdfTool(root: HTMLElement) {
     el.style.top = `${y * s}px`;
     el.style.transform = angle ? `rotate(${angle}deg)` : '';
     el.classList.toggle('is-selected', ed.selected === o);
-    if (o.kind === 'image') {
+    if (o.kind === 'image' || o.kind === 'rect') {
       el.style.width = `${o.w * s}px`;
       el.style.height = `${o.h * s}px`;
+      if (o.kind === 'rect') el.style.background = o.color;
     } else {
       const t = el.querySelector<HTMLElement>('.pdf-ov__text')!;
       t.style.fontSize = `${o.size * s}px`;
@@ -976,7 +1003,13 @@ export function mountPdfTool(root: HTMLElement) {
         const el = document.createElement('div');
         el.className = `pdf-ov pdf-ov--${o.kind}`;
         el.dataset.id = String(o.id);
-        if (o.kind === 'image') {
+        if (o.kind === 'rect') {
+          el.tabIndex = 0;
+          el.setAttribute('role', 'img');
+          el.setAttribute('aria-label', 'Cover box. Arrow keys move it, Delete removes it.');
+          el.addEventListener('pointerdown', (e) => startDrag(e, o, 'move'));
+          el.addEventListener('focus', () => select(o));
+        } else if (o.kind === 'image') {
           el.tabIndex = 0;
           el.setAttribute('role', 'img');
           el.setAttribute('aria-label', 'Added image. Arrow keys move it, Delete removes it.');
@@ -1036,7 +1069,9 @@ export function mountPdfTool(root: HTMLElement) {
   function syncProps() {
     const o = ed.selected;
     removeBtn.disabled = !o;
-    props.hidden = o?.kind === 'image';
+    props.hidden = o?.kind === 'image' || o?.kind === 'rect';
+    coverProps.hidden = o?.kind !== 'rect';
+    if (o?.kind === 'rect') coverColor.value = o.color;
     const t = o?.kind === 'text' ? o : textStyle;
     propSize.value = String(Math.round(t.size * 10) / 10);
     propFont.value = t.font;
@@ -1061,6 +1096,60 @@ export function mountPdfTool(root: HTMLElement) {
   propFont.addEventListener('change', () => updateText({ font: propFont.value as FontKey }));
   propBold.addEventListener('click', () => updateText({ bold: propBold.getAttribute('aria-pressed') !== 'true' }));
   propColor.addEventListener('input', () => updateText({ color: propColor.value }));
+
+  coverColor.addEventListener('input', () => {
+    const o = ed.selected;
+    if (o?.kind !== 'rect') return;
+    o.color = coverColor.value;
+    o.auto = false;
+    const el = overlayEl(o);
+    if (el) styleOverlay(el, o);
+  });
+
+  /*
+    Sets a cover box to the page colour around it: samples a ring of pixels
+    just outside the box on the rendered page and takes the most common
+    colour, so text the box sits on doesn't tint it.
+  */
+  function matchCover(o: RectOverlay) {
+    const el = overlayEl(o);
+    const canvas = stage.querySelector<HTMLCanvasElement>('.pdf-stage__canvas');
+    if (!el || !canvas || !canvas.width) return;
+    const c = canvas.getBoundingClientRect();
+    const b = el.getBoundingClientRect();
+    const k = canvas.width / c.width;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+    const ring = 3;
+    const left = (b.left - c.left - ring) * k;
+    const top = (b.top - c.top - ring) * k;
+    const right = (b.right - c.left + ring) * k;
+    const bottom = (b.bottom - c.top + ring) * k;
+    const points: [number, number][] = [];
+    const step = 3 * k;
+    for (let x = left; x <= right; x += step) points.push([x, top], [x, bottom]);
+    for (let y = top; y <= bottom; y += step) points.push([left, y], [right, y]);
+    const buckets = new Map<number, { n: number; r: number; g: number; b: number }>();
+    for (const [x, y] of points) {
+      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
+      const [r, g, bl, a] = ctx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+      if (a < 200) continue;
+      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (bl >> 4);
+      const s = buckets.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
+      s.n++;
+      s.r += r;
+      s.g += g;
+      s.b += bl;
+      buckets.set(key, s);
+    }
+    let best: { n: number; r: number; g: number; b: number } | undefined;
+    for (const s of buckets.values()) if (!best || s.n > best.n) best = s;
+    if (!best) return;
+    const hex = (v: number) => Math.round(v / best!.n).toString(16).padStart(2, '0');
+    o.color = `#${hex(best.r)}${hex(best.g)}${hex(best.b)}`;
+    styleOverlay(el, o);
+    if (ed.selected === o) coverColor.value = o.color;
+  }
 
   /** Pointer position on the stage, as a point in the overlay's own orientation */
   function pointIn(o: Overlay, e: PointerEvent): [number, number] {
@@ -1090,6 +1179,9 @@ export function mountPdfTool(root: HTMLElement) {
       if (mode === 'move') {
         o.x = start.x + dx;
         o.y = start.y + dy;
+      } else if (o.kind === 'rect' && start.kind === 'rect') {
+        o.w = Math.max(2, start.w + dx);
+        o.h = Math.max(2, start.h + dy);
       } else if (o.kind === 'image' && start.kind === 'image') {
         o.w = Math.max(8, start.w + dx);
         o.h = (o.w * start.h) / start.w;
@@ -1104,6 +1196,7 @@ export function mountPdfTool(root: HTMLElement) {
       target.removeEventListener('pointermove', onMove);
       target.removeEventListener('pointerup', onUp);
       target.removeEventListener('pointercancel', onUp);
+      if (o.kind === 'rect' && o.auto) matchCover(o);
     };
     target.addEventListener('pointermove', onMove);
     target.addEventListener('pointerup', onUp);
@@ -1159,6 +1252,18 @@ export function mountPdfTool(root: HTMLElement) {
         break;
       case 'sign':
         openSignPad();
+        break;
+      case 'cover': {
+        const o: RectOverlay = { id: nextId++, kind: 'rect', ...centred(140, 22), w: 140, h: 22, color: '#ffffff', auto: true };
+        addOverlay(o);
+        matchCover(o);
+        break;
+      }
+      case 'match':
+        if (ed.selected?.kind === 'rect') {
+          ed.selected.auto = true;
+          matchCover(ed.selected);
+        }
         break;
       case 'remove':
         removeSelected();

@@ -17,7 +17,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <p class="pdf__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> PDF Studio</p>
       <h1 class="pdf__title"><span class="serif-italic">pdf</span> STUDIO</h1>
       <div class="pdf__text">
-        <p>Merge files, reorder, rotate and remove pages, pull out the ones you need, add text, images and signatures, and fill in forms.</p>
+        <p>Merge files, reorder, rotate and remove pages, pull out the ones you need, add text, images and signatures, cover and retype small mistakes, and fill in forms.</p>
         <p class="pdf__private">Runs entirely in your browser. Your files are never uploaded.</p>
       </div>
     </header>
@@ -66,6 +66,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     <p class="pdf__note">
       Need to change text that’s already in a PDF? That takes a desktop editor, such as the free{' '}
       <a href="https://github.com/SteveTheKiller/KillerPDF" target="_blank" rel="noopener">KillerPDF</a> on Windows.
+      Cover boxes only hide what’s underneath: the text is still in the file, so don’t use them to remove private
+      information.
     </p>
   </section>
 
@@ -82,6 +84,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <button type="button" data-ed="text">+ Text</button>
       <button type="button" data-ed="image">+ Image</button>
       <button type="button" data-ed="sign">+ Signature</button>
+      <button type="button" data-ed="cover" title="A box that hides what's under it. Hidden text is still in the file.">+ Cover</button>
       <input type="file" accept="image/*" class="visually-hidden" tabindex="-1" data-image-input />
       <div class="pdf-editor__props" data-props>
         <label>
@@ -102,6 +105,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <span class="visually-hidden">Text colour</span>
           <input type="color" data-prop="color" />
         </label>
+      </div>
+      <div class="pdf-editor__props" data-cover-props hidden>
+        <label class="pdf-editor__color">
+          <span class="visually-hidden">Cover colour</span>
+          <input type="color" data-cover-color />
+        </label>
+        <button type="button" data-ed="match">Match page</button>
+        <span class="pdf-editor__hint">Hides, doesn’t delete</span>
       </div>
       <button type="button" class="pdf-editor__remove" data-ed="remove" disabled>Remove</button>
     </div>
@@ -736,6 +747,26 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   .pdf-editor__remove {
     margin-left: auto;
+  }
+
+  .pdf-editor__hint {
+    font-weight: 400;
+    color: var(--gray);
+  }
+
+  .pdf-ov--rect {
+    cursor: move;
+    touch-action: none;
+  }
+
+  .pdf-ov--rect:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 0;
+  }
+
+  /* A cover box is the page colour, so give it a visible edge while you work */
+  .pdf-ov--rect:not(.is-selected) {
+    outline: 1px dashed color-mix(in srgb, var(--black) 35%, transparent);
   }
 
   .pdf-editor__stage-wrap {
