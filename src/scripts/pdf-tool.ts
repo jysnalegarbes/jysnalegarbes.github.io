@@ -5,17 +5,23 @@
     - pdf-lib writes the result: merge, reorder, rotate, delete, extract
       selected pages, add text / images / signatures, fill form fields
       (filled forms are flattened into the page on download)
+    - pdf-content.ts edits what's already on the page: "Edit existing"
+      turns each line of text into a click target (the old text is really
+      removed from the file and retyped as a text box) and makes the PDF's
+      own images movable, resizable, replaceable and deletable. Pages with
+      such edits are previewed from a rewritten copy, so what you see is
+      what downloads.
 
   Overlay geometry: each overlay remembers the page rotation it was placed
   at (r0) and its top-left in PDF points in that orientation (top-left
   origin, y down). On download that maps to PDF user space and is drawn
   rotated by r0, so an overlay stays attached to the page content if the
-  page is rotated later. Editing text already inside a PDF is out of scope
-  (a desktop editor's job).
+  page is rotated later. Retyped existing text uses r0 = 0, the page's own
+  orientation, so it sits exactly where the old line was.
 */
 
 import * as pdfjs from 'pdfjs-dist';
-import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {
   PDFCheckBox,
@@ -31,6 +37,19 @@ import {
 } from 'pdf-lib';
 
 import { compressPdf, type CompressLevel } from './pdf-compress';
+import {
+  analyzePage,
+  eraseFor,
+  groupLines,
+  rewritePage,
+  type Box,
+  type EraseBox,
+  type ImageEdit,
+  type ImageEl,
+  type PageEdits,
+  type TextItemLike,
+  type TextLine,
+} from './pdf-content';
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -57,6 +76,8 @@ const FONTS = {
     base: 0.946,
     regular: StandardFonts.Helvetica,
     bold: StandardFonts.HelveticaBold,
+    italic: StandardFonts.HelveticaOblique,
+    boldItalic: StandardFonts.HelveticaBoldOblique,
   },
   times: {
     label: 'Serif',
@@ -64,6 +85,8 @@ const FONTS = {
     base: 0.938,
     regular: StandardFonts.TimesRoman,
     bold: StandardFonts.TimesRomanBold,
+    italic: StandardFonts.TimesRomanItalic,
+    boldItalic: StandardFonts.TimesRomanBoldItalic,
   },
   courier: {
     label: 'Mono',
@@ -71,10 +94,17 @@ const FONTS = {
     base: 0.866,
     regular: StandardFonts.Courier,
     bold: StandardFonts.CourierBold,
+    italic: StandardFonts.CourierOblique,
+    boldItalic: StandardFonts.CourierBoldOblique,
   },
 } as const;
 
 type FontKey = keyof typeof FONTS;
+
+const pdfFontName = (key: FontKey, bold: boolean, italic: boolean) => {
+  const f = FONTS[key];
+  return bold && italic ? f.boldItalic : bold ? f.bold : italic ? f.italic : f.regular;
+};
 type Rotation = 0 | 90 | 180 | 270;
 
 // ---------- Types ----------
@@ -98,6 +128,27 @@ interface Source {
   fields: Field[];
   /** Only the fields the visitor changed */
   edited: Map<string, FieldValue>;
+  /** pdf-lib copy for reading page content (never modified) */
+  lib?: Promise<PDFDocument>;
+  /** Existing text lines and images, per page index */
+  content: Map<number, Promise<PageInfo>>;
+}
+
+/** A line of existing text, with the closest of our fonts */
+interface EditLine extends TextLine {
+  font: FontKey;
+  bold: boolean;
+  italic: boolean;
+}
+
+interface PageInfo {
+  lines: EditLine[];
+  images: ImageEl[];
+}
+
+/** Existing text a retyped text box replaces; `line` is the TextLine id */
+interface LineErase extends EraseBox {
+  line: string;
 }
 
 interface OverlayBase {
@@ -114,6 +165,9 @@ interface TextOverlay extends OverlayBase {
   color: string;
   font: FontKey;
   bold: boolean;
+  italic: boolean;
+  /** Set when this box retypes a line already in the PDF: that line is removed on download */
+  erase?: LineErase;
 }
 
 interface ImageOverlay extends OverlayBase {
@@ -164,6 +218,8 @@ interface Page {
   turn: number;
   selected: boolean;
   overlays: Overlay[];
+  /** Edits to the PDF's own images, by content-stream operator index */
+  imgEdits: Map<number, ImageEdit>;
   thumbKey?: string;
 }
 
@@ -328,15 +384,32 @@ function applyForm(lib: PDFDocument, src: Source) {
   }
 }
 
+// ---------- Edits to existing content ----------
+
+function editsOf(p: Page): PageEdits {
+  const erase: EraseBox[] = [];
+  for (const o of p.overlays) if (o.kind === 'text' && o.erase) erase.push(o.erase);
+  return { erase, images: p.imgEdits };
+}
+
+const hasContentEdits = (p: Page) => p.imgEdits.size > 0 || p.overlays.some((o) => o.kind === 'text' && o.erase);
+
+/** Changes whenever the rewritten page would look different */
+const contentKey = (p: Page) =>
+  hasContentEdits(p)
+    ? JSON.stringify([editsOf(p).erase.map((e) => [e.x1, e.y, e.x2]), [...p.imgEdits]])
+    : '';
+
 // ---------- Building the PDF ----------
 
-async function buildPdf(list: Page[]): Promise<{ bytes: Uint8Array; replaced: number }> {
+async function buildPdf(list: Page[]): Promise<{ bytes: Uint8Array; replaced: number; covered: number }> {
   const out = await PDFDocument.create();
   const fonts = new Map<string, PDFFont>();
   let replaced = 0;
+  let covered = 0;
 
-  const font = async (key: FontKey, bold: boolean) => {
-    const name = bold ? FONTS[key].bold : FONTS[key].regular;
+  const font = async (key: FontKey, bold: boolean, italic: boolean) => {
+    const name = pdfFontName(key, bold, italic);
     let f = fonts.get(name);
     if (!f) {
       f = await out.embedFont(name);
@@ -351,6 +424,11 @@ async function buildPdf(list: Page[]): Promise<{ bytes: Uint8Array; replaced: nu
   const copied = new Map<string, PDFPage>();
   for (const [src, indices] of bySource) {
     const lib = await PDFDocument.load(src.bytes, { updateMetadata: false });
+    // Content edits first: they address operators by position in the page's
+    // original stream, which flattening a form would shift
+    for (const p of list) {
+      if (p.src === src && hasContentEdits(p)) covered += rewritePage(lib, p.index, editsOf(p)).covered.length;
+    }
     applyForm(lib, src);
     const pages = await out.copyPages(lib, indices);
     indices.forEach((index, k) => copied.set(`${src.id}:${index}`, pages[k]));
@@ -381,7 +459,7 @@ async function buildPdf(list: Page[]): Promise<{ bytes: Uint8Array; replaced: nu
         });
         continue;
       }
-      const f = await font(o.font, o.bold);
+      const f = await font(o.font, o.bold, o.italic);
       const charset = new Set(f.getCharacterSet());
       const lines = o.text
         .replace(/\r/g, '')
@@ -410,7 +488,7 @@ async function buildPdf(list: Page[]): Promise<{ bytes: Uint8Array; replaced: nu
     }
   }
 
-  return { bytes: await out.save(), replaced };
+  return { bytes: await out.save(), replaced, covered };
 }
 
 // ---------- Canvas drawing of overlays (thumbnails) ----------
@@ -428,7 +506,7 @@ function drawOverlays(ctx: CanvasRenderingContext2D, p: Page, s: number) {
       ctx.fillRect(0, 0, o.w * s, o.h * s);
     } else {
       ctx.fillStyle = o.color;
-      ctx.font = `${o.bold ? 700 : 400} ${o.size * s}px ${FONTS[o.font].css}`;
+      ctx.font = `${o.italic ? 'italic ' : ''}${o.bold ? 700 : 400} ${o.size * s}px ${FONTS[o.font].css}`;
       o.text.split('\n').forEach((line, i) => {
         ctx.fillText(line, PAD * s, (PAD + i * o.size * LINE + o.size * FONTS[o.font].base) * s);
       });
@@ -464,6 +542,10 @@ export function mountPdfTool(root: HTMLElement) {
   const propSize = $<HTMLInputElement>('[data-prop="size"]', editor);
   const propFont = $<HTMLSelectElement>('[data-prop="font"]', editor);
   const propBold = $<HTMLButtonElement>('[data-prop="bold"]', editor);
+  const propItalic = $<HTMLButtonElement>('[data-prop="italic"]', editor);
+  const contentBtn = $<HTMLButtonElement>('[data-ed="content"]', editor);
+  const elProps = $<HTMLElement>('[data-el-props]', editor);
+  const edStatus = $<HTMLElement>('[data-ed-status]', editor);
   const propColor = $<HTMLInputElement>('[data-prop="color"]', editor);
   const removeBtn = $<HTMLButtonElement>('[data-ed="remove"]', editor);
   const cropBtn = $<HTMLButtonElement>('[data-ed="crop"]', editor);
@@ -506,8 +588,9 @@ export function mountPdfTool(root: HTMLElement) {
           throw new Notice(`${file.name} couldn’t be read. It may be damaged.`);
         }
         if (lib.isEncrypted) throw new Notice(`${file.name} is password-protected. Remove the protection first, then add it again.`);
-        // PDF.js takes ownership of the buffer it gets, so it gets a copy
-        const doc = await pdfjs.getDocument({ data: bytes.slice() }).promise;
+        // PDF.js takes ownership of the buffer it gets, so it gets a copy.
+        // Font names are kept so retyped text can match bold / italic.
+        const doc = await pdfjs.getDocument({ data: bytes.slice(), fontExtraProperties: true }).promise;
         const src: Source = {
           id: nextId++,
           label: String.fromCharCode(65 + (sources.length % 26)),
@@ -516,6 +599,8 @@ export function mountPdfTool(root: HTMLElement) {
           doc,
           fields: readFields(lib),
           edited: new Map(),
+          lib: Promise.resolve(lib),
+          content: new Map(),
         };
         sources.push(src);
         for (let i = 0; i < doc.numPages; i++) {
@@ -533,6 +618,7 @@ export function mountPdfTool(root: HTMLElement) {
             turn: 0,
             selected: false,
             overlays: [],
+            imgEdits: new Map(),
           });
         }
         added += doc.numPages;
@@ -569,6 +655,72 @@ export function mountPdfTool(root: HTMLElement) {
     addFiles(e.dataTransfer!.files);
   });
 
+  // ---------- Existing content ----------
+
+  /** Lines of text (with their closest font) and images already on a page */
+  function contentOf(p: Page): Promise<PageInfo> {
+    let info = p.src.content.get(p.index);
+    if (!info) {
+      info = (async () => {
+        const pg = await p.src.doc.getPage(p.index + 1);
+        const tc = await pg.getTextContent();
+        // Loads the page's fonts, so their bold / italic flags can be read
+        await pg.getOperatorList();
+        const lines = groupLines(
+          tc.items.filter((i): i is TextItemLike & typeof i => 'str' in i),
+          (f) => [tc.styles[f]?.ascent || 0.9, tc.styles[f]?.descent || -0.22],
+        ).map((l): EditLine => {
+          let family = tc.styles[l.fontName]?.fontFamily ?? 'sans-serif';
+          let bold = false;
+          let italic = false;
+          try {
+            const f = pg.commonObjs.get(l.fontName) as { bold?: boolean; black?: boolean; italic?: boolean; fallbackName?: string; name?: string };
+            const name = f.name ?? '';
+            bold = !!(f.bold || f.black) || /bold|black|heavy|semibold|demi/i.test(name);
+            italic = !!f.italic || /italic|oblique/i.test(name);
+            family = `${f.fallbackName ?? family} ${name}`;
+          } catch {}
+          const font: FontKey = /mono|courier/i.test(family) ? 'courier' : /serif|times|georgia|garamond/i.test(family.replace(/sans-?serif/gi, '')) ? 'times' : 'helvetica';
+          return { ...l, font, bold, italic };
+        });
+        const { images } = analyzePage(await p.src.lib!, p.index);
+        return { lines, images };
+      })();
+      p.src.content.set(p.index, info);
+    }
+    return info;
+  }
+
+  /*
+    Pages with edits to existing content are shown from a rewritten one-page
+    copy, so the stage and thumbnail show exactly what will download.
+  */
+  const previews = new Map<number, { key: string; page: Promise<PDFPageProxy>; destroy: () => void }>();
+
+  function pageFor(p: Page): Promise<PDFPageProxy> {
+    const key = contentKey(p);
+    if (!key) return p.src.doc.getPage(p.index + 1);
+    const cached = previews.get(p.id);
+    if (cached?.key === key) return cached.page;
+    cached?.destroy();
+    let task: ReturnType<typeof pdfjs.getDocument> | null = null;
+    const page = (async () => {
+      const lib = await PDFDocument.load(p.src.bytes, { ignoreEncryption: true, updateMetadata: false });
+      const { covered } = rewritePage(lib, p.index, editsOf(p));
+      const out = await PDFDocument.create();
+      const [copy] = await out.copyPages(lib, [p.index]);
+      out.addPage(copy);
+      task = pdfjs.getDocument({ data: await out.save() });
+      const doc = await task.promise;
+      if (covered.length && ed.page === p) {
+        edSay('Some edited text is part of a graphic or uses an unusual font, so it’s covered with the page colour instead of removed.');
+      }
+      return doc.getPage(1);
+    })();
+    previews.set(p.id, { key, page, destroy: () => task?.destroy() });
+    return page;
+  }
+
   // ---------- Thumbnails ----------
 
   const thumbQueue = new Set<Page>();
@@ -590,9 +742,9 @@ export function mountPdfTool(root: HTMLElement) {
 
   async function drawThumb(p: Page) {
     const r = rotationOf(p);
-    const key = `${r}:${p.overlays.length}:${JSON.stringify(p.overlays, (k, v) => (k === 'bytes' || k === 'img' ? undefined : v))}`;
+    const key = `${r}:${contentKey(p)}:${JSON.stringify(p.overlays, (k, v) => (k === 'bytes' || k === 'img' || k === 'original' ? undefined : v))}`;
     if (p.thumbKey === key) return;
-    const pg = await p.src.doc.getPage(p.index + 1);
+    const pg = await pageFor(p);
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const [dw] = displaySize(p, r);
     const s = (THUMB_CSS_W * dpr) / dw;
@@ -670,8 +822,8 @@ export function mountPdfTool(root: HTMLElement) {
       const srcEl = el.querySelector<HTMLElement>('.pdf-card__src')!;
       srcEl.textContent = sources.length > 1 ? `${p.src.label} · ${p.index + 1}` : '';
       srcEl.title = p.src.name;
-      const n = p.overlays.length;
-      el.querySelector('.pdf-card__edits')!.textContent = n ? `+${n} added` : '';
+      const n = p.overlays.length + p.imgEdits.size;
+      el.querySelector('.pdf-card__edits')!.textContent = n ? `${n} edit${n === 1 ? '' : 's'}` : '';
       el.querySelector<HTMLElement>('[data-c="edit"]')!.setAttribute('aria-label', `Edit page ${i + 1}`);
       el.querySelector<HTMLButtonElement>('[data-c="left"]')!.disabled = i === 0;
       el.querySelector<HTMLButtonElement>('[data-c="right"]')!.disabled = i === pages.length - 1;
@@ -795,7 +947,7 @@ export function mountPdfTool(root: HTMLElement) {
     say('Building your PDF…');
     try {
       const built = await buildPdf(list);
-      const { replaced } = built;
+      const { replaced, covered } = built;
       let bytes = built.bytes;
       const level = compressSelect.value as CompressLevel | 'none';
       if (level !== 'none') {
@@ -816,7 +968,8 @@ export function mountPdfTool(root: HTMLElement) {
       const kb = bytes.length / 1024;
       say(
         `Downloaded ${name} (${list.length} page${list.length === 1 ? '' : 's'}, ${kb > 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.ceil(kb)} KB`}).` +
-          (replaced ? ` ${replaced} character${replaced === 1 ? '' : 's'} the PDF fonts can’t show became “?”.` : ''),
+          (replaced ? ` ${replaced} character${replaced === 1 ? '' : 's'} the PDF fonts can’t show became “?”.` : '') +
+          (covered ? ` ${covered} edited line${covered === 1 ? ' was' : 's were'} covered with the page colour, not removed.` : ''),
       );
     } catch (err) {
       say(`Couldn’t build the PDF: ${errorText(err)}`);
@@ -859,6 +1012,8 @@ export function mountPdfTool(root: HTMLElement) {
       case 'clear':
         if (!confirm('Remove all files and start over?')) return;
         for (const s of sources) s.doc.loadingTask.destroy();
+        for (const pv of previews.values()) pv.destroy();
+        previews.clear();
         sources.length = 0;
         pages = [];
         lastDeleted = [];
@@ -920,32 +1075,86 @@ export function mountPdfTool(root: HTMLElement) {
 
   // ---------- Page editor ----------
 
-  const ed: { page: Page | null; scale: number; selected: Overlay | null; task: RenderTask | null; token: number } = {
+  const ed: {
+    page: Page | null;
+    scale: number;
+    selected: Overlay | null;
+    /** Selected image of the PDF itself (operator index) */
+    element: number | null;
+    /** "Edit existing" mode: existing text and images are click targets */
+    content: boolean;
+    info: PageInfo | null;
+    task: RenderTask | null;
+    token: number;
+  } = {
     page: null,
     scale: 1,
     selected: null,
+    element: null,
+    content: false,
+    info: null,
     task: null,
     token: 0,
   };
   /** New text boxes reuse the last style picked */
-  const textStyle: Pick<TextOverlay, 'size' | 'color' | 'font' | 'bold'> = {
+  const textStyle: Pick<TextOverlay, 'size' | 'color' | 'font' | 'bold' | 'italic'> = {
     size: 14,
     color: '#141918',
     font: 'helvetica',
     bold: false,
+    italic: false,
+  };
+
+  const edSay = (text: string) => {
+    edStatus.textContent = text;
   };
 
   function openEditor(p: Page) {
+    if (ed.page !== p) {
+      ed.info = null;
+      edSay('');
+    }
     ed.page = p;
     ed.selected = null;
+    ed.element = null;
     if (!editor.open) editor.showModal();
     drawStage();
+    if (ed.content) loadContent();
+  }
+
+  /** Reads the page's existing text and images, then shows them as targets */
+  async function loadContent() {
+    const p = ed.page;
+    if (!p) return;
+    try {
+      const info = await contentOf(p);
+      if (ed.page !== p) return;
+      ed.info = info;
+      if (!info.lines.length && !info.images.length) edSay('Nothing editable found on this page. A scanned page is one picture: add text or a cover box instead.');
+      else edSay('Click a line of text to retype it, or an image to move, resize, replace or delete it.');
+      renderLayer();
+    } catch (err) {
+      edSay(`Couldn’t read this page’s content: ${errorText(err)}`);
+    }
+  }
+
+  function setContentMode(on: boolean) {
+    ed.content = on;
+    contentBtn.setAttribute('aria-pressed', String(on));
+    stage.classList.toggle('is-content', on);
+    if (!on) {
+      ed.element = null;
+      edSay('');
+      renderLayer();
+      syncProps();
+    } else loadContent();
   }
 
   editor.addEventListener('close', () => {
     ed.task?.cancel();
     ed.page = null;
     ed.selected = null;
+    ed.element = null;
     layer.replaceChildren();
     render();
   });
@@ -969,7 +1178,7 @@ export function mountPdfTool(root: HTMLElement) {
     renderLayer();
     syncProps();
 
-    const pg = await p.src.doc.getPage(p.index + 1);
+    const pg = await pageFor(p);
     if (token !== ed.token) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const viewport = pg.getViewport({ scale: ed.scale * dpr, rotation: r });
@@ -1014,13 +1223,252 @@ export function mountPdfTool(root: HTMLElement) {
       t.style.padding = `${PAD * s}px`;
       t.style.fontFamily = FONTS[o.font].css;
       t.style.fontWeight = o.bold ? '700' : '400';
+      t.style.fontStyle = o.italic ? 'italic' : 'normal';
       t.style.color = o.color;
     }
+  }
+
+  /** Re-renders the stage from the rewritten page, after an edit to existing content */
+  function refreshStage() {
+    drawStage();
+  }
+
+  // ---------- Existing content: geometry ----------
+
+  /** A box in page space (y up) → its rectangle on the stage as displayed, in points */
+  function boxToDisplay(p: Page, b: Box) {
+    const r = rotationOf(p);
+    const a = fromUser(r, p.W, p.H, b.x - p.vx, b.y - p.vy);
+    const c = fromUser(r, p.W, p.H, b.x + b.w - p.vx, b.y + b.h - p.vy);
+    return { x: Math.min(a[0], c[0]), y: Math.min(a[1], c[1]), w: Math.abs(c[0] - a[0]), h: Math.abs(c[1] - a[1]) };
+  }
+
+  function displayToBox(p: Page, d: { x: number; y: number; w: number; h: number }): Box {
+    const r = rotationOf(p);
+    const a = toUser(r, p.W, p.H, d.x, d.y);
+    const c = toUser(r, p.W, p.H, d.x + d.w, d.y + d.h);
+    return { x: Math.min(a[0], c[0]) + p.vx, y: Math.min(a[1], c[1]) + p.vy, w: Math.abs(c[0] - a[0]), h: Math.abs(c[1] - a[1]) };
+  }
+
+  const lineBox = (l: TextLine): Box => ({ x: l.x1, y: l.bottom, w: Math.max(1, l.x2 - l.x1), h: l.top - l.bottom });
+
+  /** Where an existing image is now: its original box, or where it was moved */
+  const imageBox = (p: Page, im: ImageEl) => {
+    const e = p.imgEdits.get(im.op);
+    return e?.action === 'move' ? e.to : im.box;
+  };
+
+  /*
+    Text and background colour of a line, read from the rendered page: the
+    most common colour in its box is the background, the most common one
+    clearly different from that is the ink.
+  */
+  function sampleLine(l: TextLine): { color: string; bg: [number, number, number] } {
+    const fallback = { color: '#141918', bg: [255, 255, 255] as [number, number, number] };
+    const canvas = stage.querySelector<HTMLCanvasElement>('.pdf-stage__canvas');
+    const ctx = canvas?.getContext('2d', { willReadFrequently: true });
+    if (!canvas || !ctx || !canvas.width) return fallback;
+    const d = boxToDisplay(ed.page!, lineBox(l));
+    const k = canvas.width / (canvas.getBoundingClientRect().width / ed.scale);
+    const x = Math.max(0, Math.floor(d.x * k));
+    const y = Math.max(0, Math.floor(d.y * k));
+    const w = Math.min(canvas.width - x, Math.ceil(d.w * k));
+    const h = Math.min(canvas.height - y, Math.ceil(d.h * k));
+    if (w < 1 || h < 1) return fallback;
+    const { data } = ctx.getImageData(x, y, w, h);
+    const buckets = new Map<number, { n: number; r: number; g: number; b: number }>();
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 200) continue;
+      const key = ((data[i] >> 4) << 8) | ((data[i + 1] >> 4) << 4) | (data[i + 2] >> 4);
+      const s = buckets.get(key) ?? { n: 0, r: 0, g: 0, b: 0 };
+      s.n++;
+      s.r += data[i];
+      s.g += data[i + 1];
+      s.b += data[i + 2];
+      buckets.set(key, s);
+    }
+    const avg = (s: { n: number; r: number; g: number; b: number }) => [s.r / s.n, s.g / s.n, s.b / s.n];
+    const sorted = [...buckets.values()].sort((a, b) => b.n - a.n);
+    if (!sorted.length) return fallback;
+    const bg = avg(sorted[0]);
+    const ink = sorted.find((s) => {
+      const c = avg(s);
+      return Math.abs(c[0] - bg[0]) + Math.abs(c[1] - bg[1]) + Math.abs(c[2] - bg[2]) > 120;
+    });
+    const hex = (c: number[]) => `#${c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+    return { color: ink ? hex(avg(ink)) : fallback.color, bg: bg.map(Math.round) as [number, number, number] };
+  }
+
+  /** Turns an existing line into a text box with the same words, size, font and colour */
+  function editLine(l: EditLine) {
+    const p = ed.page!;
+    const { color, bg } = sampleLine(l);
+    const size = Math.round(l.size * 10) / 10;
+    addOverlay({
+      id: nextId++,
+      kind: 'text',
+      text: l.text,
+      size,
+      color,
+      font: l.font,
+      bold: l.bold,
+      italic: l.italic,
+      r0: 0,
+      x: l.x1 - p.vx - PAD,
+      y: p.H - (l.y - p.vy) - PAD - size * FONTS[l.font].base,
+      erase: { ...eraseFor(l, bg), line: l.id },
+    });
+    // Caret at the end of the text rather than everything selected
+    const t = overlayEl(ed.selected!)?.querySelector<HTMLElement>('.pdf-ov__text');
+    if (t) getSelection()?.collapse(t, t.childNodes.length);
+    edSay('Retyping existing text. Remove brings the original back.');
+    refreshStage();
+  }
+
+  function selectElement(op: number | null) {
+    if (op !== ed.element) edSay('');
+    ed.element = op;
+    ed.selected = null;
+    for (const el of layer.children) {
+      const h = el as HTMLElement;
+      h.classList.toggle('is-selected', op !== null && h.dataset.op === String(op));
+      if (h.classList.contains('pdf-ov')) h.classList.remove('is-selected');
+    }
+    syncProps();
+  }
+
+  function setImageEdit(op: number, edit: ImageEdit | null) {
+    const p = ed.page!;
+    if (edit) p.imgEdits.set(op, edit);
+    else p.imgEdits.delete(op);
+    renderLayer();
+    refreshStage();
+  }
+
+  /** Text-line and image targets for "Edit existing" */
+  function contentTargets(): HTMLElement[] {
+    const p = ed.page!;
+    if (!ed.content || !ed.info) return [];
+    const s = ed.scale;
+    const place = (el: HTMLElement, d: { x: number; y: number; w: number; h: number }) => {
+      el.style.left = `${d.x * s}px`;
+      el.style.top = `${d.y * s}px`;
+      el.style.width = `${d.w * s}px`;
+      el.style.height = `${d.h * s}px`;
+    };
+    const editing = new Set(p.overlays.flatMap((o) => (o.kind === 'text' && o.erase ? [o.erase.line] : [])));
+    const out: HTMLElement[] = [];
+
+    for (const im of ed.info.images) {
+      const edit = p.imgEdits.get(im.op);
+      const d = boxToDisplay(p, imageBox(p, im));
+      if (d.w * s < 4 || d.h * s < 4) continue;
+      if (edit?.action === 'delete') {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pdf-hot pdf-hot--deleted';
+        b.textContent = 'Deleted · restore';
+        b.addEventListener('click', () => setImageEdit(im.op, null));
+        place(b, d);
+        out.push(b);
+        continue;
+      }
+      const el = document.createElement('div');
+      el.className = 'pdf-hot pdf-hot--image';
+      el.dataset.op = String(im.op);
+      el.tabIndex = 0;
+      el.setAttribute('role', 'img');
+      el.setAttribute('aria-label', 'Image in the PDF. Drag to move, arrow keys nudge, Delete removes it.');
+      el.classList.toggle('is-selected', ed.element === im.op);
+      el.addEventListener('pointerdown', (e) => startElementDrag(e, im, 'move'));
+      el.addEventListener('focus', () => ed.element !== im.op && selectElement(im.op));
+      const handle = document.createElement('span');
+      handle.className = 'pdf-ov__resize';
+      handle.title = 'Drag to resize';
+      handle.addEventListener('pointerdown', (e) => startElementDrag(e, im, 'resize'));
+      el.append(handle);
+      place(el, d);
+      out.push(el);
+    }
+
+    for (const l of ed.info.lines) {
+      if (editing.has(l.id)) continue;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pdf-hot pdf-hot--text';
+      b.setAttribute('aria-label', `Edit text: ${l.text}`);
+      b.addEventListener('click', () => editLine(l));
+      place(b, boxToDisplay(p, lineBox(l)));
+      out.push(b);
+    }
+    return out;
+  }
+
+  /** Move / resize an existing image; the page re-renders when you let go */
+  function startElementDrag(e: PointerEvent, im: ImageEl, mode: 'move' | 'resize') {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const p = ed.page!;
+    selectElement(im.op);
+    const el = layer.querySelector<HTMLElement>(`[data-op="${im.op}"]`)!;
+    el.focus({ preventScroll: true });
+    const start = boxToDisplay(p, imageBox(p, im));
+    const sx = e.clientX;
+    const sy = e.clientY;
+    const target = e.currentTarget as HTMLElement;
+    target.setPointerCapture(e.pointerId);
+    let d = { ...start };
+    let moved = false;
+
+    // A snapshot of the image travels with the pointer
+    const canvas = stage.querySelector<HTMLCanvasElement>('.pdf-stage__canvas');
+    if (canvas?.width) {
+      const k = canvas.width / (canvas.getBoundingClientRect().width / ed.scale);
+      const snap = document.createElement('canvas');
+      snap.width = Math.max(1, Math.round(start.w * k));
+      snap.height = Math.max(1, Math.round(start.h * k));
+      snap.getContext('2d')!.drawImage(canvas, start.x * k, start.y * k, start.w * k, start.h * k, 0, 0, snap.width, snap.height);
+      snap.className = 'pdf-hot__snap';
+      el.prepend(snap);
+    }
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = (ev.clientX - sx) / ed.scale;
+      const dy = (ev.clientY - sy) / ed.scale;
+      if (Math.abs(dx) + Math.abs(dy) > 0.5) moved = true;
+      if (mode === 'move') d = { ...start, x: start.x + dx, y: start.y + dy };
+      else {
+        const w = Math.max(8, start.w + dx);
+        d = { ...start, w, h: (w * start.h) / start.w };
+      }
+      el.style.left = `${d.x * ed.scale}px`;
+      el.style.top = `${d.y * ed.scale}px`;
+      el.style.width = `${d.w * ed.scale}px`;
+      el.style.height = `${d.h * ed.scale}px`;
+      el.classList.add('is-dragging');
+    };
+    const onUp = () => {
+      target.removeEventListener('pointermove', onMove);
+      target.removeEventListener('pointerup', onUp);
+      target.removeEventListener('pointercancel', onUp);
+      if (!moved) {
+        el.querySelector('.pdf-hot__snap')?.remove();
+        return;
+      }
+      setImageEdit(im.op, { action: 'move', to: displayToBox(p, d) });
+      selectElement(im.op);
+      layer.querySelector<HTMLElement>(`[data-op="${im.op}"]`)?.focus({ preventScroll: true });
+    };
+    target.addEventListener('pointermove', onMove);
+    target.addEventListener('pointerup', onUp);
+    target.addEventListener('pointercancel', onUp);
   }
 
   function renderLayer() {
     const p = ed.page!;
     layer.replaceChildren(
+      ...contentTargets(),
       ...p.overlays.map((o) => {
         const el = document.createElement('div');
         el.className = `pdf-ov pdf-ov--${o.kind}`;
@@ -1085,25 +1533,30 @@ export function mountPdfTool(root: HTMLElement) {
 
   function select(o: Overlay | null) {
     ed.selected = o;
+    ed.element = null;
     for (const el of layer.children) el.classList.toggle('is-selected', o !== null && (el as HTMLElement).dataset.id === String(o.id));
     syncProps();
   }
 
   function syncProps() {
     const o = ed.selected;
-    removeBtn.disabled = !o;
+    const element = ed.element !== null;
+    removeBtn.disabled = !o && !element;
+    removeBtn.textContent = element ? 'Delete image' : o?.kind === 'text' && o.erase ? 'Remove (restore original)' : 'Remove';
     cropBtn.disabled = o?.kind !== 'image';
-    props.hidden = o?.kind === 'image' || o?.kind === 'rect';
+    props.hidden = element || o?.kind === 'image' || o?.kind === 'rect';
     coverProps.hidden = o?.kind !== 'rect';
+    elProps.hidden = !element;
     if (o?.kind === 'rect') coverColor.value = o.color;
     const t = o?.kind === 'text' ? o : textStyle;
     propSize.value = String(Math.round(t.size * 10) / 10);
     propFont.value = t.font;
     propBold.setAttribute('aria-pressed', String(t.bold));
+    propItalic.setAttribute('aria-pressed', String(t.italic));
     propColor.value = t.color;
   }
 
-  function updateText(change: Partial<Pick<TextOverlay, 'size' | 'color' | 'font' | 'bold'>>) {
+  function updateText(change: Partial<Pick<TextOverlay, 'size' | 'color' | 'font' | 'bold' | 'italic'>>) {
     Object.assign(textStyle, change);
     const o = ed.selected;
     if (o?.kind !== 'text') return syncProps();
@@ -1119,6 +1572,7 @@ export function mountPdfTool(root: HTMLElement) {
   });
   propFont.addEventListener('change', () => updateText({ font: propFont.value as FontKey }));
   propBold.addEventListener('click', () => updateText({ bold: propBold.getAttribute('aria-pressed') !== 'true' }));
+  propItalic.addEventListener('click', () => updateText({ italic: propItalic.getAttribute('aria-pressed') !== 'true' }));
   propColor.addEventListener('input', () => updateText({ color: propColor.value }));
 
   coverColor.addEventListener('input', () => {
@@ -1256,22 +1710,48 @@ export function mountPdfTool(root: HTMLElement) {
 
   function removeSelected() {
     const p = ed.page;
+    if (!p) return;
+    if (ed.element !== null) {
+      const op = ed.element;
+      ed.element = null;
+      setImageEdit(op, { action: 'delete' });
+      syncProps();
+      edSay('Image deleted from the page. Click its outline to restore it.');
+      return;
+    }
     const o = ed.selected;
-    if (!p || !o) return;
+    if (!o) return;
     p.overlays = p.overlays.filter((ov) => ov !== o);
     select(null);
     renderLayer();
+    if (o.kind === 'text' && o.erase) {
+      edSay('Original text restored.');
+      refreshStage();
+    }
   }
+
+  /** Swaps an existing image for a new one, fitted into the same box */
+  let replacing: number | null = null;
 
   editor.addEventListener('click', async (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-ed]');
     if (!btn || !ed.page) return;
     const i = pages.indexOf(ed.page);
     switch (btn.dataset.ed) {
+      case 'content':
+        setContentMode(!ed.content);
+        break;
+      case 'replace':
+        if (ed.element !== null) {
+          replacing = ed.element;
+          imageInput.click();
+        }
+        break;
       case 'text':
         addOverlay({ id: nextId++, kind: 'text', text: 'Text', ...textStyle, ...centred(60, textStyle.size * LINE) });
         break;
       case 'image':
+        replacing = null;
         imageInput.click();
         break;
       case 'sign':
@@ -1315,12 +1795,43 @@ export function mountPdfTool(root: HTMLElement) {
     }
   });
 
+  /** Arrow-key nudges of an existing image are applied once the keys go quiet */
+  let nudgeTimer = 0;
+
   editor.addEventListener('keydown', (e) => {
-    const o = ed.selected;
-    if (!o) return;
     const typing = (e.target as HTMLElement).isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test((e.target as HTMLElement).tagName);
     if (typing) return;
     const step = e.shiftKey ? 10 : 1;
+    if (ed.element !== null && ed.info && ed.page) {
+      const p = ed.page;
+      const im = ed.info.images.find((i) => i.op === ed.element);
+      if (!im) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        removeSelected();
+        return;
+      }
+      const dir: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+      if (!dir[e.key]) return;
+      e.preventDefault();
+      const d = boxToDisplay(p, imageBox(p, im));
+      d.x += dir[e.key][0] * step;
+      d.y += dir[e.key][1] * step;
+      p.imgEdits.set(im.op, { action: 'move', to: displayToBox(p, d) });
+      const el = layer.querySelector<HTMLElement>(`[data-op="${im.op}"]`);
+      if (el) {
+        el.style.left = `${d.x * ed.scale}px`;
+        el.style.top = `${d.y * ed.scale}px`;
+      }
+      clearTimeout(nudgeTimer);
+      nudgeTimer = window.setTimeout(() => {
+        refreshStage();
+        layer.querySelector<HTMLElement>(`[data-op="${im.op}"]`)?.focus({ preventScroll: true });
+      }, 350);
+      return;
+    }
+    const o = ed.selected;
+    if (!o) return;
     const moves: Record<string, [number, number]> = {
       ArrowLeft: [-step, 0],
       ArrowRight: [step, 0],
@@ -1345,10 +1856,26 @@ export function mountPdfTool(root: HTMLElement) {
   imageInput.addEventListener('change', async () => {
     const file = imageInput.files?.[0];
     imageInput.value = '';
+    const swap = replacing;
+    replacing = null;
     if (!file || !ed.page) return;
     try {
       const image = await readImage(file);
       const p = ed.page;
+      const old = swap !== null ? ed.info?.images.find((i) => i.op === swap) : undefined;
+      if (old) {
+        // Fit inside the old image's box, centred, keeping the new image's proportions
+        const d = boxToDisplay(p, imageBox(p, old));
+        const k = Math.min(d.w / image.w, d.h / image.h);
+        const w = image.w * k;
+        const h = image.h * k;
+        ed.element = null;
+        p.imgEdits.set(old.op, { action: 'delete' });
+        addOverlay({ id: nextId++, kind: 'image', r0: rotationOf(p), x: d.x + (d.w - w) / 2, y: d.y + (d.h - h) / 2, w, h, bytes: image.bytes, format: image.format, img: image.img });
+        refreshStage();
+        edSay('Image replaced. The new one is a normal image now: drag, resize or crop it.');
+        return;
+      }
       const [dw] = displaySize(p, rotationOf(p));
       // 96 dpi → points, but never wider than 40% of the page
       const w = Math.min(dw * 0.4, image.w * 0.75);

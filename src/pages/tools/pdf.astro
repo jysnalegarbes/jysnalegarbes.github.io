@@ -9,7 +9,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="PDF Studio — Jayson Alegarbes"
-  description="Merge, reorder, rotate, sign and fill PDFs in your browser. Files never leave your device."
+  description="Merge, reorder, rotate, edit, sign and fill PDFs in your browser. Files never leave your device."
   noindex
 >
   <section class="pdf" data-pdf>
@@ -17,7 +17,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       <p class="pdf__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> PDF Studio</p>
       <h1 class="pdf__title"><span class="serif-italic">pdf</span> STUDIO</h1>
       <div class="pdf__text">
-        <p>Merge files, reorder, rotate and remove pages, pull out the ones you need, add text, images and signatures, cover and retype small mistakes, and fill in forms.</p>
+        <p>Merge files, reorder, rotate and remove pages, pull out the ones you need, edit the text and images already in a PDF, add text, images and signatures, and fill in forms.</p>
         <p class="pdf__private">Runs entirely in your browser. Your files are never uploaded.</p>
       </div>
     </header>
@@ -73,10 +73,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </div>
 
     <p class="pdf__note">
-      Need to change text that’s already in a PDF? That takes a desktop editor, such as the free{' '}
-      <a href="https://github.com/SteveTheKiller/KillerPDF" target="_blank" rel="noopener">KillerPDF</a> on Windows.
-      Cover boxes only hide what’s underneath: the text is still in the file, so don’t use them to remove private
-      information.
+      Editing existing text really removes the old words from the file and retypes them in the closest standard font
+      (sans, serif or mono), so the typeface can look slightly different. Text that’s part of a graphic, and scanned
+      pages, can’t be retyped this way. Cover boxes only hide what’s underneath: the text is still in the file, so don’t
+      use them to remove private information.
     </p>
   </section>
 
@@ -89,7 +89,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <button type="button" class="pdf-btn pdf-btn--primary" data-ed="done">Done</button>
       </div>
     </div>
-    <div class="pdf-editor__tools" role="toolbar" aria-label="Add to the page">
+    <div class="pdf-editor__tools" role="toolbar" aria-label="Edit the page">
+      <button
+        type="button"
+        class="pdf-editor__mode"
+        data-ed="content"
+        aria-pressed="false"
+        title="Click text or images already in the PDF to change them"
+      >Edit existing</button>
       <button type="button" data-ed="text">+ Text</button>
       <button type="button" data-ed="image">+ Image</button>
       <button type="button" data-ed="sign">+ Signature</button>
@@ -109,7 +116,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
             <option value="courier">Mono</option>
           </select>
         </label>
-        <button type="button" class="pdf-editor__bold" data-prop="bold" aria-pressed="false">B</button>
+        <button type="button" class="pdf-editor__bold" data-prop="bold" aria-pressed="false" aria-label="Bold">B</button>
+        <button type="button" class="pdf-editor__bold pdf-editor__italic" data-prop="italic" aria-pressed="false" aria-label="Italic">I</button>
         <label class="pdf-editor__color">
           <span class="visually-hidden">Text colour</span>
           <input type="color" data-prop="color" />
@@ -123,9 +131,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <button type="button" data-ed="match">Match page</button>
         <span class="pdf-editor__hint">Hides, doesn’t delete</span>
       </div>
+      <div class="pdf-editor__props" data-el-props hidden>
+        <button type="button" data-ed="replace">Replace image</button>
+        <span class="pdf-editor__hint">Drag to move · corner to resize</span>
+      </div>
       <button type="button" class="pdf-editor__remove" data-ed="crop" disabled title="Crop the selected image (or double-click it)">Crop</button>
       <button type="button" data-ed="remove" disabled>Remove</button>
     </div>
+    <p class="pdf-editor__status" role="status" aria-live="polite" data-ed-status></p>
     <div class="pdf-editor__stage-wrap" data-stage-wrap>
       <div class="pdf-stage" data-stage>
         <canvas class="pdf-stage__canvas"></canvas>
@@ -798,6 +811,40 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     background: var(--black);
   }
 
+  .pdf-editor__italic {
+    font-style: italic;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+
+  /* "Edit existing" is a mode: it reads as a pressed switch, split from the add tools */
+  .pdf-editor__tools > .pdf-editor__mode {
+    padding: 0 12px;
+    margin-right: 6px;
+    border: 1px solid var(--black);
+  }
+
+  .pdf-editor__tools > .pdf-editor__mode[aria-pressed='true'] {
+    color: var(--bg);
+    background: var(--black);
+  }
+
+  .pdf-editor__tools > .pdf-editor__mode[aria-pressed='true']:hover {
+    color: var(--bg);
+    filter: none;
+  }
+
+  .pdf-editor__status {
+    min-height: 1.4em;
+    padding: 8px var(--gutter);
+    font-size: var(--fs-sm);
+    color: var(--gray);
+    border-bottom: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+  }
+
+  .pdf-editor__status:empty {
+    display: none;
+  }
+
   .pdf-editor__color input {
     width: 32px;
     height: 32px;
@@ -877,6 +924,96 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   .pdf-ov--image {
     cursor: move;
     touch-action: none;
+  }
+
+  /* ---------- Edit existing: click targets over the PDF's own text and images ---------- */
+
+  .pdf-hot {
+    position: absolute;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    outline: 1px dashed transparent;
+    outline-offset: 1px;
+    transition:
+      outline-color 0.15s,
+      background-color 0.15s;
+  }
+
+  /* While the mode is on, every target is faintly marked so you can see what's editable */
+  .pdf-hot--text {
+    cursor: text;
+    outline-color: color-mix(in srgb, var(--green) 45%, transparent);
+  }
+
+  .pdf-hot--text:hover,
+  .pdf-hot--text:focus-visible {
+    outline: 1px solid var(--green);
+    background: color-mix(in srgb, var(--green) 14%, transparent);
+  }
+
+  .pdf-hot--image {
+    cursor: move;
+    touch-action: none;
+    outline-color: color-mix(in srgb, var(--black) 35%, transparent);
+  }
+
+  .pdf-hot--image:hover {
+    outline-color: var(--black);
+  }
+
+  .pdf-hot--image.is-selected,
+  .pdf-hot--image:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: 0;
+  }
+
+  .pdf-hot--image.is-dragging {
+    outline-style: dashed;
+  }
+
+  .pdf-hot__snap {
+    display: block;
+    width: 100%;
+    height: 100%;
+    opacity: 0.85;
+    pointer-events: none;
+  }
+
+  .pdf-hot--image .pdf-ov__resize {
+    opacity: 0;
+  }
+
+  .pdf-hot--image:hover .pdf-ov__resize,
+  .pdf-hot--image.is-selected .pdf-ov__resize {
+    opacity: 1;
+  }
+
+  .pdf-hot--deleted {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--black);
+    outline: 1px dashed var(--black);
+    background: repeating-linear-gradient(
+      45deg,
+      color-mix(in srgb, var(--black) 10%, transparent) 0 6px,
+      transparent 6px 12px
+    );
+    cursor: pointer;
+  }
+
+  .pdf-hot--deleted:hover {
+    background-color: color-mix(in srgb, var(--green) 25%, transparent);
+  }
+
+  @media (pointer: coarse) {
+    .pdf-hot--image .pdf-ov__resize {
+      opacity: 1;
+    }
   }
 
   .pdf-ov--image:focus-visible {
