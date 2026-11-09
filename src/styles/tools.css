@@ -1,0 +1,514 @@
+/*
+  Shared styles for the single-purpose /tools/ pages (Image Converter, PDF
+  Compressor, Background Remover, Mockup Generator): intro, drop zone,
+  settings bar, file rows, export bar. Global because rows are created by
+  scripts. PDF Studio keeps its own .pdf- styles.
+*/
+
+.tool {
+  --line: color-mix(in srgb, var(--black) 14%, transparent);
+  --tint: color-mix(in srgb, var(--black) 6%, var(--bg));
+  padding: calc(141 * var(--px)) var(--gutter) calc(160 * var(--px));
+}
+
+/* ---------- Intro ---------- */
+
+.tool__crumb {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--gray);
+  margin-bottom: calc(18 * var(--px));
+}
+
+.tool__crumb a {
+  transition: color 0.2s;
+}
+
+.tool__crumb a:hover {
+  color: var(--black);
+}
+
+.tool__title {
+  font-weight: 700;
+  font-size: calc(44 * var(--px));
+  white-space: nowrap;
+}
+
+.tool__text {
+  font-size: var(--fs-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1lh;
+  max-width: calc(432 * var(--px));
+  margin-top: calc(40 * var(--px));
+}
+
+.tool__private {
+  font-weight: 700;
+}
+
+/* ---------- Buttons ---------- */
+
+.tool button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tool-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  border: 1px solid var(--black);
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.tool-btn--primary {
+  background: var(--black);
+  color: var(--bg);
+}
+
+.tool-btn--primary:not(:disabled):hover {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--black);
+}
+
+/* ---------- Drop zone ---------- */
+
+.tool-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: calc(56 * var(--px));
+  min-height: calc(260 * var(--px));
+  padding: 24px;
+  border: 1px dashed var(--gray);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
+}
+
+.tool-drop:hover,
+.tool-drop.is-over {
+  background: var(--tint);
+  border-color: var(--black);
+}
+
+.tool-drop:has(input:focus-visible) {
+  outline: 2px solid var(--green);
+  outline-offset: 4px;
+}
+
+.tool-drop__title {
+  font-weight: 700;
+  font-size: calc(26 * var(--px));
+  text-transform: uppercase;
+}
+
+.tool-drop__or {
+  font-size: var(--fs-sm);
+  color: var(--gray);
+}
+
+.tool-drop__link {
+  color: var(--black);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.tool-drop.is-compact {
+  min-height: 0;
+  padding: 18px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.tool-drop.is-compact .tool-drop__title {
+  font-size: var(--fs-sm);
+}
+
+.tool__status {
+  min-height: 1lh;
+  margin-top: 14px;
+  font-size: var(--fs-sm);
+}
+
+/* ---------- Settings ---------- */
+
+.tool-settings {
+  display: grid;
+  gap: 20px calc(48 * var(--px));
+  margin-top: calc(24 * var(--px));
+  padding: calc(24 * var(--px)) 0;
+  border-block: 1px solid var(--line);
+  font-size: var(--fs-sm);
+}
+
+.tool-settings__group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.tool-settings__group legend,
+.tool-settings__label {
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+.tool-settings__label output {
+  color: var(--black);
+}
+
+.tool-settings__note {
+  margin-top: 10px;
+  max-width: 44ch;
+  color: var(--gray);
+}
+
+.tool-settings__note:empty {
+  display: none;
+}
+
+.tool-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tool-formats label {
+  position: relative;
+  cursor: pointer;
+}
+
+.tool-formats input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.tool-formats span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.tool-formats label:hover span {
+  border-color: var(--black);
+}
+
+.tool-formats input:checked + span {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--bg);
+}
+
+.tool-formats input:focus-visible + span {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.tool-settings input[type='range'] {
+  width: 100%;
+  max-width: 260px;
+  accent-color: var(--black);
+}
+
+.tool-resize {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tool-resize select,
+.tool-resize input {
+  font: inherit;
+  color: var(--black);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--gray);
+  border-radius: 0;
+  padding: 6px 0;
+}
+
+.tool-resize input {
+  width: 6em;
+}
+
+.tool-resize :is(select, input):focus-visible {
+  outline: none;
+  border-bottom-color: var(--black);
+}
+
+.tool-settings input[type='color'] {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: none;
+  cursor: pointer;
+}
+
+.tool [hidden] {
+  display: none !important;
+}
+
+/* ---------- File list ---------- */
+
+.tool-list {
+  margin-top: calc(16 * var(--px));
+}
+
+.tool-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  grid-template-areas:
+    'thumb info actions'
+    'thumb result actions';
+  align-items: center;
+  gap: 4px 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-sm);
+}
+
+.tool-row__thumb {
+  grid-area: thumb;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  background:
+    repeating-conic-gradient(color-mix(in srgb, var(--black) 8%, var(--bg)) 0 25%, var(--bg) 0 50%) 0 0 / 10px 10px;
+  outline: 1px solid var(--line);
+  outline-offset: -1px;
+}
+
+.tool-row__info {
+  grid-area: info;
+  min-width: 0;
+}
+
+.tool-row__name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-row__meta {
+  color: var(--gray);
+}
+
+.tool-row__result {
+  grid-area: result;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.tool-row.is-error .tool-row__result {
+  color: #b3261e;
+}
+
+.tool-row__delta {
+  font-weight: 700;
+}
+
+.tool-row__delta.is-smaller {
+  color: color-mix(in srgb, var(--green) 75%, var(--black));
+}
+
+.tool-row__delta.is-larger {
+  color: var(--gray);
+}
+
+.tool-row__actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.tool-row__actions button {
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0 8px;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+.tool-row__rm {
+  color: var(--gray);
+}
+
+.tool-row__actions button:not(:disabled):hover {
+  background: var(--tint);
+  color: var(--black);
+}
+
+/* ---------- Export ---------- */
+
+.tool__export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 24px;
+  margin-top: calc(32 * var(--px));
+  font-size: var(--fs-sm);
+}
+
+.tool__summary {
+  font-weight: 700;
+}
+
+.tool__export-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: auto;
+}
+
+.tool__clear {
+  font-weight: 700;
+  color: var(--gray);
+  transition: color 0.2s;
+}
+
+.tool__clear:hover {
+  color: var(--black);
+}
+
+/* ---------- Wider screens ---------- */
+
+@media (min-width: 640px) {
+  .tool-settings {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .tool-row {
+    grid-template-columns: 64px minmax(0, 1.2fr) minmax(0, 1fr) auto;
+    grid-template-areas: 'thumb info result actions';
+  }
+
+  .tool-row__thumb {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tool {
+    padding-top: calc(186 * var(--px));
+    padding-right: calc(259 * var(--px));
+  }
+
+  .tool__intro {
+    display: grid;
+    grid-template-columns: calc(531 * var(--px)) auto;
+    align-items: start;
+  }
+
+  .tool__crumb,
+  .tool__title {
+    grid-column: 1 / -1;
+  }
+
+  .tool__title {
+    font-size: calc(110 * var(--px));
+  }
+
+  .tool__text {
+    grid-column: 2;
+    margin-top: calc(48 * var(--px));
+  }
+
+  .tool-drop__title {
+    font-size: calc(30 * var(--px));
+  }
+}
+
+/* ---------- File rows without a thumbnail (PDF Compressor) ---------- */
+
+.tool-row__icon {
+  grid-area: thumb;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--bg);
+  background: var(--black);
+}
+
+@media (min-width: 640px) {
+  .tool-row__icon {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* ---------- Footnote ---------- */
+
+.tool__note {
+  margin-top: calc(72 * var(--px));
+  max-width: 52ch;
+  font-size: var(--fs-sm);
+  color: var(--gray);
+}
+
+.tool__note a {
+  color: var(--black);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.tool-settings__label--sub {
+  margin-top: 14px;
+}
+
+.tool-row__warn {
+  flex-basis: 100%;
+  color: var(--brown);
+}
+
+/* Long titles ("mockup GENERATOR") wrap on phones instead of running off */
+@media (max-width: 1023.98px) {
+  .tool__title {
+    white-space: normal;
+  }
+}

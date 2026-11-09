@@ -1,0 +1,489 @@
+---
+/*
+  Mockup Generator (hidden like /lab/: not in the nav, noindex). Original,
+  code-drawn screen and print scenes: scripts/mockup-tool.ts.
+  Styles: styles/tools.css + the .mk- rules below.
+*/
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/tools.css';
+
+const screens = [
+  ['browser', 'Browser'],
+  ['phone', 'Phone'],
+  ['laptop', 'Laptop'],
+  ['responsive', 'Laptop + phone'],
+];
+const prints = [
+  ['cards', 'Business cards'],
+  ['poster', 'Framed poster'],
+  ['paper', 'Paper sheet'],
+];
+const swatches = [
+  ['mist', '#e1e8e8', 'Mist'],
+  ['sand', '#e9e2d8', 'Sand'],
+  ['green', '#0fb12a', 'Green'],
+  ['clay', '#716558', 'Clay'],
+  ['ink', '#141918', 'Ink'],
+  ['mint', 'linear-gradient(135deg, #e1e8e8, #bfe5c6)', 'Mint gradient'],
+  ['dusk', 'linear-gradient(135deg, #141918, #34433f)', 'Dusk gradient'],
+  ['transparent', 'repeating-conic-gradient(#d4d9d9 0 25%, #f4f6f6 0 50%) 0 0 / 10px 10px', 'Transparent'],
+];
+---
+
+<BaseLayout
+  title="Mockup Generator — Jayson Alegarbes"
+  description="Put your designs into browser, phone, laptop, business card and poster mockups in your browser."
+  noindex
+>
+  <section class="tool mk" data-tool>
+    <header class="tool__intro">
+      <p class="tool__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> Mockup Generator</p>
+      <h1 class="tool__title"><span class="serif-italic">mockup</span> GENERATOR</h1>
+      <div class="tool__text">
+        <p>Drop in a screenshot or a design and get it on a browser, phone, laptop, business card or framed poster, ready for a case study or a post.</p>
+        <p class="tool__private">Runs entirely in your browser. Your designs are never uploaded.</p>
+      </div>
+    </header>
+
+    <div class="mk__layout">
+      <div class="mk__preview" data-preview-wrap>
+        <canvas data-preview role="img" aria-label="Mockup preview"></canvas>
+      </div>
+
+      <div class="mk__panel">
+        <p class="tool__status" role="status" aria-live="polite" data-status></p>
+
+        <div class="mk-slots">
+          <label class="mk-slot" data-slot="1">
+            <input type="file" accept="image/*" class="visually-hidden" data-file="1" />
+            <span class="mk-slot__title">Your design</span>
+            <span class="mk-slot__hint">Drop, choose or paste an image</span>
+            <span class="mk-slot__name" data-slot-name></span>
+            <button type="button" class="mk-slot__clear" data-clear-slot="1" aria-label="Remove image">✕</button>
+          </label>
+          <label class="mk-slot" data-slot="2" hidden>
+            <input type="file" accept="image/*" class="visually-hidden" data-file="2" />
+            <span class="mk-slot__title" data-slot2-label></span>
+            <span class="mk-slot__hint">Optional</span>
+            <span class="mk-slot__name" data-slot-name></span>
+            <button type="button" class="mk-slot__clear" data-clear-slot="2" aria-label="Remove image">✕</button>
+          </label>
+        </div>
+
+        <fieldset class="mk-group">
+          <legend>Screens</legend>
+          <div class="tool-formats">
+            {screens.map(([v, l], i) => <label><input type="radio" name="scene" value={v} data-key="scene" checked={i === 0} /><span>{l}</span></label>)}
+          </div>
+        </fieldset>
+        <fieldset class="mk-group">
+          <legend>Print</legend>
+          <div class="tool-formats">
+            {prints.map(([v, l]) => <label><input type="radio" name="scene" value={v} data-key="scene" /><span>{l}</span></label>)}
+          </div>
+        </fieldset>
+
+        <fieldset class="mk-group">
+          <legend>Background</legend>
+          <div class="mk-swatches">
+            {
+              swatches.map(([v, css, l], i) => (
+                <label class="mk-swatch" title={l}>
+                  <input type="radio" name="bg" value={v} data-key="bg" checked={i === 0} />
+                  <span style={`background: ${css}`} />
+                  <span class="visually-hidden">{l}</span>
+                </label>
+              ))
+            }
+            <label class="mk-swatch mk-swatch--custom" title="Custom colour">
+              <span class="visually-hidden">Custom colour</span>
+              <input type="color" value="#f0c9b8" data-custom-bg />
+            </label>
+          </div>
+          <label class="mk-check"><input type="checkbox" data-key="texture" /> Grain</label>
+        </fieldset>
+
+        <div class="mk-row">
+          <label class="mk-field">
+            <span>Image fit</span>
+            <select data-key="fit">
+              <option value="cover">Fill</option>
+              <option value="contain">Fit whole image</option>
+            </select>
+          </label>
+          <label class="mk-field">
+            <span>Align</span>
+            <select data-key="pos">
+              <option value="top">Top (long screenshots)</option>
+              <option value="center">Centre</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="mk-row" data-show="screen">
+          <label class="mk-field">
+            <span>Device</span>
+            <select data-key="theme">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </label>
+          <label class="mk-field" data-show="browser">
+            <span>Address bar</span>
+            <input type="text" value="yourdesign.com" spellcheck="false" data-key="url" />
+          </label>
+        </div>
+
+        <div class="mk-row" data-show="poster">
+          <label class="mk-field">
+            <span>Frame</span>
+            <select data-key="frame">
+              <option value="black">Black</option>
+              <option value="white">White</option>
+              <option value="oak">Oak</option>
+            </select>
+          </label>
+          <label class="mk-check"><input type="checkbox" checked data-key="mat" /> White mat</label>
+        </div>
+
+        <div class="mk-row" data-show="cards">
+          <label class="mk-field mk-field--color">
+            <span>Card back colour</span>
+            <input type="color" value="#141918" data-key="cardColor" />
+          </label>
+        </div>
+
+        <label class="mk-check" data-show="phone laptop responsive poster"><input type="checkbox" checked data-key="glare" /> Glass reflection</label>
+
+        <div class="mk-ranges">
+          <label class="mk-range" data-show="tilt">
+            <span>Tilt <output data-out="tilt">0</output>°</span>
+            <input type="range" min="-35" max="35" value="0" data-key="tilt" />
+          </label>
+          <label class="mk-range" data-show="rotate">
+            <span>Rotation <output data-out="rotate">-6</output>°</span>
+            <input type="range" min="-30" max="30" value="-6" data-key="rotate" />
+          </label>
+          <label class="mk-range">
+            <span>Size <output data-out="scale">80</output>%</span>
+            <input type="range" min="40" max="98" value="80" data-key="scale" />
+          </label>
+          <label class="mk-range">
+            <span>Shadow <output data-out="shadow">60</output>%</span>
+            <input type="range" min="0" max="100" value="60" data-key="shadow" />
+          </label>
+        </div>
+
+        <div class="mk-export">
+          <div class="mk-row">
+            <label class="mk-field">
+              <span>Canvas</span>
+              <select data-key="ratio">
+                <option value="16:9">16:9 · slides, Behance</option>
+                <option value="4:3">4:3</option>
+                <option value="1:1">1:1 · square post</option>
+                <option value="4:5">4:5 · portrait post</option>
+                <option value="9:16">9:16 · story</option>
+              </select>
+            </label>
+            <label class="mk-field">
+              <span>Export size</span>
+              <select data-size>
+                <option value="1600">1600 px</option>
+                <option value="2400" selected>2400 px</option>
+                <option value="3840">3840 px (4K)</option>
+              </select>
+            </label>
+            <label class="mk-field">
+              <span>Format</span>
+              <select data-type>
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+              </select>
+            </label>
+          </div>
+          <button type="button" class="tool-btn tool-btn--primary mk__download" data-act="download">Download mockup</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountMockupTool } from '../../scripts/mockup-tool';
+
+  const root = document.querySelector<HTMLElement>('[data-tool]');
+  if (root) mountMockupTool(root);
+</script>
+
+<style is:global>
+  .mk__layout {
+    display: grid;
+    gap: 28px;
+    margin-top: calc(48 * var(--px));
+  }
+
+  .mk__preview {
+    display: grid;
+    place-items: center;
+    min-width: 0;
+  }
+
+  .mk__preview canvas {
+    display: block;
+    outline: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+  }
+
+  .mk__preview.is-transparent canvas {
+    background: repeating-conic-gradient(#d4d9d9 0 25%, #f4f6f6 0 50%) 0 0 / 20px 20px;
+  }
+
+  .mk.is-over .mk__preview canvas {
+    outline: 2px dashed var(--black);
+  }
+
+  .mk__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-size: var(--fs-sm);
+    min-width: 0;
+  }
+
+  .mk__panel .tool__status {
+    margin: 0;
+  }
+
+  .mk__panel .tool__status:empty {
+    display: none;
+  }
+
+  .mk-slots {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mk-slot {
+    position: relative;
+    display: grid;
+    gap: 2px;
+    padding: 14px 44px 14px 16px;
+    border: 1px dashed var(--gray);
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      background-color 0.2s;
+  }
+
+  .mk-slot:hover {
+    border-color: var(--black);
+    background: color-mix(in srgb, var(--black) 6%, var(--bg));
+  }
+
+  .mk-slot:has(input:focus-visible) {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  .mk-slot__title {
+    font-weight: 700;
+  }
+
+  .mk-slot__hint,
+  .mk-slot__name {
+    color: var(--gray);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mk-slot.has-image {
+    border-style: solid;
+    border-color: var(--black);
+  }
+
+  .mk-slot.has-image .mk-slot__hint,
+  .mk-slot__name:empty,
+  .mk-slot:not(.has-image) .mk-slot__clear {
+    display: none;
+  }
+
+  .mk-slot__clear {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    translate: 0 -50%;
+    width: 32px;
+    height: 32px;
+    color: var(--gray);
+  }
+
+  .mk-slot__clear:hover {
+    color: var(--black);
+  }
+
+  .mk-group {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .mk-group legend,
+  .mk-field > span,
+  .mk-range > span {
+    padding: 0;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: var(--gray);
+  }
+
+  .mk-range output {
+    color: var(--black);
+  }
+
+  .mk-swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mk-swatch {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .mk-swatch input[type='radio'] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .mk-swatch > span:not(.visually-hidden) {
+    display: block;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    outline: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+    outline-offset: -1px;
+  }
+
+  .mk-swatch input:checked + span {
+    outline: 2px solid var(--black);
+    outline-offset: 2px;
+  }
+
+  .mk-swatch input:focus-visible + span {
+    outline: 2px solid var(--green);
+    outline-offset: 2px;
+  }
+
+  .mk-swatch--custom input {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+  }
+
+  .mk-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 14px 20px;
+  }
+
+  .mk-field {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 140px;
+    min-width: 0;
+  }
+
+  .mk-field select,
+  .mk-field input[type='text'] {
+    font: inherit;
+    color: var(--black);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--gray);
+    border-radius: 0;
+    padding: 6px 0;
+    width: 100%;
+  }
+
+  .mk-field :is(select, input):focus-visible {
+    outline: none;
+    border-bottom-color: var(--black);
+  }
+
+  .mk-field--color input {
+    width: 40px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+    background: none;
+  }
+
+  .mk-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+
+  .mk-check input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--black);
+  }
+
+  .mk-ranges {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 20px;
+  }
+
+  .mk-range {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mk-range input {
+    width: 100%;
+    accent-color: var(--black);
+  }
+
+  .mk-export {
+    display: grid;
+    gap: 16px;
+    padding-top: 20px;
+    border-top: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+  }
+
+  .mk__download {
+    width: 100%;
+  }
+
+  .mk [hidden] {
+    display: none !important;
+  }
+
+  @media (min-width: 1024px) {
+    .mk__layout {
+      grid-template-columns: minmax(0, 1fr) calc(420 * var(--px) + 80px);
+      align-items: start;
+    }
+
+    .mk__preview {
+      position: sticky;
+      top: calc(120 * var(--px));
+    }
+  }
+</style>

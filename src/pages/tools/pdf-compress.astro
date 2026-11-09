@@ -1,0 +1,70 @@
+---
+/*
+  PDF Compressor (hidden like /lab/: not in the nav, noindex). Shrinks PDFs
+  in the browser: scripts/pdf-compress-page.ts → scripts/pdf-compress.ts.
+  Styles: styles/tools.css.
+*/
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/tools.css';
+---
+
+<BaseLayout
+  title="PDF Compressor — Jayson Alegarbes"
+  description="Make PDFs smaller in your browser. Files never leave your device."
+  noindex
+>
+  <section class="tool" data-tool>
+    <header class="tool__intro">
+      <p class="tool__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> PDF Compressor</p>
+      <h1 class="tool__title"><span class="serif-italic">pdf</span> COMPRESSOR</h1>
+      <div class="tool__text">
+        <p>Make PDFs small enough to email or upload. Most of a PDF’s weight is the photos inside it, so that’s what gets shrunk.</p>
+        <p class="tool__private">Runs entirely in your browser. Your files are never uploaded.</p>
+      </div>
+    </header>
+
+    <label class="tool-drop" data-drop>
+      <input type="file" accept="application/pdf,.pdf" multiple class="visually-hidden" data-file-input />
+      <span class="tool-drop__title">Drop PDFs here</span>
+      <span class="tool-drop__or">or <span class="tool-drop__link">choose files</span></span>
+    </label>
+
+    <p class="tool__status" role="status" aria-live="polite" data-status></p>
+
+    <div class="tool__workspace" data-workspace hidden>
+      <div class="tool-settings">
+        <fieldset class="tool-settings__group">
+          <legend>Compression</legend>
+          <div class="tool-formats">
+            <label><input type="radio" name="level" value="balanced" checked /><span>Balanced</span></label>
+            <label><input type="radio" name="level" value="strong" /><span>Strong</span></label>
+            <label><input type="radio" name="level" value="flatten" /><span>Maximum</span></label>
+          </div>
+          <p class="tool-settings__note" data-level-note></p>
+        </fieldset>
+      </div>
+
+      <ul class="tool-list" data-list aria-label="PDFs"></ul>
+
+      <div class="tool__export">
+        <p class="tool__summary" data-summary></p>
+        <div class="tool__export-actions">
+          <button type="button" class="tool__clear" data-act="clear">Start over</button>
+          <button type="button" class="tool-btn tool-btn--primary" data-act="download-all" disabled>Download</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="tool__note">
+      Text-only PDFs are usually small already and may not shrink much. To edit, merge or sign PDFs, use
+      <a href="/tools/pdf/">PDF Studio</a>.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountPdfCompress } from '../../scripts/pdf-compress-page';
+
+  const root = document.querySelector<HTMLElement>('[data-tool]');
+  if (root) mountPdfCompress(root);
+</script>

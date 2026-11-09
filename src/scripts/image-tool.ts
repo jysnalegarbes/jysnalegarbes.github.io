@@ -8,26 +8,40 @@
       ICO container (PNG entries 16–256 px), pdf-lib for one PDF (loaded only
       when PDF is picked)
     - re-encoding through a canvas drops metadata (camera, GPS location)
+    - SVG is traced, not converted (imagetracerjs in trace-worker.ts):
+      fine for logos and flat art, blotchy and heavy for photos, so photos
+      get a warning
     - "Download all" packs the results into a .zip (stored, no compression:
       the images are already compressed)
   Decoded images aren't kept in memory: each conversion decodes the file
   again, so a large batch of photos doesn't exhaust RAM.
 */
 
-type Format = 'png' | 'jpeg' | 'webp' | 'avif' | 'ico' | 'pdf';
+import { baseName, buildZip, errorText, formatBytes, saveBlob, sizeChange, uniqueNames } from './tool-utils';
+
+type Format = 'png' | 'jpeg' | 'webp' | 'avif' | 'svg' | 'ico' | 'pdf';
+type Detail = 'low' | 'medium' | 'high';
 type ResizeMode = 'original' | 'width' | 'height' | 'percent';
 
-const MIME: Record<Exclude<Format, 'ico' | 'pdf'>, string> = {
+const MIME: Record<Exclude<Format, 'svg' | 'ico' | 'pdf'>, string> = {
   png: 'image/png',
   jpeg: 'image/jpeg',
   webp: 'image/webp',
   avif: 'image/avif',
 };
-const EXT: Record<Format, string> = { png: 'png', jpeg: 'jpg', webp: 'webp', avif: 'avif', ico: 'ico', pdf: 'pdf' };
+const EXT: Record<Format, string> = { png: 'png', jpeg: 'jpg', webp: 'webp', avif: 'avif', svg: 'svg', ico: 'ico', pdf: 'pdf' };
 const LOSSY = new Set<Format>(['jpeg', 'webp', 'avif', 'pdf']);
 const ICO_SIZES = [16, 32, 48, 64, 128, 256];
 /** Largest edge we'll create; bigger canvases fail on many devices */
 const MAX_EDGE = 16384;
+/** Tracing is slow; larger images are traced at this longest edge (the SVG still scales freely) */
+const TRACE_EDGE = 1000;
+
+const TRACE_DETAIL: Record<Detail, Record<string, number | boolean>> = {
+  low: { ltres: 2, qtres: 2, pathomit: 24, blurradius: 2, blurdelta: 20 },
+  medium: { ltres: 1, qtres: 1, pathomit: 8 },
+  high: { ltres: 0.5, qtres: 0.5, pathomit: 2 },
+};
 
 interface Settings {
   format: Format;
@@ -35,6 +49,8 @@ interface Settings {
   resize: ResizeMode;
   value: number;
   bg: string;
+  colors: number;
+  detail: Detail;
 }
 
 interface Item {
@@ -47,6 +63,8 @@ interface Item {
   out?: Blob;
   outW?: number;
   outH?: number;
+  /** Looks like a photo (lots of colours): tracing it to SVG won't go well */
+  photo?: boolean;
   row: HTMLLIElement;
 }
 
@@ -58,13 +76,6 @@ interface Decoded {
 }
 
 // ---------- Helpers ----------
-
-const formatBytes = (n: number) =>
-  n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : n >= 1024 ? `${Math.ceil(n / 1024)} KB` : `${n} B`;
-
-const baseName = (name: string) => name.replace(/\.[^.]+$/, '') || 'image';
-
-const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 const isHeic = (f: File) => /image\/hei[cf]/.test(f.type) || /\.(heic|heif)$/i.test(f.name);
 const isSvg = (f: File) => f.type === 'image/svg+xml' || /\.svg$/i.test(f.name);
@@ -200,90 +211,44 @@ async function buildIco(src: Decoded): Promise<Blob> {
   return new Blob([buf], { type: 'image/x-icon' });
 }
 
-// ---------- ZIP (stored) ----------
+// ---------- SVG tracing ----------
 
-const CRC_TABLE = (() => {
-  const t = new Uint32Array(256);
-  for (let n = 0; n < 256; n++) {
-    let c = n;
-    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    t[n] = c >>> 0;
+let tracer: Worker | null = null;
+let traceId = 0;
+const traceJobs = new Map<number, { resolve: (svg: string) => void; reject: (e: Error) => void }>();
+
+function trace(image: ImageData, options: Record<string, number | boolean>) {
+  if (!tracer) {
+    tracer = new Worker(new URL('./trace-worker.ts', import.meta.url), { type: 'module' });
+    tracer.onmessage = (e: MessageEvent<{ id: number; svg?: string; error?: string }>) => {
+      const job = traceJobs.get(e.data.id);
+      traceJobs.delete(e.data.id);
+      if (e.data.svg) job?.resolve(e.data.svg);
+      else job?.reject(new Error(e.data.error ?? 'Tracing failed.'));
+    };
   }
-  return t;
-})();
-
-function crc32(data: Uint8Array) {
-  let c = 0xffffffff;
-  for (let i = 0; i < data.length; i++) c = CRC_TABLE[(c ^ data[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
+  const id = ++traceId;
+  return new Promise<string>((resolve, reject) => {
+    traceJobs.set(id, { resolve, reject });
+    tracer!.postMessage({ id, image, options });
+  });
 }
 
-async function buildZip(files: { name: string; blob: Blob }[]): Promise<Blob> {
-  const enc = new TextEncoder();
-  const now = new Date();
-  const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
-  const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
-  const parts: BlobPart[] = [];
-  const central: Uint8Array[] = [];
-  let offset = 0;
-
-  for (const f of files) {
-    const data = new Uint8Array(await f.blob.arrayBuffer());
-    const name = enc.encode(f.name);
-    const crc = crc32(data);
-    const local = new Uint8Array(30 + name.length);
-    const lv = new DataView(local.buffer);
-    lv.setUint32(0, 0x04034b50, true);
-    lv.setUint16(4, 20, true);
-    lv.setUint16(6, 0x0800, true); // UTF-8 names
-    lv.setUint16(10, time, true);
-    lv.setUint16(12, date, true);
-    lv.setUint32(14, crc, true);
-    lv.setUint32(18, data.length, true);
-    lv.setUint32(22, data.length, true);
-    lv.setUint16(26, name.length, true);
-    local.set(name, 30);
-
-    const cd = new Uint8Array(46 + name.length);
-    const cv = new DataView(cd.buffer);
-    cv.setUint32(0, 0x02014b50, true);
-    cv.setUint16(4, 20, true);
-    cv.setUint16(6, 20, true);
-    cv.setUint16(8, 0x0800, true);
-    cv.setUint16(12, time, true);
-    cv.setUint16(14, date, true);
-    cv.setUint32(16, crc, true);
-    cv.setUint32(20, data.length, true);
-    cv.setUint32(24, data.length, true);
-    cv.setUint16(28, name.length, true);
-    cv.setUint32(42, offset, true);
-    cd.set(name, 46);
-
-    parts.push(local as BlobPart, data as BlobPart);
-    central.push(cd);
-    offset += local.length + data.length;
+/** Counts colours on a small sample: photos have thousands, flat art a handful */
+function looksLikePhoto(src: Decoded) {
+  const c = document.createElement('canvas');
+  const k = Math.min(1, 96 / Math.max(src.w, src.h));
+  c.width = Math.max(1, Math.round(src.w * k));
+  c.height = Math.max(1, Math.round(src.h * k));
+  const ctx = c.getContext('2d', { willReadFrequently: true })!;
+  ctx.drawImage(src.img, 0, 0, c.width, c.height);
+  const { data } = ctx.getImageData(0, 0, c.width, c.height);
+  const seen = new Set<number>();
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 128) continue;
+    seen.add(((data[i] >> 3) << 10) | ((data[i + 1] >> 3) << 5) | (data[i + 2] >> 3));
   }
-
-  const cdSize = central.reduce((n, c) => n + c.length, 0);
-  const end = new Uint8Array(22);
-  const ev = new DataView(end.buffer);
-  ev.setUint32(0, 0x06054b50, true);
-  ev.setUint16(8, files.length, true);
-  ev.setUint16(10, files.length, true);
-  ev.setUint32(12, cdSize, true);
-  ev.setUint32(16, offset, true);
-  return new Blob([...parts, ...(central as BlobPart[]), end as BlobPart], { type: 'application/zip' });
-}
-
-function saveBlob(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  return seen.size > 1200;
 }
 
 // ---------- Mount ----------
@@ -306,8 +271,12 @@ export function mountImageTool(root: HTMLElement) {
   const bg = $<HTMLInputElement>('[data-bg]');
   const formatNote = $<HTMLElement>('[data-format-note]');
   const downloadAll = $<HTMLButtonElement>('[data-act="download-all"]');
+  const traceRow = $<HTMLElement>('[data-trace-row]');
+  const traceColors = $<HTMLInputElement>('[data-trace-colors]');
+  const traceColorsOut = $<HTMLOutputElement>('[data-trace-colors-out]');
+  const traceDetail = $<HTMLSelectElement>('[data-trace-detail]');
 
-  const settings: Settings = { format: 'webp', quality: 0.85, resize: 'original', value: 0, bg: '#ffffff' };
+  const settings: Settings = { format: 'webp', quality: 0.85, resize: 'original', value: 0, bg: '#ffffff', colors: 16, detail: 'medium' };
   let items: Item[] = [];
   let nextId = 1;
   let gen = 0;
@@ -339,19 +308,25 @@ export function mountImageTool(root: HTMLElement) {
     settings.resize = resizeMode.value as ResizeMode;
     settings.value = Number(resizeValue.value);
     settings.bg = bg.value;
+    settings.colors = Number(traceColors.value);
+    settings.detail = traceDetail.value as Detail;
   }
 
   function syncControls() {
     qualityRow.hidden = !LOSSY.has(settings.format);
     qualityOut.value = `${Math.round(settings.quality * 100)}`;
     bgRow.hidden = settings.format !== 'jpeg' && settings.format !== 'pdf';
+    traceRow.hidden = settings.format !== 'svg';
+    traceColorsOut.value = String(settings.colors);
     const resizable = settings.format !== 'ico';
     resizeMode.disabled = !resizable;
     resizeValue.hidden = !resizable || settings.resize === 'original';
     resizeUnit.hidden = resizeValue.hidden;
     resizeUnit.textContent = settings.resize === 'percent' ? '%' : 'px';
     formatNote.textContent =
-      settings.format === 'ico'
+      settings.format === 'svg'
+        ? 'Traced into shapes, like Image Trace. Great for logos, icons and flat art; photos turn blotchy and heavy.'
+        : settings.format === 'ico'
         ? 'Favicon with sizes 16 to 256 px in one file. Non-square images are centred on a transparent square.'
         : settings.format === 'pdf'
           ? 'All images go into one PDF, one page each, in the order listed.'
@@ -386,6 +361,9 @@ export function mountImageTool(root: HTMLElement) {
   resizeMode.addEventListener('change', onSettingsChange);
   resizeValue.addEventListener('input', onSettingsChange);
   bg.addEventListener('change', onSettingsChange);
+  traceColors.addEventListener('input', () => (traceColorsOut.value = traceColors.value));
+  traceColors.addEventListener('change', onSettingsChange);
+  traceDetail.addEventListener('change', onSettingsChange);
 
   // ---------- Adding files ----------
 
@@ -397,29 +375,30 @@ export function mountImageTool(root: HTMLElement) {
     }
     for (const file of incoming) {
       const row = document.createElement('li');
-      row.className = 'img-row';
+      row.className = 'tool-row';
       const item: Item = { id: nextId++, file, thumb: URL.createObjectURL(file), w: 0, h: 0, row };
       row.innerHTML = `
-        <img class="img-row__thumb" alt="" loading="lazy" decoding="async" />
-        <div class="img-row__info">
-          <p class="img-row__name"></p>
-          <p class="img-row__meta"></p>
+        <img class="tool-row__thumb" alt="" loading="lazy" decoding="async" />
+        <div class="tool-row__info">
+          <p class="tool-row__name"></p>
+          <p class="tool-row__meta"></p>
         </div>
-        <p class="img-row__result"></p>
-        <div class="img-row__actions">
-          <button type="button" class="img-row__dl" data-row="download">Download</button>
-          <button type="button" class="img-row__rm" data-row="remove" aria-label="Remove">✕</button>
+        <p class="tool-row__result"></p>
+        <div class="tool-row__actions">
+          <button type="button" class="tool-row__dl" data-row="download">Download</button>
+          <button type="button" class="tool-row__rm" data-row="remove" aria-label="Remove">✕</button>
         </div>`;
-      const thumb = row.querySelector<HTMLImageElement>('.img-row__thumb')!;
+      const thumb = row.querySelector<HTMLImageElement>('.tool-row__thumb')!;
       thumb.addEventListener('error', () => (thumb.style.visibility = 'hidden'));
       thumb.src = item.thumb;
-      row.querySelector('.img-row__name')!.textContent = file.name;
+      row.querySelector('.tool-row__name')!.textContent = file.name;
       list.append(row);
       items.push(item);
       try {
         const d = await decode(file);
         item.w = d.w;
         item.h = d.h;
+        item.photo = looksLikePhoto(d);
         d.close();
       } catch (err) {
         item.error = errorText(err);
@@ -467,8 +446,8 @@ export function mountImageTool(root: HTMLElement) {
 
   function renderRow(item: Item) {
     const r = item.row;
-    const meta = r.querySelector('.img-row__meta')!;
-    const result = r.querySelector('.img-row__result')!;
+    const meta = r.querySelector('.tool-row__meta')!;
+    const result = r.querySelector('.tool-row__result')!;
     const dl = r.querySelector<HTMLButtonElement>('[data-row="download"]')!;
     r.classList.toggle('is-error', !!item.error);
     meta.textContent = item.error ? '' : `${item.w} × ${item.h} · ${formatBytes(item.file.size)}`;
@@ -483,17 +462,23 @@ export function mountImageTool(root: HTMLElement) {
       return;
     }
     if (!item.out) {
-      result.textContent = 'Converting…';
+      result.textContent = settings.format === 'svg' ? 'Tracing…' : 'Converting…';
       return;
     }
-    const change = Math.round((item.out.size / item.file.size - 1) * 100);
+    const { change, label } = sizeChange(item.file.size, item.out.size);
     result.innerHTML = '';
     const size = document.createElement('span');
     size.textContent = `${EXT[settings.format].toUpperCase()} · ${settings.format === 'ico' ? 'up to 256 px' : `${item.outW} × ${item.outH}`} · ${formatBytes(item.out.size)}`;
     const delta = document.createElement('span');
-    delta.className = `img-row__delta ${change < 0 ? 'is-smaller' : 'is-larger'}`;
-    delta.textContent = change === 0 ? '±0%' : `${change > 0 ? '+' : '−'}${Math.abs(change)}%`;
+    delta.className = `tool-row__delta ${change < 0 ? 'is-smaller' : 'is-larger'}`;
+    delta.textContent = label;
     result.append(size, delta);
+    if (settings.format === 'svg' && item.photo) {
+      const warn = document.createElement('span');
+      warn.className = 'tool-row__warn';
+      warn.textContent = 'Looks like a photo: the SVG will be blotchy. Fewer colours helps.';
+      result.append(warn);
+    }
   }
 
   async function convert(item: Item) {
@@ -501,6 +486,22 @@ export function mountImageTool(root: HTMLElement) {
     try {
       if (settings.format === 'ico') {
         item.out = await buildIco(src);
+        return;
+      }
+      if (settings.format === 'svg') {
+        const [fw, fh] = targetSize(src.w, src.h, settings);
+        const k = Math.min(1, TRACE_EDGE / Math.max(fw, fh));
+        const tw = Math.max(1, Math.round(fw * k));
+        const th = Math.max(1, Math.round(fh * k));
+        const c = draw(src, tw, th);
+        const image = c.getContext('2d')!.getImageData(0, 0, tw, th);
+        c.width = c.height = 0;
+        let svg = await trace(image, { numberofcolors: settings.colors, colorsampling: 2, colorquantcycles: 3, roundcoords: 1, viewbox: true, ...TRACE_DETAIL[settings.detail] });
+        // Keep the requested size as the SVG's width/height (the viewBox is the traced grid)
+        svg = svg.replace('<svg ', `<svg width="${fw}" height="${fh}" `);
+        item.out = new Blob([svg], { type: 'image/svg+xml' });
+        item.outW = fw;
+        item.outH = fh;
         return;
       }
       const [w, h] = targetSize(src.w, src.h, settings);
@@ -583,7 +584,7 @@ export function mountImageTool(root: HTMLElement) {
 
   list.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-row]');
-    const row = btn?.closest('.img-row');
+    const row = btn?.closest('.tool-row');
     const item = items.find((i) => i.row === row);
     if (!btn || !item) return;
     if (btn.dataset.row === 'download' && item.out) saveBlob(item.out, outName(item));
@@ -628,15 +629,8 @@ export function mountImageTool(root: HTMLElement) {
         saveBlob(ok[0].out!, outName(ok[0]));
       } else {
         say('Zipping…');
-        // Same output name twice (photo.png + photo.jpg → photo.webp): number them
-        const used = new Map<string, number>();
-        const files = ok.map((i) => {
-          let name = outName(i);
-          const n = used.get(name.toLowerCase()) ?? 0;
-          used.set(name.toLowerCase(), n + 1);
-          if (n) name = name.replace(/(\.[^.]+)$/, ` (${n + 1})$1`);
-          return { name, blob: i.out! };
-        });
+        const names = uniqueNames(ok.map(outName));
+        const files = ok.map((i, k) => ({ name: names[k], blob: i.out! }));
         const zip = await buildZip(files);
         saveBlob(zip, `converted-${EXT[settings.format]}.zip`);
         say(`Downloaded ${files.length} images as a .zip (${formatBytes(zip.size)}).`);

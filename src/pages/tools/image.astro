@@ -1,60 +1,60 @@
 ---
 /*
   Image Converter (hidden like /lab/: not in the nav, noindex). Converts
-  images in the browser: scripts/image-tool.ts. Styles are global (prefixed
-  .img-) because the file rows are created by the script; the intro and
-  drop zone mirror PDF Studio.
+  images in the browser: scripts/image-tool.ts. Styles: styles/tools.css.
 */
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/tools.css';
 ---
 
 <BaseLayout
   title="Image Converter — Jayson Alegarbes"
-  description="Convert images to PNG, JPG, WebP, AVIF, ICO or PDF in your browser. Files never leave your device."
+  description="Convert images to PNG, JPG, WebP, SVG, ICO or PDF in your browser. Files never leave your device."
   noindex
 >
-  <section class="img" data-img>
-    <header class="img__intro">
-      <p class="img__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> Image Converter</p>
-      <h1 class="img__title"><span class="serif-italic">image</span> CONVERTER</h1>
-      <div class="img__text">
-        <p>Convert images to PNG, JPG, WebP, a favicon (ICO) or one PDF, plus AVIF in browsers that can write it. Resize and compress them on the way, one file or a whole batch.</p>
-        <p class="img__private">Runs entirely in your browser. Your files are never uploaded, and converting strips hidden metadata such as camera and location info.</p>
+  <section class="tool" data-img>
+    <header class="tool__intro">
+      <p class="tool__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> Image Converter</p>
+      <h1 class="tool__title"><span class="serif-italic">image</span> CONVERTER</h1>
+      <div class="tool__text">
+        <p>Convert images to PNG, JPG, WebP, traced SVG, a favicon (ICO) or one PDF, plus AVIF in browsers that can write it. Resize and compress them on the way, one file or a whole batch.</p>
+        <p class="tool__private">Runs entirely in your browser. Your files are never uploaded, and converting strips hidden metadata such as camera and location info.</p>
       </div>
     </header>
 
-    <label class="img-drop" data-drop>
+    <label class="tool-drop" data-drop>
       <input type="file" accept="image/*,.heic,.heif,.svg,.ico,.avif,.webp,.bmp" multiple class="visually-hidden" data-file-input />
-      <span class="img-drop__title">Drop images here</span>
-      <span class="img-drop__or">or <span class="img-drop__link">choose files</span>, or paste a screenshot</span>
+      <span class="tool-drop__title">Drop images here</span>
+      <span class="tool-drop__or">or <span class="tool-drop__link">choose files</span>, or paste a screenshot</span>
     </label>
 
-    <p class="img__status" role="status" aria-live="polite" data-status></p>
+    <p class="tool__status" role="status" aria-live="polite" data-status></p>
 
-    <div class="img__workspace" data-workspace hidden>
-      <div class="img-settings">
-        <fieldset class="img-settings__group">
+    <div class="tool__workspace" data-workspace hidden>
+      <div class="tool-settings">
+        <fieldset class="tool-settings__group">
           <legend>Convert to</legend>
-          <div class="img-formats">
+          <div class="tool-formats">
             <label><input type="radio" name="format" value="webp" checked /><span>WebP</span></label>
             <label><input type="radio" name="format" value="jpeg" /><span>JPG</span></label>
             <label><input type="radio" name="format" value="png" /><span>PNG</span></label>
             <label><input type="radio" name="format" value="avif" /><span>AVIF</span></label>
+            <label><input type="radio" name="format" value="svg" /><span>SVG</span></label>
             <label><input type="radio" name="format" value="ico" /><span>ICO</span></label>
             <label><input type="radio" name="format" value="pdf" /><span>PDF</span></label>
           </div>
-          <p class="img-settings__note" data-format-note></p>
+          <p class="tool-settings__note" data-format-note></p>
         </fieldset>
 
-        <div class="img-settings__group" data-quality-row>
-          <label class="img-settings__label" for="img-quality">Quality <output data-quality-out>85</output></label>
-          <input id="img-quality" type="range" min="10" max="100" step="1" value="85" data-quality />
+        <div class="tool-settings__group" data-quality-row>
+          <label class="tool-settings__label" for="tool-quality">Quality <output data-quality-out>85</output></label>
+          <input id="tool-quality" type="range" min="10" max="100" step="1" value="85" data-quality />
         </div>
 
-        <div class="img-settings__group">
-          <label class="img-settings__label" for="img-resize">Size</label>
-          <div class="img-resize">
-            <select id="img-resize" data-resize>
+        <div class="tool-settings__group">
+          <label class="tool-settings__label" for="tool-resize">Size</label>
+          <div class="tool-resize">
+            <select id="tool-resize" data-resize>
               <option value="original">Original size</option>
               <option value="width">Set width</option>
               <option value="height">Set height</option>
@@ -65,19 +65,32 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           </div>
         </div>
 
-        <div class="img-settings__group" data-bg-row hidden>
-          <label class="img-settings__label" for="img-bg">Background</label>
-          <input id="img-bg" type="color" value="#ffffff" data-bg />
+        <div class="tool-settings__group" data-trace-row hidden>
+          <label class="tool-settings__label" for="img-colors">Colours <output data-trace-colors-out>16</output></label>
+          <input id="img-colors" type="range" min="2" max="64" step="1" value="16" data-trace-colors />
+          <label class="tool-settings__label tool-settings__label--sub" for="img-detail">Detail</label>
+          <div class="tool-resize">
+            <select id="img-detail" data-trace-detail>
+              <option value="low">Smooth (fewer shapes)</option>
+              <option value="medium" selected>Balanced</option>
+              <option value="high">Detailed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tool-settings__group" data-bg-row hidden>
+          <label class="tool-settings__label" for="tool-bg">Background</label>
+          <input id="tool-bg" type="color" value="#ffffff" data-bg />
         </div>
       </div>
 
-      <ul class="img-list" data-list aria-label="Images"></ul>
+      <ul class="tool-list" data-list aria-label="Images"></ul>
 
-      <div class="img__export">
-        <p class="img__summary" data-summary></p>
-        <div class="img__export-actions">
-          <button type="button" class="img__clear" data-act="clear">Start over</button>
-          <button type="button" class="img-btn img-btn--primary" data-act="download-all" disabled>Download all (.zip)</button>
+      <div class="tool__export">
+        <p class="tool__summary" data-summary></p>
+        <div class="tool__export-actions">
+          <button type="button" class="tool__clear" data-act="clear">Start over</button>
+          <button type="button" class="tool-btn tool-btn--primary" data-act="download-all" disabled>Download all (.zip)</button>
         </div>
       </div>
     </div>
@@ -90,458 +103,3 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   const root = document.querySelector<HTMLElement>('[data-img]');
   if (root) mountImageTool(root);
 </script>
-
-<style is:global>
-  .img {
-    --line: color-mix(in srgb, var(--black) 14%, transparent);
-    --tint: color-mix(in srgb, var(--black) 6%, var(--bg));
-    padding: calc(141 * var(--px)) var(--gutter) calc(160 * var(--px));
-  }
-
-  /* ---------- Intro ---------- */
-
-  .img__crumb {
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    color: var(--gray);
-    margin-bottom: calc(18 * var(--px));
-  }
-
-  .img__crumb a {
-    transition: color 0.2s;
-  }
-
-  .img__crumb a:hover {
-    color: var(--black);
-  }
-
-  .img__title {
-    font-weight: 700;
-    font-size: calc(44 * var(--px));
-    white-space: nowrap;
-  }
-
-  .img__text {
-    font-size: var(--fs-sm);
-    display: flex;
-    flex-direction: column;
-    gap: 1lh;
-    max-width: calc(432 * var(--px));
-    margin-top: calc(40 * var(--px));
-  }
-
-  .img__private {
-    font-weight: 700;
-  }
-
-  /* ---------- Buttons ---------- */
-
-  .img button:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-
-  .img-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    padding: 0 20px;
-    font-size: var(--fs-sm);
-    font-weight: 700;
-    border: 1px solid var(--black);
-    transition:
-      background-color 0.2s,
-      color 0.2s;
-  }
-
-  .img-btn--primary {
-    background: var(--black);
-    color: var(--bg);
-  }
-
-  .img-btn--primary:not(:disabled):hover {
-    background: var(--green);
-    border-color: var(--green);
-    color: var(--black);
-  }
-
-  /* ---------- Drop zone ---------- */
-
-  .img-drop {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-top: calc(56 * var(--px));
-    min-height: calc(260 * var(--px));
-    padding: 24px;
-    border: 1px dashed var(--gray);
-    cursor: pointer;
-    text-align: center;
-    transition:
-      background-color 0.2s,
-      border-color 0.2s;
-  }
-
-  .img-drop:hover,
-  .img-drop.is-over {
-    background: var(--tint);
-    border-color: var(--black);
-  }
-
-  .img-drop:has(input:focus-visible) {
-    outline: 2px solid var(--green);
-    outline-offset: 4px;
-  }
-
-  .img-drop__title {
-    font-weight: 700;
-    font-size: calc(26 * var(--px));
-    text-transform: uppercase;
-  }
-
-  .img-drop__or {
-    font-size: var(--fs-sm);
-    color: var(--gray);
-  }
-
-  .img-drop__link {
-    color: var(--black);
-    font-weight: 700;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-    text-decoration-thickness: 1px;
-  }
-
-  .img-drop.is-compact {
-    min-height: 0;
-    padding: 18px;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 4px 12px;
-  }
-
-  .img-drop.is-compact .img-drop__title {
-    font-size: var(--fs-sm);
-  }
-
-  .img__status {
-    min-height: 1lh;
-    margin-top: 14px;
-    font-size: var(--fs-sm);
-  }
-
-  /* ---------- Settings ---------- */
-
-  .img-settings {
-    display: grid;
-    gap: 20px calc(48 * var(--px));
-    margin-top: calc(24 * var(--px));
-    padding: calc(24 * var(--px)) 0;
-    border-block: 1px solid var(--line);
-    font-size: var(--fs-sm);
-  }
-
-  .img-settings__group {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    min-width: 0;
-  }
-
-  .img-settings__group legend,
-  .img-settings__label {
-    display: flex;
-    gap: 8px;
-    padding: 0;
-    margin-bottom: 10px;
-    font-weight: 700;
-    color: var(--gray);
-  }
-
-  .img-settings__label output {
-    color: var(--black);
-  }
-
-  .img-settings__note {
-    margin-top: 10px;
-    max-width: 44ch;
-    color: var(--gray);
-  }
-
-  .img-settings__note:empty {
-    display: none;
-  }
-
-  .img-formats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .img-formats label {
-    position: relative;
-    cursor: pointer;
-  }
-
-  .img-formats input {
-    position: absolute;
-    opacity: 0;
-    inset: 0;
-    margin: 0;
-    cursor: pointer;
-  }
-
-  .img-formats span {
-    display: inline-flex;
-    align-items: center;
-    min-height: 36px;
-    padding: 0 14px;
-    font-weight: 700;
-    border: 1px solid var(--line);
-    transition:
-      background-color 0.2s,
-      color 0.2s,
-      border-color 0.2s;
-  }
-
-  .img-formats label:hover span {
-    border-color: var(--black);
-  }
-
-  .img-formats input:checked + span {
-    background: var(--black);
-    border-color: var(--black);
-    color: var(--bg);
-  }
-
-  .img-formats input:focus-visible + span {
-    outline: 2px solid var(--green);
-    outline-offset: 2px;
-  }
-
-  .img-settings input[type='range'] {
-    width: 100%;
-    max-width: 260px;
-    accent-color: var(--black);
-  }
-
-  .img-resize {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .img-resize select,
-  .img-resize input {
-    font: inherit;
-    color: var(--black);
-    background: none;
-    border: 0;
-    border-bottom: 1px solid var(--gray);
-    border-radius: 0;
-    padding: 6px 0;
-  }
-
-  .img-resize input {
-    width: 6em;
-  }
-
-  .img-resize :is(select, input):focus-visible {
-    outline: none;
-    border-bottom-color: var(--black);
-  }
-
-  .img-settings input[type='color'] {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border: 1px solid var(--line);
-    background: none;
-    cursor: pointer;
-  }
-
-  .img [hidden] {
-    display: none !important;
-  }
-
-  /* ---------- File list ---------- */
-
-  .img-list {
-    margin-top: calc(16 * var(--px));
-  }
-
-  .img-row {
-    display: grid;
-    grid-template-columns: 56px 1fr auto;
-    grid-template-areas:
-      'thumb info actions'
-      'thumb result actions';
-    align-items: center;
-    gap: 4px 14px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--line);
-    font-size: var(--fs-sm);
-  }
-
-  .img-row__thumb {
-    grid-area: thumb;
-    width: 56px;
-    height: 56px;
-    object-fit: contain;
-    background:
-      repeating-conic-gradient(color-mix(in srgb, var(--black) 8%, var(--bg)) 0 25%, var(--bg) 0 50%) 0 0 / 10px 10px;
-    outline: 1px solid var(--line);
-    outline-offset: -1px;
-  }
-
-  .img-row__info {
-    grid-area: info;
-    min-width: 0;
-  }
-
-  .img-row__name {
-    font-weight: 700;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .img-row__meta {
-    color: var(--gray);
-  }
-
-  .img-row__result {
-    grid-area: result;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 10px;
-  }
-
-  .img-row.is-error .img-row__result {
-    color: #b3261e;
-  }
-
-  .img-row__delta {
-    font-weight: 700;
-  }
-
-  .img-row__delta.is-smaller {
-    color: color-mix(in srgb, var(--green) 75%, var(--black));
-  }
-
-  .img-row__delta.is-larger {
-    color: var(--gray);
-  }
-
-  .img-row__actions {
-    grid-area: actions;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 700;
-  }
-
-  .img-row__actions button {
-    min-height: 36px;
-    min-width: 36px;
-    padding: 0 8px;
-    transition:
-      color 0.2s,
-      background-color 0.2s;
-  }
-
-  .img-row__rm {
-    color: var(--gray);
-  }
-
-  .img-row__actions button:not(:disabled):hover {
-    background: var(--tint);
-    color: var(--black);
-  }
-
-  /* ---------- Export ---------- */
-
-  .img__export {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 16px 24px;
-    margin-top: calc(32 * var(--px));
-    font-size: var(--fs-sm);
-  }
-
-  .img__summary {
-    font-weight: 700;
-  }
-
-  .img__export-actions {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    margin-left: auto;
-  }
-
-  .img__clear {
-    font-weight: 700;
-    color: var(--gray);
-    transition: color 0.2s;
-  }
-
-  .img__clear:hover {
-    color: var(--black);
-  }
-
-  /* ---------- Wider screens ---------- */
-
-  @media (min-width: 640px) {
-    .img-settings {
-      grid-template-columns: auto auto auto auto;
-      justify-content: start;
-      align-items: start;
-    }
-
-    .img-row {
-      grid-template-columns: 64px minmax(0, 1.2fr) minmax(0, 1fr) auto;
-      grid-template-areas: 'thumb info result actions';
-    }
-
-    .img-row__thumb {
-      width: 64px;
-      height: 64px;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .img {
-      padding-top: calc(186 * var(--px));
-      padding-right: calc(259 * var(--px));
-    }
-
-    .img__intro {
-      display: grid;
-      grid-template-columns: calc(531 * var(--px)) auto;
-      align-items: start;
-    }
-
-    .img__crumb,
-    .img__title {
-      grid-column: 1 / -1;
-    }
-
-    .img__title {
-      font-size: calc(110 * var(--px));
-    }
-
-    .img__text {
-      grid-column: 2;
-      margin-top: calc(48 * var(--px));
-    }
-
-    .img-drop__title {
-      font-size: calc(30 * var(--px));
-    }
-  }
-</style>

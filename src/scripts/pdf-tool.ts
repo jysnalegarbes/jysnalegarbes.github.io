@@ -30,6 +30,8 @@ import {
   type PDFPage,
 } from 'pdf-lib';
 
+import { compressPdf, type CompressLevel } from './pdf-compress';
+
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 // ---------- Constants ----------
@@ -436,6 +438,7 @@ export function mountPdfTool(root: HTMLElement) {
   const countEl = $<HTMLElement>('[data-count]');
   const statusEl = $<HTMLElement>('[data-status]');
   const outputName = $<HTMLInputElement>('[data-output-name]');
+  const compressSelect = $<HTMLSelectElement>('[data-compress]');
   const formsEl = $<HTMLElement>('[data-forms]');
   const formsList = $<HTMLElement>('[data-forms-list]');
   const undoBtn = $<HTMLButtonElement>('[data-act="undo"]');
@@ -779,7 +782,14 @@ export function mountPdfTool(root: HTMLElement) {
     setBusy(true);
     say('Building your PDF…');
     try {
-      const { bytes, replaced } = await buildPdf(list);
+      const built = await buildPdf(list);
+      const { replaced } = built;
+      let bytes = built.bytes;
+      const level = compressSelect.value as CompressLevel | 'none';
+      if (level !== 'none') {
+        say('Compressing…');
+        bytes = (await compressPdf(bytes, level)).bytes;
+      }
       let name = (outputName.value.trim() || 'document.pdf').replace(/[\\/:*?"<>|]+/g, '-');
       if (!/\.pdf$/i.test(name)) name += '.pdf';
       if (suffix) name = name.replace(/\.pdf$/i, `${suffix}.pdf`);

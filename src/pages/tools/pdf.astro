@@ -56,6 +56,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           <span>File name</span>
           <input type="text" spellcheck="false" autocomplete="off" data-output-name />
         </label>
+        <label class="pdf__name pdf__compress">
+          <span>Compression</span>
+          <select data-compress>
+            <option value="none">None</option>
+            <option value="balanced">Balanced (keeps text)</option>
+            <option value="strong">Strong (keeps text)</option>
+            <option value="flatten">Maximum (pages become images)</option>
+          </select>
+        </label>
         <div class="pdf__export-actions">
           <button type="button" class="pdf-btn" data-act="download-selected" data-needs="selection">Download selected pages</button>
           <button type="button" class="pdf-btn pdf-btn--primary" data-act="download" data-needs="pages">Download PDF</button>
@@ -567,6 +576,22 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   }
 
   .pdf-form :is(input, textarea, select):focus-visible,
+  .pdf__compress {
+    flex: 0 1 240px;
+  }
+
+  .pdf__compress select {
+    width: 100%;
+    font: inherit;
+    color: var(--black);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--gray);
+    border-radius: 0;
+    padding: 6px 0;
+  }
+
+  .pdf__compress select:focus-visible,
   .pdf__name input:focus-visible {
     outline: none;
     border-bottom-color: var(--black);

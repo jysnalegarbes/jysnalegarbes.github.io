@@ -1,0 +1,199 @@
+---
+/*
+  Background Remover (hidden like /lab/: not in the nav, noindex). AI cut-out
+  in the browser: scripts/bg-tool.ts. Styles: styles/tools.css + below.
+*/
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/tools.css';
+---
+
+<BaseLayout
+  title="Background Remover — Jayson Alegarbes"
+  description="Remove the background from a photo in your browser. Images never leave your device."
+  noindex
+>
+  <section class="tool" data-tool>
+    <header class="tool__intro">
+      <p class="tool__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> Background Remover</p>
+      <h1 class="tool__title"><span class="serif-italic">background</span> REMOVER</h1>
+      <div class="tool__text">
+        <p>Cut the subject out of a photo: people, products, pets. Download it transparent, or on a new colour or a blurred backdrop.</p>
+        <p class="tool__private">The AI runs in your browser. Your images are never uploaded; only the model is downloaded, once.</p>
+      </div>
+    </header>
+
+    <label class="tool-drop" data-drop>
+      <input type="file" accept="image/*" class="visually-hidden" data-file-input />
+      <span class="tool-drop__title">Drop a photo here</span>
+      <span class="tool-drop__or">or <span class="tool-drop__link">choose a file</span>, or paste one</span>
+    </label>
+
+    <p class="tool__status" role="status" aria-live="polite" data-status></p>
+
+    <div class="tool__workspace" data-workspace hidden>
+      <div class="tool-settings">
+        <fieldset class="tool-settings__group">
+          <legend>Model</legend>
+          <div class="tool-formats">
+            <label><input type="radio" name="model" value="fast" checked /><span>Fast · 5 MB</span></label>
+            <label><input type="radio" name="model" value="quality" /><span>High quality · 98 MB</span></label>
+          </div>
+          <p class="tool-settings__note">High quality handles hair and fine edges far better. Its model downloads once, then stays in your browser.</p>
+        </fieldset>
+
+        <fieldset class="tool-settings__group">
+          <legend>Background</legend>
+          <div class="tool-formats">
+            <label><input type="radio" name="bg" value="transparent" checked /><span>None</span></label>
+            <label><input type="radio" name="bg" value="color" /><span>Colour</span></label>
+            <label><input type="radio" name="bg" value="blur" /><span>Blur</span></label>
+            <label class="bg-swatch">
+              <span class="visually-hidden">Background colour</span>
+              <input type="color" value="#ffffff" data-bg-color />
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="tool-settings__group">
+          <label class="tool-settings__label" for="bg-edge">Edge <span class="bg-range-ends">soft – sharp</span></label>
+          <input id="bg-edge" type="range" min="0" max="100" value="0" data-edge />
+        </div>
+      </div>
+
+      <div class="bg-stage" data-stage style="--split: 100%">
+        <img class="bg-stage__original" alt="Original photo" data-original />
+        <div class="bg-stage__result">
+          <canvas data-result aria-label="Result"></canvas>
+        </div>
+        <span class="bg-stage__line" aria-hidden="true"></span>
+        <input class="bg-stage__compare" type="range" min="0" max="100" value="100" aria-label="Compare with the original" data-compare />
+      </div>
+
+      <div class="tool__export">
+        <p class="tool__summary" data-meta></p>
+        <div class="tool__export-actions">
+          <span class="bg-hint">Drag across the image to compare</span>
+          <button type="button" class="tool-btn tool-btn--primary" data-act="download" disabled>Download</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="tool__note">
+      Works best when the subject is clear and in focus. Transparent cut-outs download as PNG; with a colour or blur behind,
+      as JPG.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountBgTool } from '../../scripts/bg-tool';
+
+  const root = document.querySelector<HTMLElement>('[data-tool]');
+  if (root) mountBgTool(root);
+</script>
+
+<style is:global>
+  .bg-swatch input {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+    background: none;
+    cursor: pointer;
+  }
+
+  .bg-range-ends {
+    font-weight: 400;
+  }
+
+  .bg-stage {
+    position: relative;
+    margin: calc(24 * var(--px)) auto 0;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--black) 6%, var(--bg));
+    user-select: none;
+  }
+
+  .bg-stage__original,
+  .bg-stage__result,
+  .bg-stage__result canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .bg-stage__original {
+    object-fit: contain;
+  }
+
+  /* The result shows left of the split; the original shows through on the right */
+  .bg-stage__result {
+    clip-path: inset(0 calc(100% - var(--split)) 0 0);
+  }
+
+  .bg-stage.is-transparent .bg-stage__result {
+    background: repeating-conic-gradient(#d4d9d9 0 25%, #f4f6f6 0 50%) 0 0 / 20px 20px;
+  }
+
+  .bg-stage__line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--split);
+    width: 2px;
+    margin-left: -1px;
+    background: var(--green);
+    pointer-events: none;
+  }
+
+  .bg-stage__compare {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+  }
+
+  .bg-stage:has(.bg-stage__compare:focus-visible) {
+    outline: 2px solid var(--green);
+    outline-offset: 4px;
+  }
+
+  .bg-stage.is-working::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--white) 55%, transparent), transparent) 0 0 / 50% 100% no-repeat;
+    animation: bg-scan 1.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes bg-scan {
+    from {
+      background-position: -100% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bg-stage.is-working::after {
+      animation: none;
+      background: color-mix(in srgb, var(--white) 30%, transparent);
+    }
+  }
+
+  .bg-hint {
+    color: var(--gray);
+  }
+
+  @media (pointer: coarse) {
+    .bg-hint {
+      display: none;
+    }
+  }
+</style>
