@@ -1,0 +1,234 @@
+---
+/*
+  Image Upscaler (hidden like /lab/: not in the nav, noindex). AI 2×/4×
+  upscaling in the browser: scripts/upscale-tool.ts.
+  Styles: styles/tools.css + the .up- rules below.
+*/
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/tools.css';
+---
+
+<BaseLayout
+  title="Image Upscaler — Jayson Alegarbes"
+  description="Enlarge images 2× or 4× with AI in your browser. Images never leave your device."
+  noindex
+>
+  <section class="tool" data-tool>
+    <header class="tool__intro">
+      <p class="tool__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> Image Upscaler</p>
+      <h1 class="tool__title"><span class="serif-italic">image</span> UPSCALER</h1>
+      <div class="tool__text">
+        <p>Enlarge small or low-resolution images 2× or 4×. The AI rebuilds edges and texture instead of just stretching the pixels.</p>
+        <p class="tool__private">The AI runs in your browser. Your images are never uploaded; only the model is downloaded, once.</p>
+      </div>
+    </header>
+
+    <label class="tool-drop" data-drop>
+      <input type="file" accept="image/*" class="visually-hidden" data-file-input />
+      <span class="tool-drop__title">Drop an image here</span>
+      <span class="tool-drop__or">or <span class="tool-drop__link">choose a file</span>, or paste one</span>
+    </label>
+
+    <p class="tool__status" role="status" aria-live="polite" data-status></p>
+
+    <div class="tool__workspace" data-workspace hidden>
+      <div class="tool-settings">
+        <fieldset class="tool-settings__group">
+          <legend>Enlarge</legend>
+          <div class="tool-formats">
+            <label><input type="radio" name="scale" value="2" /><span>2×</span></label>
+            <label><input type="radio" name="scale" value="4" checked /><span>4×</span></label>
+          </div>
+          <p class="tool-settings__note" data-scale-note></p>
+        </fieldset>
+
+        <fieldset class="tool-settings__group">
+          <legend>Model</legend>
+          <div class="tool-formats">
+            <label><input type="radio" name="model" value="standard" checked /><span>Standard · 5 MB</span></label>
+            <label><input type="radio" name="model" value="max" /><span>Max detail · 64 MB</span></label>
+          </div>
+          <p class="tool-settings__note">Max detail is sharper on photos but much slower; its model downloads once.</p>
+        </fieldset>
+
+        <div class="tool-settings__group">
+          <label class="tool-settings__label" for="up-strength">AI strength <output data-strength-out>100</output>%</label>
+          <input id="up-strength" type="range" min="0" max="100" value="100" data-strength />
+          <p class="tool-settings__note">Lower it if the result looks painted; it blends back toward a plain resize.</p>
+        </div>
+
+        <div class="tool-settings__group up-run">
+          <button type="button" class="tool-btn" data-act="run">Upscale</button>
+        </div>
+      </div>
+
+      <progress class="up-progress" data-progress hidden></progress>
+
+      <div class="up-viewport" data-viewport>
+        <div class="up-stage" data-stage style="--split: 100%">
+          <canvas class="up-stage__before" data-before aria-label="Plain resize"></canvas>
+          <canvas class="up-stage__after" data-after aria-label="AI upscaled"></canvas>
+          <span class="up-stage__line" aria-hidden="true"></span>
+          <span class="up-stage__tag up-stage__tag--after" aria-hidden="true">AI</span>
+          <span class="up-stage__tag up-stage__tag--before" aria-hidden="true">Plain resize</span>
+          <input class="up-stage__compare" type="range" min="0" max="100" value="100" aria-label="Compare the AI result with a plain resize" data-compare />
+        </div>
+      </div>
+
+      <div class="tool__export">
+        <p class="tool__summary" data-meta></p>
+        <div class="tool__export-actions">
+          <button type="button" class="tool__clear" data-act="zoom">Actual pixels</button>
+          <label class="up-type">
+            <span class="visually-hidden">Format</span>
+            <select data-type>
+              <option value="png">PNG</option>
+              <option value="jpg">JPG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </label>
+          <button type="button" class="tool-btn tool-btn--primary" data-act="download" disabled>Download</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="tool__note">
+      Works best on photos, screenshots and artwork that are small or soft. It can’t recover detail that was never there, like
+      unreadable text or a face that’s only a few pixels wide. Very large results are capped at 8192 px on the long edge.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountUpscaleTool } from '../../scripts/upscale-tool';
+
+  const root = document.querySelector<HTMLElement>('[data-tool]');
+  if (root) mountUpscaleTool(root);
+</script>
+
+<style is:global>
+  .up-run {
+    align-self: end;
+  }
+
+  .up-progress {
+    display: block;
+    width: 100%;
+    height: 3px;
+    margin-top: 16px;
+    border: 0;
+    appearance: none;
+    background: color-mix(in srgb, var(--black) 10%, transparent);
+    accent-color: var(--green);
+  }
+
+  .up-progress::-webkit-progress-bar {
+    background: color-mix(in srgb, var(--black) 10%, transparent);
+  }
+
+  .up-progress::-webkit-progress-value {
+    background: var(--green);
+  }
+
+  .up-progress::-moz-progress-bar {
+    background: var(--green);
+  }
+
+  .up-viewport {
+    margin-top: calc(24 * var(--px));
+  }
+
+  .up-viewport.is-zoomed {
+    max-height: 75vh;
+    overflow: auto;
+    outline: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+    overscroll-behavior: contain;
+  }
+
+  .up-stage {
+    position: relative;
+    margin: 0 auto;
+    background: repeating-conic-gradient(#d4d9d9 0 25%, #f4f6f6 0 50%) 0 0 / 20px 20px;
+    user-select: none;
+  }
+
+  .up-stage canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* AI on the left of the split, the plain resize on the right */
+  .up-stage__after {
+    clip-path: inset(0 calc(100% - var(--split)) 0 0);
+  }
+
+  .up-stage__line,
+  .up-stage__tag {
+    display: none;
+  }
+
+  .up-stage.has-result .up-stage__line {
+    display: block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--split);
+    width: 2px;
+    margin-left: -1px;
+    background: var(--green);
+    pointer-events: none;
+  }
+
+  .up-stage.has-result .up-stage__tag {
+    display: block;
+    position: sticky;
+    position: absolute;
+    top: 10px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--bg);
+    background: color-mix(in srgb, var(--black) 75%, transparent);
+    pointer-events: none;
+  }
+
+  .up-stage__tag--after {
+    left: 10px;
+  }
+
+  .up-stage__tag--before {
+    right: 10px;
+  }
+
+  .up-stage__compare {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+  }
+
+  .up-stage:not(.has-result) .up-stage__compare {
+    pointer-events: none;
+  }
+
+  .up-stage:has(.up-stage__compare:focus-visible) {
+    outline: 2px solid var(--green);
+    outline-offset: 4px;
+  }
+
+  .up-type select {
+    font: inherit;
+    font-weight: 700;
+    color: var(--black);
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--gray);
+    border-radius: 0;
+    padding: 6px 0;
+  }
+</style>

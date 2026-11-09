@@ -17,7 +17,7 @@
   "Edge" sharpens the matte without running the model again.
 */
 
-import type * as Ort from 'onnxruntime-web';
+import { createSession, hasWebGpu, loadOrt, type Ort } from './ort-models';
 import { baseName, errorText, formatBytes, saveBlob } from './tool-utils';
 
 type ModelKey = 'fast' | 'quality';
@@ -29,52 +29,6 @@ const MODELS = {
 };
 const MEAN = [0.485, 0.456, 0.406];
 const STD = [0.229, 0.224, 0.225];
-const CACHE = 'tools-models-v1';
-
-let ortPromise: Promise<typeof Ort> | null = null;
-function loadOrt() {
-  ortPromise ??= import('onnxruntime-web/webgpu').then((ort) => {
-    // The WebAssembly files come from the CDN, pinned to this package's version
-    ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ort.env.versions.web}/dist/`;
-    // Its optimiser prints harmless warnings to the console as errors
-    ort.env.logLevel = 'error';
-    return ort as unknown as typeof Ort;
-  });
-  return ortPromise;
-}
-
-/** Fetches a model, from the Cache API when we have it, reporting download progress */
-async function fetchModel(url: string, onProgress: (loaded: number, total: number) => void): Promise<Uint8Array> {
-  let cache: Cache | null = null;
-  try {
-    cache = await caches.open(CACHE);
-    const hit = await cache.match(url);
-    if (hit) return new Uint8Array(await hit.arrayBuffer());
-  } catch {}
-  const res = await fetch(url);
-  if (!res.ok || !res.body) throw new Error(`The model couldn’t be downloaded (${res.status}).`);
-  const total = Number(res.headers.get('content-length')) || 0;
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let loaded = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    loaded += value.length;
-    onProgress(loaded, total);
-  }
-  const bytes = new Uint8Array(loaded);
-  let o = 0;
-  for (const c of chunks) {
-    bytes.set(c, o);
-    o += c.length;
-  }
-  try {
-    await cache?.put(url, new Response(bytes as BlobPart, { headers: { 'content-type': 'application/octet-stream' } }));
-  } catch {}
-  return bytes;
-}
 
 const sessions = new Map<ModelKey, Promise<{ session: Ort.InferenceSession; fp16: boolean; device: string }>>();
 
@@ -82,21 +36,11 @@ function getSession(key: ModelKey, onProgress: (text: string) => void) {
   let s = sessions.get(key);
   if (!s) {
     s = (async () => {
-      const ort = await loadOrt();
-      const gpu = 'gpu' in navigator && !!(await (navigator as Navigator & { gpu: { requestAdapter(): Promise<unknown> } }).gpu.requestAdapter().catch(() => null));
-      let url = '/models/u2netp.onnx';
-      let fp16 = false;
-      if (key === 'quality') {
-        fp16 = gpu;
-        url = HF + (fp16 ? 'model_fp16.onnx' : 'model.onnx');
-      }
-      const bytes = await fetchModel(url, (loaded, total) =>
-        onProgress(total ? `Downloading the model… ${Math.round((loaded / total) * 100)}% of ${formatBytes(total)}` : `Downloading the model… ${formatBytes(loaded)}`),
-      );
-      onProgress('Starting the model…');
-      const providers = gpu ? ['webgpu', 'wasm'] : ['wasm'];
-      const session = await ort.InferenceSession.create(bytes, { executionProviders: providers, graphOptimizationLevel: 'all', logSeverityLevel: 3 });
-      return { session, fp16, device: gpu ? 'WebGPU' : 'CPU' };
+      // BiRefNet in fp16 on WebGPU; without WebGPU the fp32 file runs on the CPU
+      const fp16 = key === 'quality' && (await hasWebGpu());
+      const url = key === 'quality' ? HF + (fp16 ? 'model_fp16.onnx' : 'model.onnx') : '/models/u2netp.onnx';
+      const { session, device } = await createSession(url, onProgress);
+      return { session, fp16, device };
     })();
     s.catch(() => sessions.delete(key));
     sessions.set(key, s);

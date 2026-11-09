@@ -6,7 +6,7 @@
 */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-type Art = 'pdf' | 'compress' | 'convert' | 'cutout' | 'mockup';
+type Art = 'pdf' | 'compress' | 'convert' | 'cutout' | 'upscale' | 'mockup';
 
 const groups: { name: string; tools: { href: string; name: string; summary: string; tags: string[]; art: Art }[] }[] = [
   {
@@ -44,6 +44,13 @@ const groups: { name: string; tools: { href: string; name: string; summary: stri
         summary: 'AI cut-outs of people, products and pets. Transparent, on a colour, or on a blurred backdrop.',
         tags: ['AI', 'Transparent PNG', 'Fast or HQ'],
         art: 'cutout',
+      },
+      {
+        href: '/tools/upscale/',
+        name: 'Image Upscaler',
+        summary: 'Enlarge small or soft images 2× or 4×. The AI rebuilds edges and texture instead of stretching pixels.',
+        tags: ['AI', '2× / 4×', 'Up to 8K'],
+        art: 'upscale',
       },
     ],
   },
@@ -117,6 +124,15 @@ let index = 0;
                         <circle cx="60" cy="32" r="9" class="fill" />
                         <path d="M44 70c0-14 7-22 16-22s16 8 16 22" class="fill" />
                         <path d="M30 12h60v58H30z" class="accent dash" />
+                      </svg>
+                    )}
+                    {t.art === 'upscale' && (
+                      <svg viewBox="0 0 120 80">
+                        <rect x="22" y="40" width="24" height="24" rx="1.5" />
+                        <path d="M22 46h24M22 52h24M22 58h24M28 40v24M34 40v24M40 40v24" class="thin" />
+                        <rect x="56" y="12" width="44" height="52" rx="2" class="fill" />
+                        <path d="M62 56l11-14 8 9 6-6 8 11" />
+                        <path d="M46 40l10-10m-7 0h7v7" class="accent" />
                       </svg>
                     )}
                     {t.art === 'mockup' && (
@@ -242,6 +258,11 @@ let index = 0;
   .tool-card__art .checker {
     fill: color-mix(in srgb, var(--black) 10%, var(--bg));
     stroke: none;
+  }
+
+  .tool-card__art .thin {
+    stroke-width: 0.6;
+    opacity: 0.5;
   }
 
   .tool-card__art .dash {
