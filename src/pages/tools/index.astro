@@ -1,0 +1,176 @@
+---
+/*
+  Tools (hidden like /lab/: not in the nav, noindex). Small, free tools that
+  run in the browser. Add a tool by adding an entry to `tools`.
+*/
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const tools = [
+  {
+    href: '/tools/pdf/',
+    name: 'PDF Studio',
+    summary:
+      'Merge, reorder, rotate and split PDFs. Add text, images and signatures, and fill in forms. Everything runs in your browser; files are never uploaded.',
+    tags: ['Merge', 'Reorder', 'Rotate', 'Extract pages', 'Text', 'Images', 'Signature', 'Forms'],
+  },
+];
+
+const num = (n: number) => String(n).padStart(2, '0');
+---
+
+<BaseLayout title="Tools — Jayson Alegarbes" description="Small, free tools that run in your browser." noindex>
+  <section class="tools">
+    <header class="tools__intro">
+      <h1 class="tools__title"><span class="serif-italic">free</span> TOOLS</h1>
+      <div class="tools__text">
+        <p>Small tools I built for my own work, free to use. They run in your browser, so your files stay on your device.</p>
+        <p class="tools__count">{num(tools.length)} {tools.length === 1 ? 'tool' : 'tools'}</p>
+      </div>
+    </header>
+
+    <ul class="tools__list">
+      {
+        tools.map((t, i) => (
+          <li>
+            <a class="tool" href={t.href}>
+              <span class="tool__num serif-italic">{num(i + 1)}</span>
+              <span class="tool__body">
+                <span class="tool__name">{t.name}</span>
+                <span class="tool__summary">{t.summary}</span>
+                <span class="tool__tags">
+                  {t.tags.map((tag) => (
+                    <span>{tag}</span>
+                  ))}
+                </span>
+              </span>
+              <span class="tool__open">Open →</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</BaseLayout>
+
+<style>
+  .tools {
+    padding: calc(141 * var(--px)) var(--gutter) calc(160 * var(--px));
+  }
+
+  .tools__title {
+    font-weight: 700;
+    font-size: calc(44 * var(--px));
+    white-space: nowrap;
+  }
+
+  .tools__text {
+    font-size: var(--fs-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 1lh;
+    max-width: calc(432 * var(--px));
+    margin-top: calc(57 * var(--px));
+  }
+
+  .tools__count {
+    font-weight: 700;
+  }
+
+  .tools__list {
+    margin-top: calc(72 * var(--px));
+    border-bottom: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+  }
+
+  .tool {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px calc(24 * var(--px));
+    padding-block: calc(36 * var(--px));
+    border-top: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+  }
+
+  .tool__num {
+    font-size: calc(28 * var(--px));
+    line-height: 1;
+  }
+
+  .tool__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tool__name {
+    font-weight: 700;
+    font-size: calc(22 * var(--px));
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .tool__summary {
+    font-size: var(--fs-sm);
+    max-width: 52ch;
+  }
+
+  .tool__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-size: var(--fs-sm);
+    color: var(--gray);
+  }
+
+  .tool__open {
+    grid-column: 2;
+    font-size: var(--fs-sm);
+    font-weight: 700;
+  }
+
+  .tool:hover .tool__name {
+    color: var(--green);
+    filter: brightness(0.8);
+  }
+
+  @media (min-width: 1024px) {
+    .tools {
+      padding-top: calc(186 * var(--px));
+      padding-right: calc(259 * var(--px));
+    }
+
+    .tools__intro {
+      display: grid;
+      grid-template-columns: calc(531 * var(--px)) auto;
+      align-items: start;
+    }
+
+    .tools__title {
+      grid-column: 1 / -1;
+      font-size: calc(110 * var(--px));
+    }
+
+    .tools__text {
+      grid-column: 2;
+      margin-top: calc(48 * var(--px));
+    }
+
+    .tool {
+      grid-template-columns: calc(531 * var(--px)) 1fr auto;
+      gap: 0;
+      align-items: start;
+      padding-block: calc(56 * var(--px));
+    }
+
+    .tool__num {
+      font-size: calc(44 * var(--px));
+    }
+
+    .tool__name {
+      font-size: calc(30 * var(--px));
+    }
+
+    .tool__open {
+      grid-column: auto;
+      padding-left: 24px;
+    }
+  }
+</style>
