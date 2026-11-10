@@ -1,0 +1,279 @@
+---
+/*
+  Image to Layers (hidden like /lab/: not in the nav, noindex). Splits a flat
+  graphic into background, element and live-text layers in the browser:
+  scripts/layers-tool.ts. OCR files are self-hosted in public/ocr/.
+  Styles: styles/tools.css + below.
+*/
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import '../../styles/tools.css';
+---
+
+<BaseLayout
+  title="Image to Layers — Jayson Alegarbes"
+  description="Split a flat graphic into editable layers in your browser. Images never leave your device."
+  noindex
+>
+  <section class="tool" data-tool>
+    <header class="tool__intro">
+      <p class="tool__crumb"><a href="/tools/">Tools</a> <span aria-hidden="true">/</span> Image to Layers</p>
+      <h1 class="tool__title"><span class="serif-italic">image to</span> LAYERS</h1>
+      <div class="tool__text">
+        <p>Turn a flat poster, ad or social post back into layers: the background, each shape or picture, and the text as real, editable text. Drag the SVG into Figma.</p>
+        <p class="tool__private">Everything runs in your browser. Your images are never uploaded.</p>
+      </div>
+    </header>
+
+    <label class="tool-drop" data-drop>
+      <input type="file" accept="image/*" class="visually-hidden" data-file-input />
+      <span class="tool-drop__title">Drop a graphic here</span>
+      <span class="tool-drop__or">or <span class="tool-drop__link">choose a file</span>, or paste one</span>
+    </label>
+
+    <p class="tool__status" role="status" aria-live="polite" data-status></p>
+
+    <div class="tool__workspace" data-workspace hidden>
+      <div class="tool-settings">
+        <div class="tool-settings__group">
+          <label class="tool-settings__label" for="ly-sens">Sensitivity <span class="ly-ends">more – fewer elements</span></label>
+          <input id="ly-sens" type="range" min="14" max="110" value="40" data-sensitivity />
+        </div>
+        <div class="tool-settings__group">
+          <label class="tool-settings__label" for="ly-group">Grouping <span class="ly-ends">split – merge nearby parts</span></label>
+          <input id="ly-group" type="range" min="1" max="30" value="6" data-grouping />
+        </div>
+        <fieldset class="tool-settings__group">
+          <legend>Options</legend>
+          <div class="tool-formats">
+            <label><input type="checkbox" checked data-read-text /><span>Editable text</span></label>
+            <label><input type="checkbox" data-show-original /><span>Show original</span></label>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="ly-workbench">
+        <div class="ly-stage" data-stage>
+          <div class="ly-stage__preview" data-preview></div>
+          <img class="ly-stage__original" alt="Original image" data-original />
+          <span class="ly-stage__outline" data-outline hidden></span>
+        </div>
+
+        <aside class="ly-panel" aria-label="Layers">
+          <p class="ly-panel__head"><span>Layers</span> <span class="ly-panel__count" data-layer-count></span></p>
+          <ul class="ly-panel__list" data-layer-list></ul>
+        </aside>
+      </div>
+
+      <div class="tool__export">
+        <p class="tool__summary" data-meta></p>
+        <div class="tool__export-actions">
+          <button type="button" class="tool-btn" data-act="zip" disabled>PNG layers (.zip)</button>
+          <button type="button" class="tool-btn tool-btn--primary" data-act="svg" disabled>SVG for Figma</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="tool__note">
+      Works best on flat designs: solid or gently graded backgrounds, clear type. The font is matched to Archivo at the
+      measured size, weight and spacing; swap in the real typeface in Figma. Hidden layers are left out of the download.
+    </p>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountLayersTool } from '../../scripts/layers-tool';
+
+  const root = document.querySelector<HTMLElement>('[data-tool]');
+  if (root) mountLayersTool(root);
+</script>
+
+<style is:global>
+  .ly-ends {
+    font-weight: 400;
+  }
+
+  .ly-workbench {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(260px, calc(340 * var(--px)), 380px);
+    gap: calc(24 * var(--px));
+    align-items: start;
+    margin-top: calc(24 * var(--px));
+  }
+
+  .ly-stage {
+    position: relative;
+    width: min(100%, calc(76vh * var(--ratio, 1)));
+    margin-inline: auto;
+    overflow: hidden; /* keeps the highlight's dimming inside the image */
+    background: repeating-conic-gradient(#d4d9d9 0 25%, #f4f6f6 0 50%) 0 0 / 20px 20px;
+    user-select: none;
+  }
+
+  .ly-stage__preview,
+  .ly-stage__preview svg,
+  .ly-stage__original {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .ly-stage__original {
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .ly-stage.is-original .ly-stage__original {
+    opacity: 1;
+  }
+
+  .ly-stage__outline {
+    position: absolute;
+    outline: 2px solid var(--green);
+    outline-offset: 1px;
+    box-shadow: 0 0 0 9999px color-mix(in srgb, var(--black) 28%, transparent);
+    pointer-events: none;
+  }
+
+  .ly-stage__outline[hidden] {
+    display: none;
+  }
+
+  .ly-stage.is-working::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--white) 55%, transparent), transparent) 0 0 / 50% 100% no-repeat;
+    animation: ly-scan 1.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes ly-scan {
+    from {
+      background-position: -100% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ly-stage.is-working::after {
+      animation: none;
+      background: color-mix(in srgb, var(--white) 30%, transparent);
+    }
+    .ly-stage__original {
+      transition: none;
+    }
+  }
+
+  .ly-panel {
+    border: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+    max-height: 76vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ly-panel__head {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 14px;
+    font-weight: 700;
+    border-bottom: 1px solid color-mix(in srgb, var(--black) 14%, transparent);
+  }
+
+  .ly-panel__count {
+    font-weight: 400;
+    color: var(--gray);
+  }
+
+  .ly-panel__list {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .layers-row {
+    display: grid;
+    grid-template-columns: 32px 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px 4px 6px;
+    font-size: var(--fs-sm);
+  }
+
+  .layers-row:hover {
+    background: color-mix(in srgb, var(--black) 5%, transparent);
+  }
+
+  .layers-row__eye {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    color: inherit;
+  }
+
+  .layers-row__eye svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+  }
+
+  .layers-row__eye[aria-pressed='false'] {
+    color: var(--gray);
+  }
+
+  .layers-row__eye[aria-pressed='false'] svg {
+    opacity: 0.45;
+  }
+
+  .layers-row:has([aria-pressed='false']) .layers-row__name {
+    color: var(--gray);
+    text-decoration: line-through;
+  }
+
+  .layers-row__eye:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: -2px;
+  }
+
+  .layers-row__kind {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--gray);
+    text-transform: uppercase;
+  }
+
+  .layers-row__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .layers-row__info {
+    color: var(--gray);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 899px) {
+    .ly-workbench {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .ly-stage {
+      width: 100%;
+    }
+    .ly-panel {
+      max-height: 50vh;
+    }
+  }
+</style>

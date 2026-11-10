@@ -1,0 +1,25 @@
+Text recognition files for Image to Layers (/tools/layers/)
+============================================================
+
+worker.min.js
+  From tesseract.js 7.0.0 (npm, dist/worker.min.js), unmodified.
+  https://github.com/naptha/tesseract.js
+  Licensed under the Apache License, Version 2.0:
+  https://www.apache.org/licenses/LICENSE-2.0
+
+tesseract-core-lstm.wasm.js
+tesseract-core-simd-lstm.wasm.js
+tesseract-core-relaxedsimd-lstm.wasm.js
+  From tesseract.js-core 7.0.0 (npm), unmodified. Tesseract OCR compiled
+  to WebAssembly. https://github.com/naptha/tesseract.js-core
+  Licensed under the Apache License, Version 2.0. Tesseract itself:
+  https://github.com/tesseract-ocr/tesseract (Apache License 2.0).
+
+eng.traineddata.gz
+  From @tesseract.js-data/eng 1.0.0 (npm, 4.0.0_best_int/), unmodified.
+  sha256 45b4cb346724ac1774f1c36f42f182b887bcdb28ebe63e6fff90ac41f3fcff91
+  English LSTM model from https://github.com/tesseract-ocr/tessdata_best
+  (Apache License 2.0); package licence MIT.
+
+Self-hosted (rather than loaded from the jsDelivr CDN, tesseract.js's
+default) so the vetted versions are the ones that run. Vetted 2026-11-10.

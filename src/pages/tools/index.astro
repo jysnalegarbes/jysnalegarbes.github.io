@@ -14,6 +14,7 @@ import convert from '../../assets/tools/convert.png';
 import background from '../../assets/tools/background.png';
 import upscale from '../../assets/tools/upscale.png';
 import mockup from '../../assets/tools/mockup.png';
+import layers from '../../assets/tools/layers.png';
 
 const tools = [
   { href: '/tools/pdf/', name: 'PDF Studio', verb: 'Edit, merge and sign PDFs', input: 'PDF', shot: pdf },
@@ -22,6 +23,7 @@ const tools = [
   { href: '/tools/background/', name: 'Background Remover', verb: 'Cut the subject out of a photo', input: 'Image', shot: background },
   { href: '/tools/upscale/', name: 'Image Upscaler', verb: 'Enlarge a small image with AI', input: 'Image', shot: upscale },
   { href: '/tools/mockup/', name: 'Mockup Generator', verb: 'Put a design on a screen or in print', input: 'Image', shot: mockup },
+  { href: '/tools/layers/', name: 'Image to Layers', verb: 'Split a flat graphic into editable layers', input: 'Image', shot: layers },
 ];
 
 const num = (n: number) => String(n).padStart(2, '0');
