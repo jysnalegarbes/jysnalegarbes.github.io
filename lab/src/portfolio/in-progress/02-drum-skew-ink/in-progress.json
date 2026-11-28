@@ -1,0 +1,27 @@
+{
+  "scroll": {
+    "smoothing": 0.15,
+    "wheel": 1.35
+  },
+  "drum": {
+    "angle": 80,
+    "shrink": 0.16,
+    "perspective": 4000
+  },
+  "skew": {
+    "maxDeg": 6,
+    "perSpeed": 0.0035,
+    "stretch": 0.16,
+    "settle": 0.35
+  },
+  "ink": {
+    "radius": 0.54,
+    "smear": 0.165,
+    "amount": 2.95,
+    "edge": 0.72,
+    "softness": 0,
+    "wobble": 0.35,
+    "tail": 4.7,
+    "linger": 0.8200000000000001
+  }
+}

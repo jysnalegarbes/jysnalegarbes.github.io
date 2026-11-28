@@ -1,0 +1,248 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import '../styles/contact-layouts.css';
+
+// Contact details follow Jayson's résumé (v2, 2026-11-11)
+const email = 'jysn.alegarbes@gmail.com';
+const resume = '/jayson-alegarbes-resume.pdf';
+
+const socials = [
+  { label: 'Behance', href: 'https://www.behance.net/jysnalegarbes', icon: '/images/icons/behance.svg' },
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/alegarbesjayson', icon: '/images/icons/linkedin.svg' },
+];
+
+// The same content for the layout options (?layout=1…5, contact-layouts/)
+const content = {
+  lead: 'Let’s make something good.',
+  name: 'Jayson Alegarbes',
+  email,
+  resume,
+  sign: 'Still making things © 2026',
+  socials,
+};
+---
+
+<BaseLayout title="Contact — Jayson Alegarbes" current="contact"
+  description="Got a project in mind? Get in touch with Jayson Alegarbes, UI/UX and visual designer. Email, résumé, Behance and LinkedIn.">
+  <!-- Layout option: hide the current page before first paint -->
+  <script is:inline>
+    if (/^[1-5]$/.test(new URLSearchParams(location.search).get('layout') || '')) {
+      document.documentElement.classList.add('cx-layout');
+    }
+  </script>
+  <section class="contact" data-contact data-content={JSON.stringify(content)}>
+    <div class="contact__hero" data-contact-hero>
+      <p class="contact__lead">Let’s make something good.</p>
+      <h1 class="contact__title">
+        GOT <span class="serif-italic">a project</span><br class="mobile-only" /> IN MIND?
+      </h1>
+    </div>
+
+    <p class="contact__name desktop-only" aria-hidden="true" data-contact-name>Jayson Alegarbes</p>
+
+    <div class="contact__foot" data-contact-foot>
+      <div class="contact__col">
+        <p class="label">Say something</p>
+        <div class="contact__links">
+          <a class="contact__email" href={`mailto:${email}`}>{email}</a>
+          <a class="contact__resume" href={resume} target="_blank" rel="noopener">
+            Résumé (PDF) <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+      <div class="contact__col">
+        <p class="label">Elsewhere</p>
+        <ul class="contact__socials">
+          {
+            socials.map(({ label, href, icon }) => (
+              <li>
+                <a href={href} aria-label={label} target="_blank" rel="noopener noreferrer">
+                  <img src={icon} width="50" height="50" alt="" />
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <p class="contact__sign">Still making things © 2026</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountContactReveal } from '../scripts/contact-reveal';
+
+  // ?layout=1…5: the layout options under review (contact-layouts/)
+  const params = new URLSearchParams(location.search);
+  const which = /^[1-5]$/.test(params.get('layout') ?? '') ? params.get('layout')! : '0';
+  const section = document.querySelector<HTMLElement>('[data-contact]');
+  if (section && which === '0') mountContactReveal(section);
+  if (section && (which !== '0' || params.has('tweak'))) {
+    import('../scripts/contact-layouts/index').then(async ({ mountContactLayout, mountContactLayoutTweaks }) => {
+      const mounted = which === '0' ? null : await mountContactLayout(section, which);
+      if (params.has('tweak')) mountContactLayoutTweaks(which, mounted?.settings ?? null, mounted?.layout ?? null);
+    });
+  }
+</script>
+
+<style>
+  .contact {
+    position: relative;
+    min-height: max(100svh, calc(760 * var(--px)));
+    font-weight: 700;
+  }
+
+  .contact__hero {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(9 * var(--px));
+    text-align: center;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+
+  .contact__lead {
+    font-weight: 400;
+    font-size: calc(22 * var(--px));
+  }
+
+  .contact__title {
+    font-size: calc(60 * var(--px));
+  }
+
+  .contact__foot {
+    font-size: var(--fs-sm);
+    position: absolute;
+    right: var(--gutter);
+    bottom: calc(24 * var(--px));
+    left: var(--gutter);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(54 * var(--px));
+    text-align: center;
+  }
+
+  .contact__col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(12 * var(--px));
+  }
+
+  .contact__socials {
+    display: flex;
+    gap: calc(8 * var(--px));
+  }
+
+  .contact__socials img {
+    width: calc(40 * var(--px));
+    height: calc(40 * var(--px));
+  }
+
+  .contact__links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(10 * var(--px));
+  }
+
+  /* Text links are drawn 14px tall: pad the hit area, not the layout */
+  .contact__email,
+  .contact__resume {
+    position: relative;
+  }
+
+  .contact__email::after,
+  .contact__resume::after {
+    content: '';
+    position: absolute;
+    inset: -8px -4px;
+  }
+
+  .contact__resume {
+    color: var(--gray);
+    transition: color 0.2s ease;
+  }
+
+  .contact__resume:hover {
+    color: var(--black);
+  }
+
+  .contact__email:hover,
+  .contact__socials a:hover {
+    opacity: 0.7;
+  }
+
+  .contact__sign {
+    margin-top: calc(10 * var(--px));
+  }
+
+  @media (min-width: 1024px) {
+    .contact {
+      min-height: max(100svh, calc(900 * var(--px)));
+    }
+
+    .contact__hero {
+      top: calc(50% - 65.5 * var(--px));
+      gap: calc(4 * var(--px));
+    }
+
+    .contact__lead {
+      font-size: calc(40 * var(--px));
+    }
+
+    .contact__title {
+      font-size: calc(110 * var(--px));
+    }
+
+    /* The name (1:552), at the background colour: the canvas uncovers it in
+       green along the cursor trail (contact-reveal.ts) */
+    .contact__name {
+      position: absolute;
+      top: calc(50% + 192 * var(--px));
+      left: 50%;
+      font-weight: 800;
+      font-size: calc(164 * var(--px));
+      color: var(--bg);
+      text-transform: uppercase;
+      white-space: nowrap;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .contact__foot {
+      bottom: calc(60 * var(--px));
+      display: grid;
+      grid-template-columns: calc(828 * var(--px)) 1fr auto;
+      align-items: end;
+      gap: 0;
+      text-align: left;
+    }
+
+    .contact__col {
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0;
+      min-height: calc(105 * var(--px));
+    }
+
+    .contact__links {
+      align-items: flex-start;
+      gap: calc(6 * var(--px));
+    }
+
+    .contact__socials img {
+      width: calc(50 * var(--px));
+      height: calc(50 * var(--px));
+    }
+
+    .contact__sign {
+      margin: 0;
+    }
+  }
+</style>

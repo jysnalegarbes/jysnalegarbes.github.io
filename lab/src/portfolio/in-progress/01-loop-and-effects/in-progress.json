@@ -1,0 +1,48 @@
+{
+  "scrollFx": 1,
+  "hoverFx": 4,
+  "scroll": {
+    "smoothing": 0.12,
+    "wheel": 1
+  },
+  "skew": {
+    "maxDeg": 7,
+    "perSpeed": 0.004,
+    "stretch": 0.08
+  },
+  "drum": {
+    "angle": 38,
+    "shrink": 0.16,
+    "perspective": 1300
+  },
+  "drift": {
+    "slow": 0.82,
+    "fast": 1.2,
+    "lag": 0.22
+  },
+  "halftone": {
+    "radius": 0.32,
+    "cell": 9,
+    "follow": 0.12
+  },
+  "pixel": {
+    "block": 22,
+    "radius": 1.6,
+    "fade": 0.55
+  },
+  "liquid": {
+    "radius": 0.28,
+    "strength": 0.06,
+    "split": 1
+  },
+  "liquidTrail": {
+    "cell": 9,
+    "brush": 2.6,
+    "fade": 0.9,
+    "edge": 0.32,
+    "softness": 0.06,
+    "wobble": 0.6,
+    "dot": 8,
+    "smear": 0.05
+  }
+}

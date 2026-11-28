@@ -1,0 +1,40 @@
+{
+  "hallway": {
+    "perspective": 1020,
+    "depth": 780,
+    "width": 0.57,
+    "angle": 41,
+    "size": 0.54,
+    "look": 1.5,
+    "wheel": 2.5,
+    "smoothing": 0.28
+  },
+  "canvas": {
+    "size": 0.36,
+    "gap": 0.05,
+    "bend": 0.6,
+    "aberration": 0.6,
+    "smoothing": 0.12,
+    "friction": 0.9
+  },
+  "ring": {
+    "radius": 1.05,
+    "size": 0.4,
+    "tilt": 9,
+    "count": 12,
+    "smoothing": 0.16,
+    "wheel": 0.08
+  },
+  "deck": {
+    "size": 0.56,
+    "spread": 5,
+    "tilt": 12,
+    "fling": 0.35
+  },
+  "table": {
+    "size": 0.27,
+    "friction": 3,
+    "bounce": 0.45,
+    "spin": 0.25
+  }
+}

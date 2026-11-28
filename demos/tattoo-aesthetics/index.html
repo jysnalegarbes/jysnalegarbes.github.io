@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tattoo &amp; Aesthetics — Tattoo studio and skin clinic (concept)</title>
+  <meta name="description" content="Concept website for a tattoo studio and skin aesthetics clinic. Designed and developed by Jayson Alegarbes.">
+  <!-- A concept site for a studio that doesn't exist: keep it out of search results -->
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#111110">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Manrope:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="preload" as="image" href="./assets/img/hero.webp">
+  <script>
+    // JS on: hide the page until the intro is set up (safety reveal after 2.5s)
+    document.documentElement.classList.replace('no-js', 'js');
+    setTimeout(function () { document.documentElement.classList.add('is-ready'); }, 2500);
+  </script>
+</head>
+
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" data-header>
+    <a class="brand" href="#studio" data-goto="0" aria-label="Tattoo and Aesthetics, back to top">
+      Tattoo <em>&amp;</em> Aesthetics
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <ul>
+        <li><a href="#artists" data-goto="1">Artists</a></li>
+        <li><a href="#services" data-goto="2">Services</a></li>
+        <li><a href="#works" data-goto="3">Works</a></li>
+        <li><a href="#visit" data-goto="4">Visit</a></li>
+      </ul>
+    </nav>
+    <a class="header__cta" href="#visit" data-goto="4">Book now</a>
+    <button class="burger" type="button" aria-expanded="false" aria-controls="menu" data-burger>
+      <span class="burger__label">Menu</span>
+      <span class="burger__lines" aria-hidden="true"><i></i><i></i></span>
+    </button>
+  </header>
+
+  <!-- Mobile menu -->
+  <div class="menu" id="menu" data-menu hidden>
+    <nav aria-label="Mobile">
+      <ol class="menu__list">
+        <li><a href="#studio" data-goto="0"><span>01</span>Studio</a></li>
+        <li><a href="#artists" data-goto="1"><span>02</span>Artists</a></li>
+        <li><a href="#services" data-goto="2"><span>03</span>Services</a></li>
+        <li><a href="#works" data-goto="3"><span>04</span>Works</a></li>
+        <li><a href="#visit" data-goto="4"><span>05</span>Visit</a></li>
+      </ol>
+    </nav>
+    <p class="menu__foot">Mon–Fri 9AM–6PM · Sat 10AM–4PM</p>
+  </div>
+
+  <!-- Section pager (desktop) -->
+  <nav class="pager" aria-label="Sections" data-pager>
+    <button type="button" data-goto="0" aria-label="Studio"><span>01</span></button>
+    <button type="button" data-goto="1" aria-label="Artists"><span>02</span></button>
+    <button type="button" data-goto="2" aria-label="Services"><span>03</span></button>
+    <button type="button" data-goto="3" aria-label="Works"><span>04</span></button>
+    <button type="button" data-goto="4" aria-label="Visit"><span>05</span></button>
+  </nav>
+
+  <main id="main">
+    <!-- 01 Studio -->
+    <section class="panel hero" id="studio" data-panel data-theme="dark" aria-label="Studio">
+      <div class="hero__media" data-hero-media>
+        <img src="./assets/img/hero.webp" alt="" width="1920" height="969" fetchpriority="high">
+      </div>
+      <div class="hero__inner wrap" data-depth>
+        <p class="eyebrow" data-hero-fade>Tattoo studio &amp; skin clinic · Davao City</p>
+        <h1 class="hero__title" data-hero-title>We turn skin <em>into art.</em></h1>
+        <div class="hero__side" data-hero-fade>
+          <p class="hero__lede">Custom tattoos and medical-grade skin aesthetics under one roof, by six resident artists.</p>
+          <div class="hero__actions">
+            <a class="btn btn--accent" href="#visit" data-goto="4">Book a session</a>
+            <a class="link" href="#works" data-goto="3">See our work</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 Artists -->
+    <section class="panel artists" id="artists" data-panel data-theme="light" aria-labelledby="artists-title">
+      <div class="artists__inner wrap" data-depth>
+        <div class="artists__list">
+          <p class="eyebrow" data-reveal="fade">02 — Artists</p>
+          <h2 class="title" id="artists-title" data-reveal="lines">Masterpieces <em>in motion.</em></h2>
+          <ol class="roster" data-roster>
+            <li><button type="button" class="is-active" aria-pressed="true" data-artist="0">Kathy Kate</button></li>
+            <li><button type="button" aria-pressed="false" data-artist="1">Solana Mercure</button></li>
+            <li><button type="button" aria-pressed="false" data-artist="2">Benn Shakespear</button></li>
+            <li><button type="button" aria-pressed="false" data-artist="3">Ava Saturne</button></li>
+            <li><button type="button" aria-pressed="false" data-artist="4">Meow Jupitere</button></li>
+            <li><button type="button" aria-pressed="false" data-artist="5">Sato Moon</button></li>
+          </ol>
+        </div>
+
+        <div class="portrait" data-portrait>
+          <img src="./assets/img/artist-1.webp" alt="Portrait of Kathy Kate" width="476" height="563">
+          <img src="./assets/img/artist-2.webp" alt="Portrait of Solana Mercure" width="476" height="563" loading="lazy">
+          <img src="./assets/img/artist-3.webp" alt="Portrait of Benn Shakespear" width="476" height="563" loading="lazy">
+          <img src="./assets/img/artist-4.webp" alt="Portrait of Ava Saturne" width="476" height="563" loading="lazy">
+          <img src="./assets/img/artist-5.webp" alt="Portrait of Meow Jupitere" width="476" height="563" loading="lazy">
+          <img src="./assets/img/artist-6.webp" alt="Portrait of Sato Moon" width="476" height="563" loading="lazy">
+        </div>
+
+        <aside class="artist-card" data-artist-card>
+          <p class="artist-card__count" data-reveal="fade"><span data-artist-index>01</span> / 06</p>
+          <div class="artist-card__body" data-artist-body>
+            <p class="artist-card__role" data-artist-role>Fine-line &amp; botanical</p>
+            <p class="artist-card__bio" data-artist-bio>Single-needle florals and script that age gracefully. Twelve years on the machine.</p>
+          </div>
+          <a class="link" href="#visit" data-goto="4">Book with <span data-artist-first>Kathy</span></a>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 03 Services -->
+    <section class="panel services" id="services" data-panel data-theme="dark" aria-labelledby="services-title">
+      <div class="services__inner wrap" data-depth>
+        <div class="services__head">
+          <p class="eyebrow" data-reveal="fade">03 — Services</p>
+          <h2 class="title" id="services-title" data-reveal="lines">Harmonizing art <em>and expression.</em></h2>
+        </div>
+        <div class="services__split">
+          <article class="service" data-reveal="service">
+            <div class="service__bg" aria-hidden="true"><img src="./assets/img/work-2.webp" alt="" loading="lazy"></div>
+            <p class="service__num">(01)</p>
+            <h3 class="service__name">Tattoos</h3>
+            <p class="service__desc">Custom pieces drawn for your skin, from a first consultation to the last healing check.</p>
+            <ul class="service__list">
+              <li>Custom &amp; flash</li>
+              <li>Realism &amp; portrait</li>
+              <li>Fine-line &amp; script</li>
+              <li>Cover-ups</li>
+            </ul>
+          </article>
+          <article class="service" data-reveal="service">
+            <div class="service__bg" aria-hidden="true"><img src="./assets/img/work-3.webp" alt="" loading="lazy"></div>
+            <p class="service__num">(02)</p>
+            <h3 class="service__name">Aesthetics</h3>
+            <p class="service__desc">Skin treatments by licensed practitioners, planned around your skin, your schedule and your ink.</p>
+            <ul class="service__list">
+              <li>Skin boosters</li>
+              <li>Brow &amp; lip blush</li>
+              <li>Piercing &amp; ear curation</li>
+              <li>Tattoo aftercare</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 Works -->
+    <section class="panel works" id="works" data-panel data-theme="light" aria-labelledby="works-title">
+      <div class="works__inner" data-depth>
+        <div class="works__head wrap">
+          <div>
+            <p class="eyebrow" data-reveal="fade">04 — Works</p>
+            <h2 class="title" id="works-title" data-reveal="lines">Ink your memories, <em>wear your story.</em></h2>
+          </div>
+          <div class="works__controls" data-reveal="fade">
+            <button type="button" class="arrow" aria-label="Previous work" data-works-prev>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg>
+            </button>
+            <button type="button" class="arrow" aria-label="Next work" data-works-next>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="marquee" data-marquee>
+          <ul class="marquee__track" data-marquee-track>
+            <li class="work-card">
+              <figure>
+                <div class="work-card__media"><img src="./assets/img/work-2.webp" alt="Colour realism portrait tattoo on a forearm" width="925" height="711" loading="lazy"></div>
+                <figcaption><span>Realism portrait</span><span>Tattoo</span></figcaption>
+              </figure>
+            </li>
+            <li class="work-card">
+              <figure>
+                <div class="work-card__media"><img src="./assets/img/work-1.webp" alt="Curated ear with helix, rook and lobe piercings" width="925" height="711" loading="lazy"></div>
+                <figcaption><span>Ear curation</span><span>Piercing</span></figcaption>
+              </figure>
+            </li>
+            <li class="work-card">
+              <figure>
+                <div class="work-card__media"><img src="./assets/img/work-3.webp" alt="Skin booster treatment in the clinic" width="925" height="711" loading="lazy"></div>
+                <figcaption><span>Skin booster</span><span>Aesthetics</span></figcaption>
+              </figure>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 Visit -->
+    <section class="panel visit" id="visit" data-panel data-theme="dark" aria-labelledby="visit-title">
+      <div class="visit__inner wrap" data-depth>
+        <div class="visit__info">
+          <p class="eyebrow" data-reveal="fade">05 — Visit</p>
+          <h2 class="title title--xl" id="visit-title" data-reveal="lines">Book a <em>session.</em></h2>
+          <dl class="facts">
+            <div data-reveal="item">
+              <dt>Location</dt>
+              <dd>Davao City, Philippines<br><a class="link link--small" href="https://maps.google.com/?q=Davao+City" target="_blank" rel="noopener">Get directions</a></dd>
+            </div>
+            <div data-reveal="item">
+              <dt>Hours</dt>
+              <dd>Mon–Fri · 9AM–6PM<br>Sat · 10AM–4PM</dd>
+            </div>
+            <div data-reveal="item">
+              <dt>Contact</dt>
+              <dd>hello@studio.example<br>+63 900 000 0000</dd>
+            </div>
+            <div data-reveal="item">
+              <dt>Walk-ins</dt>
+              <dd>Flash and piercing,<br>Saturdays only</dd>
+            </div>
+          </dl>
+        </div>
+
+        <form class="form" data-form novalidate>
+          <div class="field" data-reveal="item">
+            <label for="f-name">Name</label>
+            <input id="f-name" name="name" type="text" autocomplete="name" required>
+          </div>
+          <div class="field" data-reveal="item">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <fieldset class="field field--choice" data-reveal="item">
+            <legend>I'm interested in</legend>
+            <label><input type="radio" name="service" value="Tattoo" checked><span>Tattoo</span></label>
+            <label><input type="radio" name="service" value="Aesthetics"><span>Aesthetics</span></label>
+            <label><input type="radio" name="service" value="Piercing"><span>Piercing</span></label>
+          </fieldset>
+          <div class="field" data-reveal="item">
+            <label for="f-idea">Your idea</label>
+            <textarea id="f-idea" name="idea" rows="3" placeholder="Placement, size, references…"></textarea>
+          </div>
+          <div class="form__foot" data-reveal="item">
+            <button class="btn btn--accent" type="submit">Request a slot</button>
+            <p class="form__status" role="status" data-form-status></p>
+          </div>
+        </form>
+
+        <footer class="footer">
+          <span>© 2026 Tattoo <em>&amp;</em> Aesthetics</span>
+          <span>Concept site, not a real studio. Designed &amp; developed by <a href="https://jysnalegarbes.github.io/work/tattoo-aesthetics/" target="_top">Jayson Alegarbes</a></span>
+        </footer>
+      </div>
+    </section>
+  </main>
+
+  <script src="./vendor/gsap/gsap.min.js" defer></script>
+  <script src="./vendor/gsap/Observer.min.js" defer></script>
+  <script src="./vendor/gsap/ScrollToPlugin.min.js" defer></script>
+  <script src="./vendor/gsap/SplitText.min.js" defer></script>
+  <script src="./js/main.js" defer></script>
+</body>
+</html>

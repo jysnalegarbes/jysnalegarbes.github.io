@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact — Alchemist (store design demo)</title>
+  <meta name="description" content="Contact page of the Alchemist store design, built as a live demo by Jayson Alegarbes. Not the brand's official store.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@100;300;400;500;600;700;900&family=Oswald:wght@500&family=Saira:ital,wght@1,900&display=swap">
+  <link rel="stylesheet" href="./vendor/lenis.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/store.css">
+  <script>
+    document.documentElement.classList.replace('no-js', 'js');
+    setTimeout(function () { document.documentElement.classList.add('is-ready'); }, 2500);
+  </script>
+</head>
+
+<body class="inner" data-page="contact">
+  <!-- @header -->
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- Header: top bar, Sportswear mega menu, announcements -->
+  <header class="header" data-header>
+    <div class="topbar">
+      <a class="topbar__logo" href="index.html" aria-label="Alchemist, home">
+        <img src="./assets/img/logo.webp" alt="" width="300" height="49">
+      </a>
+      <nav class="topbar__nav" aria-label="Shop">
+        <ul>
+          <li><a href="shop.html?cat=sportswear" data-nav="sportswear" data-mega-trigger aria-expanded="false" aria-controls="mega">Sportswear</a></li>
+          <li><a href="shop.html?cat=supplements" data-nav="supplements">Supplements</a></li>
+          <li><a href="shop.html?cat=accessories" data-nav="accessories">Accessories</a></li>
+          <li><a href="shop.html?cat=bundles" data-nav="bundles">Bundles</a></li>
+        </ul>
+      </nav>
+      <div class="topbar__tools">
+        <form class="search" role="search" action="shop.html" data-search>
+          <label class="visually-hidden" for="q">Search products</label>
+          <input id="q" name="q" type="search" placeholder="Search" autocomplete="off">
+          <button type="submit" aria-label="Search"><img src="./assets/svg/icon-search.svg" alt="" width="24" height="24"></button>
+        </form>
+        <button class="tool tool--cart" type="button" aria-label="Bag" data-cart>
+          <img src="./assets/svg/icon-cart.svg" alt="" width="24" height="24">
+          <span class="cart-count" data-cart-count hidden>0</span>
+        </button>
+        <button class="tool" type="button" aria-label="Account" data-toast="Accounts aren't part of this demo.">
+          <img src="./assets/svg/icon-user.svg" alt="" width="24" height="24">
+        </button>
+        <button class="tool" type="button" aria-label="Wishlist" data-toast="The wishlist isn't part of this demo.">
+          <img src="./assets/svg/icon-heart.svg" alt="" width="24" height="24">
+        </button>
+        <button class="tool tool--menu" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu" data-burger>
+          <img src="./assets/svg/icon-menu.svg" alt="" width="24" height="24">
+        </button>
+      </div>
+    </div>
+    <div class="mega" id="mega" data-mega hidden>
+      <div class="mega__col">
+        <h3>Women</h3>
+        <ul>
+          <li><a href="shop.html?cat=sportswear&amp;tag=new">New Arrivals</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;tag=best">Best Sellers</a></li>
+          <li><a href="shop.html?cat=sportswear">All Products</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=leggings">Leggings</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=sports-bras">Sports Bras</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=joggers">Joggers</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tshirt">T-Shirts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tank-tops">Tank Tops</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=shorts">Shorts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=hoodies">Hoodies &amp; Jackets</a></li>
+        </ul>
+      </div>
+      <div class="mega__col">
+        <h3>Men</h3>
+        <ul>
+          <li><a href="shop.html?cat=sportswear&amp;tag=new">New Arrivals</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;tag=best">Best Sellers</a></li>
+          <li><a href="shop.html?cat=sportswear">All Products</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tshirt">T-Shirts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=shorts">Shorts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=joggers">Joggers</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=hoodies">Hoodies &amp; Jackets</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=stringers">Stringer &amp; Tanks</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=leggings">Leggings/Tights</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="announce" aria-roledescription="carousel" aria-label="Announcements">
+      <button class="announce__arrow" type="button" aria-label="Previous announcement" data-announce-prev><img src="./assets/svg/chevron-left.svg" alt="" width="24" height="24"></button>
+      <div class="announce__track" aria-live="polite">
+        <p class="is-active" data-announce>Clearance Sale</p>
+        <p data-announce>Use code ALCHEMIST for an extra 30% off your first order</p>
+        <p data-announce>Up to 60% off all brands</p>
+      </div>
+      <button class="announce__arrow" type="button" aria-label="Next announcement" data-announce-next><img src="./assets/svg/chevron-right.svg" alt="" width="24" height="24"></button>
+    </div>
+    <nav class="menu" id="menu" aria-label="Menu" data-menu hidden>
+      <ul>
+        <li><a href="shop.html">Shop all</a></li>
+        <li><a href="shop.html?cat=sportswear">Sportswear</a></li>
+        <li><a href="shop.html?cat=supplements">Supplements</a></li>
+        <li><a href="shop.html?cat=accessories">Accessories</a></li>
+        <li><a href="shop.html?cat=bundles">Bundles</a></li>
+        <li><a href="cart.html">Your bag</a></li>
+        <li><a href="index.html#about">About us</a></li>
+        <li><a href="index.html#blog">Our blog</a></li>
+        <li><a href="contact.html">Contact us</a></li>
+      </ul>
+    </nav>
+  </header>
+  <!-- /@header -->
+
+  <main id="main">
+    <div class="contact-crumbs">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <img src="./assets/svg/home.svg" alt="" width="13" height="13">
+        <a href="index.html">Home</a> / <span aria-current="page">Contact Us</span>
+      </nav>
+    </div>
+
+    <!-- Store map: an illustrated stand-in (the design used a map screenshot) -->
+    <section class="store-map" aria-labelledby="visit-title">
+      <svg viewBox="0 0 1920 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true" data-map>
+        <rect width="1920" height="600" fill="#d5f4e2"/>
+        <path d="M1010 0h910v600h-560c-40-60-10-120-60-170-40-40-110-20-150-70-50-60 20-140-30-200-30-35-80-40-110-90-20-30-10-50 10-70z" fill="#8fd7ee"/>
+        <path d="M1180 600c40-90 140-110 180-200 30-70 120-60 160-120 30-45 90-50 130-30l-40 60c-30-10-60 0-80 30-50 70-130 70-160 140-30 70-110 90-140 120z" fill="#3fc3e6" opacity=".85"/>
+        <g fill="none" stroke="#9fd2ea" stroke-width="6" stroke-linecap="round">
+          <path d="M0 520c120-30 200 20 300-10 120-36 160-120 280-140 100-16 150 40 250 10 70-20 110-70 180-110" data-draw/>
+          <path d="M620 600c20-70 90-110 100-180 8-60-20-110 10-170" data-draw/>
+        </g>
+        <g fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round">
+          <path d="M880 0c10 80-40 130-20 210 20 80 90 110 100 190 8 70-30 130-20 200" data-draw/>
+          <path d="M0 330c200 10 330-40 520-30 160 8 230 70 360 80" data-draw/>
+          <path d="M960 400c60-10 120 20 190 0" data-draw/>
+        </g>
+        <g fill="none" stroke="#a7b3c3" stroke-width="5" stroke-linecap="round">
+          <path d="M880 0c10 80-40 130-20 210 20 80 90 110 100 190 8 70-30 130-20 200" data-draw/>
+          <path d="M0 330c200 10 330-40 520-30 160 8 230 70 360 80" data-draw/>
+        </g>
+        <g fill="#c2ead3">
+          <rect x="760" y="250" width="70" height="44" rx="6"/><rect x="930" y="300" width="56" height="40" rx="6"/>
+          <rect x="820" y="420" width="64" height="38" rx="6"/><rect x="980" y="180" width="48" height="36" rx="6"/>
+        </g>
+      </svg>
+      <div class="map-pin" data-pin>
+        <svg viewBox="0 0 34 44" aria-hidden="true"><path d="M17 43s16-14.6 16-26.4C33 7.4 25.8 1 17 1S1 7.4 1 16.6C1 28.4 17 43 17 43z" fill="#e8433a" stroke="#b72a22" stroke-width="1.5"/><circle cx="17" cy="16.5" r="6" fill="#8e1c16"/></svg>
+        <span class="map-pin__ring" data-ring></span>
+      </div>
+      <div class="visit" data-visit>
+        <h1 class="display" id="visit-title" data-split-now>Visit our Store</h1>
+        <p><img src="./assets/svg/ic-pin.svg" alt="" width="33" height="41">Store address, Street name, Davao City, Philippines (placeholder)</p>
+      </div>
+    </section>
+
+    <section class="contact">
+      <form class="contact__form" novalidate data-contact>
+        <h2 class="label-head label-head--xl">Get in touch with us</h2>
+        <div class="fields" data-stagger-group>
+          <div class="field field--half" data-stagger><label for="c-first">First Name</label><input class="input" id="c-first" name="first" autocomplete="given-name" required><span class="field__error" id="c-first-err"></span></div>
+          <div class="field field--half" data-stagger><label for="c-last">Last Name</label><input class="input" id="c-last" name="last" autocomplete="family-name"><span class="field__error" id="c-last-err"></span></div>
+          <div class="field" data-stagger><label for="c-phone">Your Phone Number</label><input class="input" id="c-phone" name="phone" type="tel" autocomplete="tel"><span class="field__error" id="c-phone-err"></span></div>
+          <div class="field" data-stagger><label for="c-email">Your Email Address</label><input class="input" id="c-email" name="email" type="email" autocomplete="email" required><span class="field__error" id="c-email-err"></span></div>
+          <div class="field" data-stagger><label for="c-msg">Your Message</label><textarea class="input" id="c-msg" name="message" placeholder="Questions about an order, a product or a partnership." required></textarea><span class="field__error" id="c-msg-err"></span></div>
+        </div>
+        <button class="btn-action contact__submit" type="submit">Submit</button>
+      </form>
+
+      <div class="contact__side" data-stagger-group>
+        <div class="contact__info contact__about" data-stagger>
+          <h2 class="label-head label-head--xl">Information about us</h2>
+          <p>At <strong>Alchemist</strong>, we are dedicated to empowering your fitness journey with premium-quality supplements trusted by professionals. Based in Davao City, we pride ourselves on making fitness essentials accessible with affordable prices, fast delivery, and flexible payment options.</p>
+          <p>Whether you're building strength, improving endurance, or enhancing recovery, Alchemist Supplements is here to support your goals—delivered conveniently to your doorstep.</p>
+        </div>
+        <div class="contact__info" data-stagger>
+          <h2 class="label-head label-head--xl">Our contact details</h2>
+          <ul class="details">
+            <li><img src="./assets/svg/ic-sms.svg" alt="" width="40" height="40"><span>Contact Number: 0900 000 0000<br>Email: hello@example.com</span></li>
+            <li><img src="./assets/svg/ic-truck.svg" alt="" width="40" height="40"><span>Fast Same-Day Delivery</span></li>
+            <li><img src="./assets/svg/ic-map.svg" alt="" width="40" height="40"><span>Store address, Davao City, Philippines (placeholder)</span></li>
+            <li><img src="./assets/svg/ic-clock.svg" alt="" width="40" height="40"><span>Nationwide Shipping</span></li>
+          </ul>
+        </div>
+        <div class="contact__info" data-stagger>
+          <h2 class="label-head label-head--xl">Follow our socials</h2>
+          <ul class="round-socials">
+            <li><button type="button" aria-label="Facebook" data-toast="Social links are placeholders in this demo."><img src="./assets/svg/soc-fb.svg" alt="" width="50" height="50"></button></li>
+            <li><button type="button" aria-label="Instagram" data-toast="Social links are placeholders in this demo."><img src="./assets/svg/soc-ig.svg" alt="" width="50" height="50"></button></li>
+            <li><button type="button" aria-label="TikTok" data-toast="Social links are placeholders in this demo."><img src="./assets/svg/soc-tiktok.svg" alt="" width="50" height="50"></button></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- @footer -->
+  <!-- Footer -->
+  <footer class="footer">
+    <span class="footer__pattern" aria-hidden="true"></span>
+    <img class="footer__logo" src="./assets/img/footer-logo.webp" alt="Alchemist" width="546" height="87" loading="lazy">
+    <div class="footer__cols" data-stagger-group>
+      <div class="footer__col" data-stagger>
+        <h2>Partnerships</h2>
+        <a class="btn btn--white btn--block" href="contact.html">Partner with us</a>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Follow us</h2>
+        <ul class="socials">
+          <li><img src="./assets/svg/social-1.svg" alt="Facebook" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-2.svg" alt="Telegram" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-3.svg" alt="Instagram" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-4.svg" alt="TikTok" width="40" height="40"></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Shop now</h2>
+        <ul class="footer__links">
+          <li><a href="shop.html?cat=sportswear">Sportswear</a></li>
+          <li><a href="shop.html?cat=supplements">Supplements</a></li>
+          <li><a href="shop.html?cat=accessories">Accessories</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Community</h2>
+        <ul class="footer__links">
+          <li><a href="index.html#about">About us</a></li>
+          <li><a href="index.html#blog">Our blog</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Customer support</h2>
+        <ul class="footer__links">
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">FAQ</button></li>
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">Delivery information</button></li>
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">Returns policy</button></li>
+          <li><a href="cart.html">Orders</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <ul class="footer__legal">
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Privacy Policy</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Terms of Use</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Sales and Refunds</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Legal</button></li>
+      </ul>
+      <p>© 2025 All Rights Reserved</p>
+    </div>
+    <p class="footer__demo">Store design by <a href="https://jysnalegarbes.github.io/work/alchemist/" target="_top">Jayson Alegarbes</a>, built as a live demo. This is not the official Alchemist store: nothing can be bought here, and the bag is saved only in your browser.</p>
+  </footer>
+
+  <div class="toast" role="status" aria-live="polite" data-toast-el></div>
+  <!-- /@footer -->
+
+  <script src="./vendor/gsap.min.js" defer></script>
+  <script src="./vendor/ScrollTrigger.min.js" defer></script>
+  <script src="./vendor/SplitText.min.js" defer></script>
+  <script src="./vendor/lenis.min.js" defer></script>
+  <script src="./js/catalog.js" defer></script>
+  <script src="./js/site.js" defer></script>
+  <script src="./js/contact.js" defer></script>
+</body>
+</html>

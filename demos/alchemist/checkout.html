@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout — Alchemist (store design demo)</title>
+  <meta name="description" content="Checkout page of the Alchemist store design, built as a live demo by Jayson Alegarbes. Nothing is charged or sent.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@100;300;400;500;600;700;900&family=Oswald:wght@500&family=Saira:ital,wght@1,900&display=swap">
+  <link rel="stylesheet" href="./vendor/lenis.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/store.css">
+  <script>
+    document.documentElement.classList.replace('no-js', 'js');
+    setTimeout(function () { document.documentElement.classList.add('is-ready'); }, 2500);
+  </script>
+</head>
+
+<body class="inner" data-page="checkout">
+  <!-- @header -->
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- Header: top bar, Sportswear mega menu, announcements -->
+  <header class="header" data-header>
+    <div class="topbar">
+      <a class="topbar__logo" href="index.html" aria-label="Alchemist, home">
+        <img src="./assets/img/logo.webp" alt="" width="300" height="49">
+      </a>
+      <nav class="topbar__nav" aria-label="Shop">
+        <ul>
+          <li><a href="shop.html?cat=sportswear" data-nav="sportswear" data-mega-trigger aria-expanded="false" aria-controls="mega">Sportswear</a></li>
+          <li><a href="shop.html?cat=supplements" data-nav="supplements">Supplements</a></li>
+          <li><a href="shop.html?cat=accessories" data-nav="accessories">Accessories</a></li>
+          <li><a href="shop.html?cat=bundles" data-nav="bundles">Bundles</a></li>
+        </ul>
+      </nav>
+      <div class="topbar__tools">
+        <form class="search" role="search" action="shop.html" data-search>
+          <label class="visually-hidden" for="q">Search products</label>
+          <input id="q" name="q" type="search" placeholder="Search" autocomplete="off">
+          <button type="submit" aria-label="Search"><img src="./assets/svg/icon-search.svg" alt="" width="24" height="24"></button>
+        </form>
+        <button class="tool tool--cart" type="button" aria-label="Bag" data-cart>
+          <img src="./assets/svg/icon-cart.svg" alt="" width="24" height="24">
+          <span class="cart-count" data-cart-count hidden>0</span>
+        </button>
+        <button class="tool" type="button" aria-label="Account" data-toast="Accounts aren't part of this demo.">
+          <img src="./assets/svg/icon-user.svg" alt="" width="24" height="24">
+        </button>
+        <button class="tool" type="button" aria-label="Wishlist" data-toast="The wishlist isn't part of this demo.">
+          <img src="./assets/svg/icon-heart.svg" alt="" width="24" height="24">
+        </button>
+        <button class="tool tool--menu" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu" data-burger>
+          <img src="./assets/svg/icon-menu.svg" alt="" width="24" height="24">
+        </button>
+      </div>
+    </div>
+    <div class="mega" id="mega" data-mega hidden>
+      <div class="mega__col">
+        <h3>Women</h3>
+        <ul>
+          <li><a href="shop.html?cat=sportswear&amp;tag=new">New Arrivals</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;tag=best">Best Sellers</a></li>
+          <li><a href="shop.html?cat=sportswear">All Products</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=leggings">Leggings</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=sports-bras">Sports Bras</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=joggers">Joggers</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tshirt">T-Shirts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tank-tops">Tank Tops</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=shorts">Shorts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=hoodies">Hoodies &amp; Jackets</a></li>
+        </ul>
+      </div>
+      <div class="mega__col">
+        <h3>Men</h3>
+        <ul>
+          <li><a href="shop.html?cat=sportswear&amp;tag=new">New Arrivals</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;tag=best">Best Sellers</a></li>
+          <li><a href="shop.html?cat=sportswear">All Products</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tshirt">T-Shirts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=shorts">Shorts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=joggers">Joggers</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=hoodies">Hoodies &amp; Jackets</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=stringers">Stringer &amp; Tanks</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=leggings">Leggings/Tights</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="announce" aria-roledescription="carousel" aria-label="Announcements">
+      <button class="announce__arrow" type="button" aria-label="Previous announcement" data-announce-prev><img src="./assets/svg/chevron-left.svg" alt="" width="24" height="24"></button>
+      <div class="announce__track" aria-live="polite">
+        <p class="is-active" data-announce>Clearance Sale</p>
+        <p data-announce>Use code ALCHEMIST for an extra 30% off your first order</p>
+        <p data-announce>Up to 60% off all brands</p>
+      </div>
+      <button class="announce__arrow" type="button" aria-label="Next announcement" data-announce-next><img src="./assets/svg/chevron-right.svg" alt="" width="24" height="24"></button>
+    </div>
+    <nav class="menu" id="menu" aria-label="Menu" data-menu hidden>
+      <ul>
+        <li><a href="shop.html">Shop all</a></li>
+        <li><a href="shop.html?cat=sportswear">Sportswear</a></li>
+        <li><a href="shop.html?cat=supplements">Supplements</a></li>
+        <li><a href="shop.html?cat=accessories">Accessories</a></li>
+        <li><a href="shop.html?cat=bundles">Bundles</a></li>
+        <li><a href="cart.html">Your bag</a></li>
+        <li><a href="index.html#about">About us</a></li>
+        <li><a href="index.html#blog">Our blog</a></li>
+        <li><a href="contact.html">Contact us</a></li>
+      </ul>
+    </nav>
+  </header>
+  <!-- /@header -->
+
+  <main id="main">
+    <div class="page-hero">
+      <img class="page-hero__bg" src="./assets/img/page-hero.webp" alt="" width="1920" height="334" data-hero-bg>
+      <span class="page-hero__dots" aria-hidden="true"></span>
+      <h1 class="page-hero__title display" data-split-now>Checkout</h1>
+    </div>
+
+    <section class="checkout" aria-label="Checkout">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <img src="./assets/svg/home.svg" alt="" width="13" height="13">
+        <a href="index.html">Home</a> / <a href="cart.html">Cart</a> / <span aria-current="page">Checkout</span>
+      </nav>
+      <div data-checkout-view></div>
+    </section>
+  </main>
+
+  <!-- @footer -->
+  <!-- Footer -->
+  <footer class="footer">
+    <span class="footer__pattern" aria-hidden="true"></span>
+    <img class="footer__logo" src="./assets/img/footer-logo.webp" alt="Alchemist" width="546" height="87" loading="lazy">
+    <div class="footer__cols" data-stagger-group>
+      <div class="footer__col" data-stagger>
+        <h2>Partnerships</h2>
+        <a class="btn btn--white btn--block" href="contact.html">Partner with us</a>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Follow us</h2>
+        <ul class="socials">
+          <li><img src="./assets/svg/social-1.svg" alt="Facebook" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-2.svg" alt="Telegram" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-3.svg" alt="Instagram" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-4.svg" alt="TikTok" width="40" height="40"></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Shop now</h2>
+        <ul class="footer__links">
+          <li><a href="shop.html?cat=sportswear">Sportswear</a></li>
+          <li><a href="shop.html?cat=supplements">Supplements</a></li>
+          <li><a href="shop.html?cat=accessories">Accessories</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Community</h2>
+        <ul class="footer__links">
+          <li><a href="index.html#about">About us</a></li>
+          <li><a href="index.html#blog">Our blog</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Customer support</h2>
+        <ul class="footer__links">
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">FAQ</button></li>
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">Delivery information</button></li>
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">Returns policy</button></li>
+          <li><a href="cart.html">Orders</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <ul class="footer__legal">
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Privacy Policy</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Terms of Use</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Sales and Refunds</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Legal</button></li>
+      </ul>
+      <p>© 2025 All Rights Reserved</p>
+    </div>
+    <p class="footer__demo">Store design by <a href="https://jysnalegarbes.github.io/work/alchemist/" target="_top">Jayson Alegarbes</a>, built as a live demo. This is not the official Alchemist store: nothing can be bought here, and the bag is saved only in your browser.</p>
+  </footer>
+
+  <div class="toast" role="status" aria-live="polite" data-toast-el></div>
+  <!-- /@footer -->
+
+  <script src="./vendor/gsap.min.js" defer></script>
+  <script src="./vendor/ScrollTrigger.min.js" defer></script>
+  <script src="./vendor/SplitText.min.js" defer></script>
+  <script src="./vendor/lenis.min.js" defer></script>
+  <script src="./js/catalog.js" defer></script>
+  <script src="./js/site.js" defer></script>
+  <script src="./js/checkout.js" defer></script>
+</body>
+</html>

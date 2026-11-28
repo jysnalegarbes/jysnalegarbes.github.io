@@ -1,0 +1,201 @@
+/*
+  Home page styles as they were during the 2026-10-17 option rounds, shared
+  by the home demos in src/pages/lab/demo/. Frozen: don't follow the site.
+*/
+
+/* Fluid layers sit above the text (so it can invert) but below the portrait */
+.fluid {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.fluid--invert {
+  mix-blend-mode: difference;
+}
+
+.fluid--tint {
+  mix-blend-mode: lighten;
+}
+
+/* Page loader (all four options). Hidden unless <html> is .is-loading. */
+.loader {
+  display: none;
+}
+
+html.is-loading .loader {
+  display: block;
+}
+
+html.is-loading .home__title,
+html.is-loading .home__copy,
+html.header-pending .site-header > *,
+html.is-loading:not([data-loader-option='3']) .home__portrait {
+  visibility: hidden;
+}
+
+/* Static stand-in for the ink until WebGL takes over */
+.loader__cover {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  background: #1e1918;
+}
+
+html[data-loader-option='3'] .loader__cover {
+  display: none;
+}
+
+html[data-loader-option='4'] .loader__cover {
+  z-index: 40;
+  background: var(--black);
+}
+
+/* Curtain's liquid edge, stretched while it lifts */
+.loader__drip {
+  position: absolute;
+  top: 100%;
+  left: -10%;
+  width: 120%;
+  height: 22vh;
+  border-radius: 0 0 50% 50%;
+  background: inherit;
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+.loader__count {
+  position: fixed;
+  bottom: calc(40 * var(--px));
+  left: var(--gutter);
+  z-index: 29;
+  overflow: hidden;
+  font-size: calc(200 * var(--px));
+  line-height: 1;
+  color: var(--black);
+  font-variant-numeric: tabular-nums;
+}
+
+.loader__count span {
+  display: block;
+}
+
+html[data-loader-option='1']:not(.loader-inked) .loader__count,
+html[data-loader-option='2']:not(.loader-inked) .loader__count {
+  color: #ebe6e7;
+}
+
+html[data-loader-option='4'] .loader__count {
+  z-index: 41;
+  color: var(--white);
+}
+
+/* The header has no stacking context on ink pages (green exemption), so the
+   full-height section lets clicks through to it. */
+.home {
+  pointer-events: none;
+}
+
+.home > * {
+  pointer-events: auto;
+}
+
+/* Desktop hero composition (the demos are drawn at 1440×900) */
+.home {
+  --s: min(calc(100vw / 1920), calc(100svh / 1080));
+  position: relative;
+  height: 100svh;
+  min-height: calc(640 * var(--px));
+}
+
+.home__title {
+  font-weight: 600;
+  font-size: calc(170 * var(--s));
+}
+
+.home__uiux,
+.home__visual {
+  position: absolute;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+}
+
+.home__uiux {
+  top: calc(50% - 327 * var(--s));
+  left: calc(var(--gutter) - 32 * var(--s));
+  transform: rotate(180deg);
+}
+
+.home__visual {
+  top: calc(50% - 331 * var(--s));
+  left: calc(var(--gutter) + 118 * var(--s));
+  text-transform: uppercase;
+}
+
+.home__designer {
+  position: absolute;
+  top: calc(50% + 276 * var(--s));
+  left: var(--gutter);
+  font-size: calc(78 * var(--s));
+}
+
+.home__portrait {
+  position: absolute;
+  top: 50%;
+  left: calc(888 * var(--px));
+  z-index: 31;
+  height: calc(655 * var(--s));
+  aspect-ratio: 411 / 655;
+  margin: 0;
+  overflow: hidden;
+  transform: translateY(-50%);
+}
+
+/* The portrait is cropped exactly like the Figma frame */
+.home__hero {
+  position: absolute;
+  top: -11.32%;
+  left: -72.8%;
+  width: 190.23%;
+  height: 119.2%;
+  max-width: none;
+}
+
+.home__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.home__frame[hidden] {
+  display: none;
+}
+
+/* WebGL portrait effects draw the image instead */
+.home__portrait.has-fx {
+  overflow: visible;
+}
+
+.home__portrait.has-fx > img {
+  visibility: hidden;
+}
+
+.home__foot {
+  position: absolute;
+  right: var(--gutter);
+  bottom: calc(60 * var(--px));
+  left: var(--gutter);
+  display: grid;
+  grid-template-columns: calc(828 * var(--px)) 1fr auto;
+  align-items: end;
+  font-size: var(--fs-sm);
+}
+
+.home__love {
+  text-align: right;
+}

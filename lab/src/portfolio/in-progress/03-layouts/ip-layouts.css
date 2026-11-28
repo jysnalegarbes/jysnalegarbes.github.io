@@ -1,0 +1,349 @@
+/*
+  In Progress layout options (?layout=1…5, scripts/ip-layouts/).
+  The gallery fills the screen behind the intro text, which stays on top
+  and inverts over the images (difference) like the card loop's.
+*/
+
+html.ip-layout,
+html.ip-layout body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.ip-layout .ip__grid {
+  display: none;
+}
+
+html.ip-layout .ip {
+  height: 100svh;
+}
+
+html.ip-layout .ip__intro {
+  position: relative;
+  z-index: 2;
+  color: #f5ffff;
+  mix-blend-mode: difference;
+  pointer-events: none;
+}
+
+.ipx-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.ipx-stage.is-dragging {
+  cursor: grabbing;
+}
+
+.ipx-tile {
+  position: relative;
+  overflow: hidden;
+  background: var(--brown);
+}
+
+.ipx-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Cursor label */
+.ipx-label {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  padding: 8px 14px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--bg);
+  background: var(--black);
+  pointer-events: none;
+  margin: 16px 0 0 16px;
+  opacity: 0;
+  scale: 0.6;
+  transform-origin: 0 0;
+  transition:
+    opacity 0.25s ease,
+    scale 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ipx-label.is-on {
+  opacity: 1;
+  scale: 1;
+}
+
+@media (hover: none) {
+  .ipx-label {
+    display: none;
+  }
+}
+
+/* Focus view */
+.ipx-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 20px;
+  cursor: zoom-out;
+}
+
+.ipx-focus__back {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  opacity: 0.94;
+}
+
+.ipx-focus__media {
+  position: relative;
+  /* --ar: the image's own proportions (set by common.ts) */
+  width: min(80vw, calc(72vh * var(--ar, 0.88)));
+  aspect-ratio: var(--ar, 0.88);
+  transform-origin: 50% 50%;
+}
+
+.ipx-focus__cap {
+  position: relative;
+  display: flex;
+  gap: 24px;
+  align-items: baseline;
+  justify-content: space-between;
+  width: min(80vw, calc(72vh * var(--ar, 0.88)));
+  font-weight: 700;
+}
+
+.ipx-focus__title {
+  font-size: calc(24 * var(--px));
+  text-transform: uppercase;
+}
+
+.ipx-focus__close {
+  font-size: var(--fs-sm);
+  color: var(--gray);
+}
+
+/* ---------- 1 Hallway ---------- */
+.ipx-hall__view {
+  position: absolute;
+  inset: 0;
+  perspective-origin: 50% 50%;
+}
+
+.ipx-hall__world {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-style: preserve-3d;
+}
+
+/* Floor / ceiling line pieces (hallway.ts places and fades them) */
+.ipx-hall__line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: rgb(20 25 24 / 0.22);
+  transform-origin: 50% 0;
+  pointer-events: none;
+}
+
+.ipx-hall__line.is-cross {
+  height: 1px;
+}
+
+.ipx-hall__line.is-rail {
+  width: 1px;
+}
+
+.ipx-hall__card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-style: preserve-3d;
+}
+
+.ipx-hall__card .ipx-tile {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ipx-hall__card.is-hover .ipx-tile {
+  transform: rotateY(var(--turn)) scale(1.04);
+}
+
+/* ---------- 2 Infinite canvas ---------- */
+.ipx-canvas__gl {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- 3 Ring ---------- */
+.ipx-ring__view {
+  position: absolute;
+  inset: 0;
+  perspective-origin: 50% 40%;
+}
+
+.ipx-ring__ring {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  transform-style: preserve-3d;
+}
+
+/* Back faces stay visible (faded by ring.ts): backface-visibility: hidden
+   together with the per-card opacity blanked the whole ring in Chrome */
+.ipx-ring__card {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.ipx-ring__card .ipx-tile {
+  width: 100%;
+  height: 100%;
+}
+
+.ipx-ring__title {
+  position: absolute;
+  bottom: calc(60 * var(--px));
+  left: 50%;
+  translate: -50% 0;
+  font-size: calc(32 * var(--px));
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ipx-ring__title.is-in {
+  animation: ipx-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes ipx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5em);
+  }
+}
+
+@media (min-width: 1024px) {
+  .ipx-ring__title {
+    font-size: calc(64 * var(--px));
+  }
+}
+
+/* ---------- 4 Deck ---------- */
+.ipx-deck__pile {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  perspective: 1200px;
+}
+
+.ipx-deck__card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-shadow: 0 20px 50px -24px rgb(20 25 24 / 0.5);
+  will-change: transform;
+}
+
+.ipx-deck__cap {
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  translate: -50% 0;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ipx-deck__num {
+  font-size: var(--fs-sm);
+  color: var(--gray);
+  font-variant-numeric: tabular-nums;
+}
+
+.ipx-deck__title {
+  text-transform: uppercase;
+}
+
+@media (min-width: 1024px) {
+  .ipx-deck__pile,
+  .ipx-deck__cap {
+    left: 62%;
+  }
+}
+
+/* ---------- 5 Table ---------- */
+.ipx-table__desk {
+  position: absolute;
+  inset: 0;
+}
+
+.ipx-table__card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  box-shadow: 0 10px 24px -14px rgb(20 25 24 / 0.5);
+  transition: box-shadow 0.3s ease, scale 0.3s ease;
+}
+
+.ipx-table__card.is-held {
+  scale: 1.05;
+  box-shadow: 0 30px 60px -20px rgb(20 25 24 / 0.55);
+}
+
+.ipx-table__tools {
+  position: absolute;
+  right: var(--gutter);
+  bottom: calc(40 * var(--px));
+  z-index: 3;
+  display: flex;
+  gap: 20px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+
+.ipx-table__tools button {
+  color: var(--gray);
+  transition: color 0.3s ease;
+}
+
+.ipx-table__tools button:hover {
+  color: var(--black);
+}
+
+/* Phones: the hallway, ring and deck sit in the free space under the intro */
+@media (max-width: 1023.98px) {
+  .ipx-hall__view,
+  .ipx-ring__view {
+    top: 30svh;
+  }
+
+  .ipx-ring__title {
+    bottom: calc(40 * var(--px));
+  }
+
+  .ipx-deck__pile,
+  .ipx-deck__cap {
+    top: 64%;
+  }
+}

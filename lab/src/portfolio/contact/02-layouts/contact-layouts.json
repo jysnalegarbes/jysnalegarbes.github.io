@@ -1,0 +1,34 @@
+{
+  "liquid": {
+    "flow": 0.35,
+    "warp": 1,
+    "lens": 0.22,
+    "split": 0.6,
+    "ripple": 1
+  },
+  "dots": {
+    "cell": 14,
+    "push": 1,
+    "radius": 0.2,
+    "wave": 0.4,
+    "green": 1
+  },
+  "seam": {
+    "wobble": 1,
+    "bulge": 1,
+    "speed": 0.4,
+    "split": 0.5
+  },
+  "marquee": {
+    "speed": 1,
+    "wave": 1,
+    "lens": 1,
+    "size": 1
+  },
+  "orb": {
+    "size": 1,
+    "speed": 1,
+    "follow": 1,
+    "gloss": 1
+  }
+}

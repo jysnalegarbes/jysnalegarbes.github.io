@@ -1,0 +1,22 @@
+{
+  "travel": {
+    "duration": 0.9,
+    "blur": 2.4
+  },
+  "swap": {
+    "out": 0.5,
+    "in": 0.65,
+    "gap": 0.05,
+    "blur": 0.12,
+    "lift": 0.25
+  },
+  "gooOutro": {
+    "blur": 0,
+    "stagger": 0,
+    "lift": 60
+  },
+  "maskOutro": {
+    "stagger": 0.05,
+    "lift": 105
+  }
+}

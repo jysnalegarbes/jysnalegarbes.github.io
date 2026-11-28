@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lilly’s — Espresso &amp; Cucina, Rhodes (homepage design demo)</title>
+  <meta name="description" content="Homepage redesign concept for Lilly’s Espresso & Cucina in Rhodes, built as a live demo by Jayson Alegarbes. Not the restaurant’s official website.">
+  <!-- A portfolio demo, not the restaurant's site: keep it out of search results -->
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Open+Sans:wght@300;400;500;700&family=PT+Serif:ital,wght@0,700;1,400&display=swap">
+  <link rel="stylesheet" href="./vendor/lenis.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="preload" as="image" href="./assets/img/hero.webp">
+  <script>
+    document.documentElement.classList.replace('no-js', 'js');
+    setTimeout(function () { document.documentElement.classList.add('is-ready'); }, 2500);
+  </script>
+</head>
+
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="header" data-header>
+    <nav class="header__nav" aria-label="Main">
+      <ul>
+        <li><a href="#top" data-nav>Home</a></li>
+        <li class="has-drop">
+          <button type="button" class="drop-trigger" aria-expanded="false" aria-controls="drop-menu" data-drop>
+            Menu <svg width="8" height="5" viewBox="0 0 8 5" aria-hidden="true"><path d="M.5.5 4 4 7.5.5" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+          </button>
+          <ul class="drop" id="drop-menu" data-drop-panel>
+            <li><a href="#menu">Featured menu</a></li>
+            <li><a href="#dishes">Signature dishes</a></li>
+            <li><a href="#order">Order online</a></li>
+          </ul>
+        </li>
+        <li><a href="#story" data-nav>About</a></li>
+      </ul>
+    </nav>
+
+    <a class="badge header__logo" href="#top" aria-label="Lilly’s, back to top">
+      <img src="./assets/img/logo-white.webp" alt="" width="480" height="480">
+    </a>
+
+    <a class="btn btn--ghost header__cta" href="#order" data-magnetic>Make an order</a>
+
+    <button class="burger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" data-burger>
+      <span></span><span></span>
+    </button>
+  </header>
+
+  <div class="mobile-menu" id="mobile-menu" data-mobile-menu hidden>
+    <ul>
+      <li><a href="#top">Home</a></li>
+      <li><a href="#menu">Menu</a></li>
+      <li><a href="#dishes">Signature dishes</a></li>
+      <li><a href="#story">About</a></li>
+      <li><a href="#order">Order online</a></li>
+    </ul>
+    <a class="btn btn--fill" href="#order">Make an order</a>
+  </div>
+
+  <main id="main">
+    <!-- 1. Hero -->
+    <section class="hero" id="top" data-ripple-scene>
+      <div class="hero__media" data-hero-media>
+        <img src="./assets/img/hero.webp" alt="Wine glasses on a table set for dinner in warm evening light" width="1280" height="848" fetchpriority="high" data-ripple-img>
+        <canvas class="gl" data-ripple-gl aria-hidden="true"></canvas>
+      </div>
+      <div class="hero__shade"></div>
+      <h1 class="hero__title" data-hero-title>
+        A waterfront destination in Rhodes,<br class="d"> serving fresh coffee,<br> Italian-inspired dishes,<br> and memorable dining experiences.
+      </h1>
+      <a class="scroll-cue" href="#day" aria-label="Scroll to the next section" data-scroll-cue>
+        <svg viewBox="0 0 227 227" aria-hidden="true">
+          <circle class="scroll-cue__ring" cx="113.5" cy="113.5" r="112.5"/>
+          <path class="scroll-cue__arrow" d="M113.5 36v155M106 183.5l7.5 7.5 7.5-7.5"/>
+        </svg>
+      </a>
+    </section>
+
+    <!-- 2. By Day -->
+    <section class="split split--day" id="day">
+      <figure class="split__media split__media--left" data-reveal-media="left">
+        <img src="./assets/img/day.webp" alt="A bright café corner with white tables, plants and a big window" width="1280" height="853" loading="lazy" data-parallax>
+      </figure>
+      <div class="split__copy">
+        <h2 class="by"><span class="by__lead" data-rise>By</span> <span class="script" data-script>Day</span></h2>
+        <ul class="lines" data-lines>
+          <li>Fresh coffee.</li>
+          <li>Breakfast by the water.</li>
+          <li>Relaxed moments.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 3. By Night -->
+    <section class="split split--night" id="night">
+      <div class="split__copy split__copy--end">
+        <h2 class="by"><span class="by__lead" data-rise>By</span> <span class="script" data-script>Night</span></h2>
+        <ul class="lines" data-lines>
+          <li>Italian cuisine.</li>
+          <li>Wine.</li>
+          <li>Shared experiences.</li>
+        </ul>
+      </div>
+      <figure class="split__media split__media--right" data-reveal-media="right">
+        <img src="./assets/img/night.webp" alt="Dinner plates and wine glasses on a table in golden evening light" width="1280" height="853" loading="lazy" data-parallax>
+      </figure>
+    </section>
+
+    <!-- 4. Featured menu -->
+    <section class="menu" id="menu" data-menu>
+      <div class="menu__head">
+        <p class="script script--lg" data-script>Discover</p>
+        <h2 class="h2" data-rise>Featured Menu</h2>
+      </div>
+      <figure class="menu__preview" data-menu-preview>
+        <img class="is-on" src="./assets/img/menu-brunch.webp" alt="Fried eggs on toast with beans and a coffee" width="1280" height="853" loading="lazy">
+        <img src="./assets/img/dish-pasta.webp" alt="" width="1100" height="1650" loading="lazy" data-for="0">
+        <img src="./assets/img/dish-salad.webp" alt="" width="1280" height="853" loading="lazy" data-for="1">
+        <img src="./assets/img/dish-burger.webp" alt="" width="1280" height="853" loading="lazy" data-for="2">
+        <img src="./assets/img/dish-sweet.webp" alt="" width="1280" height="854" loading="lazy" data-for="3">
+      </figure>
+      <p class="menu__note" data-rise>Seasonal dishes and wines for memorable evenings.</p>
+      <ol class="menu__list" data-menu-list>
+        <li>
+          <a href="#dishes" class="menu__row" data-row="0">
+            <span class="eyebrow">Chef’s specialties</span>
+            <span class="menu__name">Dinner</span>
+            <svg class="menu__arrow" viewBox="0 0 48 16" aria-hidden="true"><path d="M0 8h46M39 1l7 7-7 7"/></svg>
+          </a>
+        </li>
+        <li>
+          <a href="#dishes" class="menu__row" data-row="1">
+            <span class="eyebrow">Daytime dining</span>
+            <span class="menu__name">Lunch</span>
+            <svg class="menu__arrow" viewBox="0 0 48 16" aria-hidden="true"><path d="M0 8h46M39 1l7 7-7 7"/></svg>
+          </a>
+        </li>
+        <li>
+          <a href="#dishes" class="menu__row" data-row="2">
+            <span class="eyebrow">Chef’s specialties</span>
+            <span class="menu__name">Dinner</span>
+            <svg class="menu__arrow" viewBox="0 0 48 16" aria-hidden="true"><path d="M0 8h46M39 1l7 7-7 7"/></svg>
+          </a>
+        </li>
+        <li>
+          <a href="#dishes" class="menu__row" data-row="3">
+            <span class="eyebrow">Sweet indulgences</span>
+            <span class="menu__name">Dessert</span>
+            <svg class="menu__arrow" viewBox="0 0 48 16" aria-hidden="true"><path d="M0 8h46M39 1l7 7-7 7"/></svg>
+          </a>
+        </li>
+      </ol>
+    </section>
+
+    <!-- 5. Signature dishes -->
+    <div id="dishes">
+      <section class="dish" id="pasta">
+        <figure class="dish__media" data-reveal-media="up">
+          <img src="./assets/img/dish-pasta.webp" alt="Prawn linguine with cherry tomatoes and basil" width="1100" height="1650" loading="lazy" data-parallax>
+        </figure>
+        <div class="dish__copy">
+          <h3 class="h2" data-chars>Fresh Pasta</h3>
+          <p class="body-lg" data-rise>House-made classics inspired by Italian tradition, crafted with seasonal ingredients and bold flavours.</p>
+        </div>
+      </section>
+
+      <section class="dish dish--flip" id="salads">
+        <figure class="dish__media" data-reveal-media="up">
+          <img src="./assets/img/dish-salad.webp" alt="Grilled salmon on lettuce with avocado, cherry tomatoes and lemon" width="1280" height="853" loading="lazy" data-parallax>
+        </figure>
+        <div class="dish__copy">
+          <h3 class="h2" data-chars>Seasonal Salads</h3>
+          <p class="body-lg" data-rise>Fresh produce, vibrant textures, and lighter dishes designed for relaxed lunches by the water.</p>
+        </div>
+      </section>
+
+      <section class="dish" id="burgers">
+        <figure class="dish__media" data-reveal-media="up">
+          <img src="./assets/img/dish-burger.webp" alt="Burger with a copper cup of thick-cut fries on a dark timber table" width="1280" height="853" loading="lazy" data-parallax>
+        </figure>
+        <div class="dish__copy">
+          <h3 class="h2" data-chars>Signature Burgers</h3>
+          <p class="body-lg" data-rise>Comfort favourites prepared with quality ingredients and served with a contemporary touch.</p>
+        </div>
+      </section>
+
+      <section class="dish dish--flip" id="sweet">
+        <figure class="dish__media" data-reveal-media="up">
+          <img src="./assets/img/dish-sweet.webp" alt="A slice of tiramisu dusted with cocoa" width="1280" height="854" loading="lazy" data-parallax>
+        </figure>
+        <div class="dish__copy">
+          <h3 class="h2" data-chars>Sweet Endings</h3>
+          <p class="body-lg" data-rise>From house-made treats to indulgent classics, every meal deserves a memorable finish.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- 6. The space -->
+    <section class="space" id="space" data-ripple-scene>
+      <div class="space__media">
+        <img src="./assets/img/space.webp" alt="" width="1280" height="851" loading="lazy" data-ripple-img>
+        <canvas class="gl" data-ripple-gl aria-hidden="true"></canvas>
+      </div>
+      <div class="hero__shade"></div>
+      <h2 class="space__title" data-words>Designed for Long Lunches and Memorable Evenings</h2>
+    </section>
+
+    <!-- 7. Our story -->
+    <section class="story" id="story">
+      <figure class="arch arch--left" data-arch>
+        <img src="./assets/img/story-bar.webp" alt="A chrome espresso machine on the café counter" width="853" height="1280" loading="lazy">
+      </figure>
+      <div class="story__copy">
+        <p class="script script--lg" data-script>Our Story</p>
+        <h2 class="h2" data-rise>Serving Rhodes Since 2006</h2>
+        <div class="story__body" data-lines>
+          <p>For almost two decades, Lilly’s has been a gathering place for locals, families, and friends.</p>
+          <p>By day, we serve fresh coffee and relaxed meals by the water.</p>
+          <p>By night, Lilly’s transforms into an Italian-inspired dining destination where good food, wine, and conversation come together.</p>
+          <p>From breakfast to dinner, we welcome guests seven days a week.</p>
+        </div>
+        <a class="text-link" href="#story" data-toast="The full story page isn’t part of this demo.">Read our story</a>
+      </div>
+      <figure class="arch arch--right" data-arch>
+        <img src="./assets/img/story-wine.webp" alt="A narrow dining room lined with shelves of wine under copper lamps" width="913" height="1280" loading="lazy">
+      </figure>
+    </section>
+
+    <!-- 8. Order -->
+    <section class="order" id="order">
+      <figure class="order__media" data-reveal-media="left">
+        <img src="./assets/img/order.webp" alt="Two pizzas and a glass of white wine on a café table" width="1024" height="1280" loading="lazy" data-parallax>
+      </figure>
+      <div class="order__copy">
+        <p class="script script--lg" data-script>Order</p>
+        <h2 class="h2" data-rise>Enjoy Lilly’s Wherever You Are</h2>
+        <p class="order__text" data-rise>Fresh coffee, Italian-inspired dishes, and your favourites delivered across Rhodes and surrounding areas.</p>
+        <div class="order__btns" data-lines>
+          <a class="btn btn--fill" href="#apps" data-magnetic>Order delivery</a>
+          <a class="btn btn--line" href="tel:+61200000000" data-magnetic data-toast="Demo: the pickup number is a placeholder.">Call for pickup</a>
+        </div>
+        <ul class="apps" id="apps" aria-label="Order through">
+          <li><a href="#apps" data-toast="Demo: delivery links aren’t connected." aria-label="Uber Eats"><img src="./assets/img/app-ubereats.webp" alt="" width="250" height="250" loading="lazy"></a></li>
+          <li><a href="#apps" data-toast="Demo: delivery links aren’t connected." aria-label="DoorDash"><img src="./assets/img/app-doordash.webp" alt="" width="250" height="250" loading="lazy"></a></li>
+          <li><a href="#apps" data-toast="Demo: delivery links aren’t connected." aria-label="Menulog"><img src="./assets/img/app-menulog.webp" alt="" width="223" height="226" loading="lazy"></a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- 9. Footer -->
+  <footer class="footer" id="footer">
+    <div class="footer__brand">
+      <a class="badge badge--lg" href="#top" aria-label="Lilly’s, back to top" data-footer-badge>
+        <img src="./assets/img/logo-white.webp" alt="" width="480" height="480" loading="lazy">
+      </a>
+      <p class="footer__tag" data-rise>Espresso &amp; Cucina</p>
+    </div>
+    <div class="footer__cols">
+      <nav class="fcol" aria-label="Explore">
+        <h2 class="fcol__title">Explore</h2>
+        <ul>
+          <li><a href="#top">Home</a></li>
+          <li><a href="#menu">Menu</a></li>
+          <li><a href="#story">Our Story</a></li>
+          <li><a href="#footer" data-toast="Reservations aren’t part of this demo.">Reservations</a></li>
+          <li><a href="#footer" data-toast="The contact page isn’t part of this demo.">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="fcol">
+        <h2 class="fcol__title">Visit</h2>
+        <ul>
+          <li>Rhodes, NSW 2138</li>
+          <!-- Placeholders: the demo doesn't publish the restaurant's real details -->
+          <li><a href="tel:+61200000000">+61 2 0000 0000</a></li>
+          <li><a href="mailto:hello@example.com">hello@example.com</a></li>
+        </ul>
+      </div>
+      <div class="fcol">
+        <h2 class="fcol__title">Hours</h2>
+        <ul>
+          <li>Monday–Sunday</li>
+          <li>Breakfast • Lunch • Dinner</li>
+        </ul>
+      </div>
+      <nav class="fcol" aria-label="Follow">
+        <h2 class="fcol__title">Follow</h2>
+        <ul>
+          <li><a href="#footer" data-toast="Demo: social links aren’t connected.">Instagram</a></li>
+          <li><a href="#footer" data-toast="Demo: social links aren’t connected.">Facebook</a></li>
+        </ul>
+      </nav>
+    </div>
+    <p class="footer__note">Design concept by Jayson Alegarbes. Not the official Lilly’s website.</p>
+  </footer>
+
+  <div class="toast" role="status" aria-live="polite" data-toast-el></div>
+
+  <script src="./vendor/gsap.min.js" defer></script>
+  <script src="./vendor/ScrollTrigger.min.js" defer></script>
+  <script src="./vendor/SplitText.min.js" defer></script>
+  <script src="./vendor/lenis.min.js" defer></script>
+  <script src="./js/ripple-gl.js" defer></script>
+  <script src="./js/main.js" defer></script>
+</body>
+</html>

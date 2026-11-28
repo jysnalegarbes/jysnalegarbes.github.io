@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agos Plumbing &amp; Fire Co. — Plumbing &amp; fire protection (landing page design demo)</title>
+  <meta name="description" content="Landing page concept for Agos Plumbing & Fire Co., a fictional plumbing and fire protection company, built as a live demo by Jayson Alegarbes.">
+  <!-- A portfolio demo with a fictional brand: keep it out of search results -->
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,400;0,500;0,700;0,800;0,900;1,400;1,700&family=Mrs+Saint+Delafield&display=swap">
+  <link rel="stylesheet" href="./vendor/lenis.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="preload" as="image" href="./assets/img/hero.webp">
+  <script>
+    document.documentElement.classList.replace('no-js', 'js');
+    setTimeout(function () { document.documentElement.classList.add('is-ready'); }, 2500);
+  </script>
+</head>
+
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- Brand mark, reused in the header and footer -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="agos-drop" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#6b98ff" />
+        <stop offset="1" stop-color="#004cff" />
+      </linearGradient>
+      <symbol id="agos-mark" viewBox="0 0 64 64">
+        <path class="mark__drop" d="M32 3.5C32 3.5 11 27.6 11 41.5a21 21 0 0 0 42 0C53 27.6 32 3.5 32 3.5Z" fill="url(#agos-drop)" />
+        <path class="mark__wave" d="M18.5 40.5c4.4-3.3 9-3.3 13.5 0s9.1 3.3 13.5 0" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" />
+        <path class="mark__wave" d="M22.5 49c3.2-2.4 6.3-2.4 9.5 0s6.3 2.4 9.5 0" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" opacity=".75" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="header" data-header>
+    <div class="header__bar">
+      <a class="logo" href="#top" aria-label="Agos Plumbing &amp; Fire Co., back to top">
+        <svg class="logo__mark" aria-hidden="true"><use href="#agos-mark" /></svg>
+        <span class="logo__text"><span class="logo__name">AGOS</span><span class="logo__tag">Plumbing &amp; Fire · Est. 1968</span></span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <ul>
+          <li><a href="#top" data-spy="top" class="is-active">Home</a></li>
+          <li><a href="#about" data-spy="about">About Us</a></li>
+          <li><a href="#services" data-spy="services">Services</a></li>
+          <li><a href="#products" data-spy="products">Products</a></li>
+          <li><a href="#contact" data-spy="contact">Contact Us</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn--fill header__cta" href="#contact"><span>Request A Quote</span></a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu" data-burger>
+        <span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="mobile-menu" id="mobile-menu" data-mobile-menu hidden>
+    <ul>
+      <li><a href="#top">Home</a></li>
+      <li><a href="#about">About Us</a></li>
+      <li><a href="#services">Services</a></li>
+      <li><a href="#products">Products</a></li>
+      <li><a href="#blogs">Blogs</a></li>
+      <li><a href="#contact">Contact Us</a></li>
+    </ul>
+    <a class="btn btn--fill" href="#contact"><span>Request A Quote</span></a>
+  </div>
+
+  <main id="main">
+
+    <!-- Hero -->
+    <section class="hero" id="top">
+      <h1 class="hero__title" data-hero-title>Pioneering Plumbing &amp; Fire Protection <span class="accent">Since&nbsp;1968</span></h1>
+      <div class="hero__ctas" data-hero-ctas>
+        <a class="btn btn--fill" href="#services"><span>Explore Services</span></a>
+        <a class="btn btn--line" href="#contact"><span>Request A Quote</span></a>
+      </div>
+      <div class="hero__media" data-hero-media>
+        <div class="hero__frame">
+          <img src="./assets/img/hero.webp" alt="Gloved hands tightening a valve on a run of steel pipes" width="1920" height="1076" data-hero-img>
+        </div>
+        <svg class="hero__notch" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,0 100,0 50,10" /></svg>
+      </div>
+    </section>
+
+    <!-- Featured products -->
+    <section class="products" id="products" aria-labelledby="products-title">
+      <div class="head head--center">
+        <p class="chip" data-chip>Our Featured Products</p>
+        <h2 class="h2" id="products-title" data-rise>Reliable Products. Reliable Performance.</h2>
+      </div>
+      <ul class="prods">
+        <li class="prod">
+          <h3>Pipes &amp; Fittings</h3>
+          <a class="prod__card" href="#products" data-toast="Demo: the product catalogue isn't part of this design.">
+            <img class="prod__img prod__img--pipes" src="./assets/img/prod-pipes.webp" alt="Blue PVC pipe elbows, tees and couplings" width="640" height="464" loading="lazy">
+            <span class="more">View All <i class="arrow" aria-hidden="true"></i></span>
+          </a>
+        </li>
+        <li class="prod">
+          <h3>Valves &amp; Controls</h3>
+          <a class="prod__card" href="#products" data-toast="Demo: the product catalogue isn't part of this design.">
+            <img class="prod__img prod__img--valves" src="./assets/img/prod-valves.webp" alt="Three stainless steel ball valves" width="680" height="428" loading="lazy">
+            <span class="more">View All <i class="arrow" aria-hidden="true"></i></span>
+          </a>
+        </li>
+        <li class="prod">
+          <h3>Sanitary Fixtures</h3>
+          <a class="prod__card" href="#products" data-toast="Demo: the product catalogue isn't part of this design.">
+            <img class="prod__img prod__img--fixtures" src="./assets/img/prod-fixtures.webp" alt="White close-coupled toilet" width="440" height="664" loading="lazy">
+            <span class="more">View All <i class="arrow" aria-hidden="true"></i></span>
+          </a>
+        </li>
+        <li class="prod">
+          <h3>Fire Protection Equipment</h3>
+          <a class="prod__card" href="#products" data-toast="Demo: the product catalogue isn't part of this design.">
+            <img class="prod__img prod__img--fire" src="./assets/img/prod-fire.webp" alt="Chrome ceiling fire sprinkler head" width="520" height="364" loading="lazy">
+            <span class="more">View All <i class="arrow" aria-hidden="true"></i></span>
+          </a>
+        </li>
+      </ul>
+      <div class="center" data-pop>
+        <a class="btn btn--fill" href="#products" data-toast="Demo: the product catalogue isn't part of this design."><span>Browse Products</span></a>
+      </div>
+    </section>
+
+    <!-- Services + About share one raised panel -->
+    <div class="panel" data-panel>
+      <section class="services" id="services" aria-labelledby="services-title">
+        <div class="services__intro">
+          <p class="chip" data-chip>Our Core Services</p>
+          <h2 class="h2" id="services-title" data-rise>End-to-End Plumbing &amp; Building Solutions You Can Trust</h2>
+          <p class="body" data-rise>We specialize in Plumbing-Sanitary and Fire Protection systems—designed, installed, and maintained with precision to meet safety standards and project demands.</p>
+          <a class="btn btn--fill" href="#services" data-toast="Demo: the services page isn't part of this design." data-pop><span>View Full Services</span></a>
+        </div>
+        <article class="svc" data-svc>
+          <img class="svc__icon" src="./assets/svg/icon-plumbing.svg" alt="" width="102" height="100" aria-hidden="true">
+          <h3>Sanitary Plumbing Systems</h3>
+          <p>Safe, efficient, and compliant water and waste systems for residential, commercial, and industrial use.</p>
+          <div class="svc__img"><img src="./assets/img/svc-plumbing.webp" alt="Plumber in orange gloves fitting a chrome sink trap" width="1000" height="667" loading="lazy"></div>
+          <a class="more" href="#services" data-toast="Demo: service pages aren't part of this design.">Learn More <i class="arrow" aria-hidden="true"></i></a>
+        </article>
+        <article class="svc" data-svc>
+          <img class="svc__icon" src="./assets/svg/icon-fire.svg" alt="" width="103" height="100" aria-hidden="true">
+          <h3>Fire Protection Systems</h3>
+          <p>Fire suppression systems including sprinklers, pumps, and standpipes built to meet safety codes and protect lives.</p>
+          <div class="svc__img"><img src="./assets/img/svc-fire.webp" alt="Fire extinguisher, hard hat and ear defenders in a locker room" width="1000" height="667" loading="lazy"></div>
+          <a class="more" href="#services" data-toast="Demo: service pages aren't part of this design.">Learn More <i class="arrow" aria-hidden="true"></i></a>
+        </article>
+      </section>
+
+      <section class="about" id="about" aria-labelledby="about-title">
+        <div class="about__bg" aria-hidden="true"></div>
+        <div class="about__story">
+          <p class="chip" data-chip>About Agos</p>
+          <h2 class="h2" id="about-title" data-rise>Decades of Expertise in Plumbing and Fire Protection</h2>
+          <div class="about__letter" data-rise-group>
+            <p>At <b>Agos Plumbing &amp; Fire Co.</b>, we believe that excellence is built through dedication, integrity, and innovation. Since our establishment, we have remained committed to providing top-quality plumbing and building services that meet the highest standards of safety, functionality, and reliability.</p>
+            <p>As we continue to grow, we remain focused on <b>innovation, safety, and customer satisfaction</b>—ensuring Agos remains a trusted name in the industry.</p>
+            <p>Thank you for trusting Agos. We look forward to building the future with you.</p>
+          </div>
+          <div class="sign">
+            <p class="sign__who"><strong>Ramon D. Alcaraz</strong><span>Founder</span></p>
+            <p class="sign__script" aria-hidden="true" data-sign>Ramon Alcaraz</p>
+          </div>
+        </div>
+        <figure class="about__portrait" data-portrait>
+          <img src="./assets/img/founder.webp" alt="Portrait of the founder in a grey three-piece suit and blue tie" width="920" height="1330" loading="lazy">
+        </figure>
+        <div class="about__side">
+          <ul class="stats" aria-label="Agos in numbers">
+            <li class="stat stat--1" data-stat><strong><span data-count="55">55</span>+ Years</strong><span>Industry Experience</span></li>
+            <li class="stat stat--2" data-stat><strong><span data-count="500">500</span>+</strong><span>Clients</span></li>
+            <li class="stat stat--3" data-stat><strong><span data-count="1000" data-comma>1,000</span>+</strong><span>Projects</span></li>
+          </ul>
+          <div class="mission">
+            <h3 class="h2" data-rise>Mission-Vision</h3>
+            <p class="body" data-rise>At Agos, we strive to provide better living for Filipinos through better plumbing. Our efforts to maintain the status of Agos as a pioneer in the industry are not solely focused on a high standard of quality of plumbing works but also continuous improvement in the realm of Plumbing-Sanitary and Fire Protection.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Call to action -->
+    <section class="cta" aria-labelledby="cta-title" data-cta>
+      <div class="cta__bg" aria-hidden="true"><img src="./assets/img/cta-bg.webp" alt="" width="1920" height="1130" loading="lazy" data-cta-img></div>
+      <div class="cta__copy">
+        <h2 class="cta__title" id="cta-title" data-rise>Need expert plumbing or fire protection solutions?</h2>
+        <p data-rise>Partner with Agos for reliable plumbing and fire protection systems built on quality, safety, and trust.</p>
+      </div>
+      <div class="cta__btns" data-pop-group>
+        <a class="btn btn--fill btn--xl" href="#contact" data-magnetic data-toast="Demo: the quote form isn't part of this design."><span>Get a Quote</span></a>
+        <a class="btn btn--ghost btn--xl" href="#contact" data-magnetic data-toast="Demo: contact details are placeholders in this design demo."><span>Talk to Us</span></a>
+      </div>
+    </section>
+
+    <!-- Blogs -->
+    <section class="blogs" id="blogs" aria-labelledby="blogs-title">
+      <div class="blogs__head">
+        <div>
+          <p class="chip" data-chip>Latest Blogs</p>
+          <h2 class="h2" id="blogs-title" data-rise>Insights &amp; Industry Updates</h2>
+        </div>
+        <div class="blogs__intro">
+          <p class="body" data-rise>We don’t just build systems—we share knowledge. Discover best practices, compliance essentials, and innovations shaping the future of plumbing and fire safety.</p>
+          <a class="btn btn--fill" href="#blogs" data-toast="Demo: the blog isn't part of this design." data-pop><span>View All Blogs</span></a>
+        </div>
+      </div>
+      <div class="posts">
+        <article class="post post--lead" data-post>
+          <div class="post__img"><img src="./assets/img/blog-1.webp" alt="Technician in a hard hat checking a pressure gauge on a red pipe" width="1400" height="933" loading="lazy"></div>
+          <div class="post__body">
+            <h3>Plumbing-Sanitary 101: What You Should Know</h3>
+            <p>Decades of successful projects across residential, commercial, and industrial sectors.</p>
+            <a class="more" href="#blogs" data-toast="Demo: blog posts aren't part of this design.">Learn More <i class="arrow" aria-hidden="true"></i></a>
+          </div>
+        </article>
+        <article class="post" data-post>
+          <div class="post__img"><img src="./assets/img/blog-2.webp" alt="Inspector in a high-visibility jacket filling in a checklist" width="700" height="467" loading="lazy"></div>
+          <div class="post__body">
+            <h3>Fire Safety Requirements for Commercial Spaces</h3>
+            <p>Ensure your property stays compliant and secure.</p>
+            <a class="more" href="#blogs" data-toast="Demo: blog posts aren't part of this design.">Learn More <i class="arrow" aria-hidden="true"></i></a>
+          </div>
+        </article>
+        <article class="post" data-post>
+          <div class="post__img"><img src="./assets/img/blog-3.webp" alt="Team reviewing plans around an architectural model" width="700" height="467" loading="lazy"></div>
+          <div class="post__body">
+            <h3>Choosing the Right Materials for Your Project</h3>
+            <p>Long-term performance starts with quality materials.</p>
+            <a class="more" href="#blogs" data-toast="Demo: blog posts aren't part of this design.">Learn More <i class="arrow" aria-hidden="true"></i></a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="contact">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <a class="flogo" href="#top" aria-label="Agos Plumbing &amp; Fire Co., back to top">
+          <svg class="flogo__mark" aria-hidden="true"><use href="#agos-mark" /></svg>
+          <span class="flogo__name">AGOS</span>
+          <span class="flogo__full">Agos Plumbing &amp; Fire Co.</span>
+          <span class="flogo__tag">Committed to integrity and better living since 1968</span>
+        </a>
+        <ul class="socials" aria-label="Social media">
+          <li><a class="social social--fb" href="#" data-toast="Demo: social links are placeholders."><span class="visually-hidden">Facebook</span></a></li>
+          <li><a class="social social--ig" href="#" data-toast="Demo: social links are placeholders."><span class="visually-hidden">Instagram</span></a></li>
+          <li><a class="social social--in" href="#" data-toast="Demo: social links are placeholders."><span class="visually-hidden">LinkedIn</span></a></li>
+          <li><a class="social social--x" href="#" data-toast="Demo: social links are placeholders."><span class="visually-hidden">X</span></a></li>
+        </ul>
+      </div>
+      <form class="news" data-news novalidate>
+        <h2>Subscribe to Our Newsletter</h2>
+        <p>Signup to get updates and news about our latest offerings.</p>
+        <div class="news__field">
+          <label class="visually-hidden" for="news-email">Email address</label>
+          <input id="news-email" type="email" name="email" placeholder="Enter your email" autocomplete="email" required>
+          <button class="btn btn--fill" type="submit"><span>Submit</span></button>
+        </div>
+        <p class="news__msg" role="status" aria-live="polite" data-news-msg></p>
+      </form>
+    </div>
+
+    <div class="footer__cols">
+      <div class="fcol">
+        <h3>Quick Links</h3>
+        <ul>
+          <li><a href="#top">Home</a></li>
+          <li><a href="#about">About Us</a></li>
+          <li><a href="#services">Services</a></li>
+          <li><a href="#products">Products</a></li>
+          <li><a href="#blogs">Blogs</a></li>
+          <li><a href="#contact">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="fcol">
+        <h3>Services</h3>
+        <ul>
+          <li><a href="#services">Sanitary Plumbing Systems</a></li>
+          <li><a href="#services">Fire Protection Systems</a></li>
+        </ul>
+      </div>
+      <div class="fcol">
+        <h3>Support</h3>
+        <ul>
+          <li><a href="#" data-toast="Demo: support pages aren't part of this design.">FAQ’s</a></li>
+          <li><a href="#" data-toast="Demo: legal pages aren't part of this design.">Privacy Policy</a></li>
+          <li><a href="#" data-toast="Demo: legal pages aren't part of this design.">Terms &amp; Conditions</a></li>
+        </ul>
+      </div>
+      <div class="fcol fcol--office">
+        <h3>Head Office:</h3>
+        <p class="ico ico--pin">000 Sample Street, San Fernando, Pampanga</p>
+        <h3>Satellite Office:</h3>
+        <p class="ico ico--pin">Unit 0, Sample Building, Diliman, Quezon City</p>
+      </div>
+      <div class="fcol fcol--reach">
+        <h3>Tel Nos.:</h3>
+        <p class="ico ico--phone">(02) 8000-0000 / (02) 8000-0001</p>
+        <h3>Email address:</h3>
+        <p class="ico ico--mail"><a href="mailto:hello@example.com">hello@example.com</a></p>
+        <p class="ico ico--mail">www.example.com</p>
+      </div>
+    </div>
+
+    <p class="footer__copy">&copy; 2025 Agos Plumbing &amp; Fire Co. All Rights Reserved. <span>A fictional brand: design demo by Jayson Alegarbes.</span></p>
+  </footer>
+
+  <div class="toast" role="status" aria-live="polite" data-toast-el></div>
+
+  <script src="./vendor/gsap.min.js" defer></script>
+  <script src="./vendor/ScrollTrigger.min.js" defer></script>
+  <script src="./vendor/SplitText.min.js" defer></script>
+  <script src="./vendor/lenis.min.js" defer></script>
+  <script src="./js/main.js" defer></script>
+</body>
+</html>

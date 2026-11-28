@@ -1,0 +1,91 @@
+  /* "View Project" tooltip (work-tooltip.ts), on <body>: global */
+  :global(.work-tip) {
+    --tip-size: 1;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--tip-size));
+    font-weight: 700;
+    font-size: calc(13px * var(--tip-size));
+    line-height: 1;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    text-transform: uppercase;
+    pointer-events: none;
+    visibility: hidden;
+    transform-origin: 0 0;
+  }
+
+  /* 1 Pill */
+  :global(.work-tip[data-style='1']) {
+    padding: calc(10px * var(--tip-size)) calc(14px * var(--tip-size));
+    border-radius: 999px;
+    background: var(--black);
+    color: var(--white);
+  }
+
+  :global(.work-tip__dot) {
+    width: calc(7px * var(--tip-size));
+    height: calc(7px * var(--tip-size));
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  :global(.work-tip[data-style='1'] .work-tip__arrow) {
+    font-size: 1.1em;
+  }
+
+  /* 2 Ink Disc: centred on the cursor, which it replaces */
+  :global(.work-tip[data-style='2']) {
+    --d: calc(112px * var(--tip-size));
+    justify-content: center;
+    width: var(--d);
+    height: var(--d);
+    margin: calc(var(--d) / -2) 0 0 calc(var(--d) / -2);
+    color: var(--white);
+    transform-origin: 50% 50%;
+  }
+
+  :global(.work-tip__disc) {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--black);
+  }
+
+  :global(.work-tip[data-style='2'] .work-tip__text) {
+    position: relative;
+    font-size: 1.05em;
+  }
+
+  :global(.work-tip[data-style='2'] .serif-italic) {
+    font-weight: 400;
+    text-transform: none;
+    font-size: 1.25em;
+  }
+
+  .work:global(.has-tip-disc.is-tip) :global(.work-item.is-current) .work-item__link {
+    cursor: none;
+  }
+
+  /* 3 Split Label: letters rise through a mask; inverts over the photo */
+  :global(.work-tip[data-style='3']) {
+    gap: calc(6px * var(--tip-size));
+    color: #f5ffff; /* in difference mode: --black on --bg, light on dark */
+    mix-blend-mode: difference;
+    font-size: calc(15px * var(--tip-size));
+    text-transform: none;
+  }
+
+  :global(.work-tip[data-style='3'] .work-tip__text),
+  :global(.work-tip[data-style='3']) {
+    overflow: hidden;
+  }
+
+  :global(.work-tip__char),
+  :global(.work-tip[data-style='3'] .work-tip__arrow) {
+    display: inline-block;
+  }

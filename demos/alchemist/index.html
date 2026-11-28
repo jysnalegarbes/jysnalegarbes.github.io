@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alchemist — Supplements &amp; sportswear (homepage design demo)</title>
+  <meta name="description" content="Homepage design proposal for Alchemist, built as a live demo by Jayson Alegarbes. Not the brand's official store.">
+  <!-- A portfolio demo, not the brand's store: keep it out of search results -->
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@100;300;400;500;600;700;900&family=Oswald:wght@500&family=Saira:ital,wght@1,900&display=swap">
+  <link rel="stylesheet" href="./vendor/lenis.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/store.css">
+  <link rel="preload" as="image" href="./assets/img/hero-1.webp">
+  <script>
+    document.documentElement.classList.replace('no-js', 'js');
+    setTimeout(function () { document.documentElement.classList.add('is-ready'); }, 2500);
+  </script>
+</head>
+
+<body data-home>
+  <!-- @header -->
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- Header: top bar, Sportswear mega menu, announcements -->
+  <header class="header" data-header>
+    <div class="topbar">
+      <a class="topbar__logo" href="index.html" aria-label="Alchemist, home">
+        <img src="./assets/img/logo.webp" alt="" width="300" height="49">
+      </a>
+      <nav class="topbar__nav" aria-label="Shop">
+        <ul>
+          <li><a href="shop.html?cat=sportswear" data-nav="sportswear" data-mega-trigger aria-expanded="false" aria-controls="mega">Sportswear</a></li>
+          <li><a href="shop.html?cat=supplements" data-nav="supplements">Supplements</a></li>
+          <li><a href="shop.html?cat=accessories" data-nav="accessories">Accessories</a></li>
+          <li><a href="shop.html?cat=bundles" data-nav="bundles">Bundles</a></li>
+        </ul>
+      </nav>
+      <div class="topbar__tools">
+        <form class="search" role="search" action="shop.html" data-search>
+          <label class="visually-hidden" for="q">Search products</label>
+          <input id="q" name="q" type="search" placeholder="Search" autocomplete="off">
+          <button type="submit" aria-label="Search"><img src="./assets/svg/icon-search.svg" alt="" width="24" height="24"></button>
+        </form>
+        <button class="tool tool--cart" type="button" aria-label="Bag" data-cart>
+          <img src="./assets/svg/icon-cart.svg" alt="" width="24" height="24">
+          <span class="cart-count" data-cart-count hidden>0</span>
+        </button>
+        <button class="tool" type="button" aria-label="Account" data-toast="Accounts aren't part of this demo.">
+          <img src="./assets/svg/icon-user.svg" alt="" width="24" height="24">
+        </button>
+        <button class="tool" type="button" aria-label="Wishlist" data-toast="The wishlist isn't part of this demo.">
+          <img src="./assets/svg/icon-heart.svg" alt="" width="24" height="24">
+        </button>
+        <button class="tool tool--menu" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu" data-burger>
+          <img src="./assets/svg/icon-menu.svg" alt="" width="24" height="24">
+        </button>
+      </div>
+    </div>
+    <div class="mega" id="mega" data-mega hidden>
+      <div class="mega__col">
+        <h3>Women</h3>
+        <ul>
+          <li><a href="shop.html?cat=sportswear&amp;tag=new">New Arrivals</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;tag=best">Best Sellers</a></li>
+          <li><a href="shop.html?cat=sportswear">All Products</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=leggings">Leggings</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=sports-bras">Sports Bras</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=joggers">Joggers</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tshirt">T-Shirts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tank-tops">Tank Tops</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=shorts">Shorts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=hoodies">Hoodies &amp; Jackets</a></li>
+        </ul>
+      </div>
+      <div class="mega__col">
+        <h3>Men</h3>
+        <ul>
+          <li><a href="shop.html?cat=sportswear&amp;tag=new">New Arrivals</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;tag=best">Best Sellers</a></li>
+          <li><a href="shop.html?cat=sportswear">All Products</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=tshirt">T-Shirts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=shorts">Shorts</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=joggers">Joggers</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=hoodies">Hoodies &amp; Jackets</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=stringers">Stringer &amp; Tanks</a></li>
+          <li><a href="shop.html?cat=sportswear&amp;type=leggings">Leggings/Tights</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="announce" aria-roledescription="carousel" aria-label="Announcements">
+      <button class="announce__arrow" type="button" aria-label="Previous announcement" data-announce-prev><img src="./assets/svg/chevron-left.svg" alt="" width="24" height="24"></button>
+      <div class="announce__track" aria-live="polite">
+        <p class="is-active" data-announce>Clearance Sale</p>
+        <p data-announce>Use code ALCHEMIST for an extra 30% off your first order</p>
+        <p data-announce>Up to 60% off all brands</p>
+      </div>
+      <button class="announce__arrow" type="button" aria-label="Next announcement" data-announce-next><img src="./assets/svg/chevron-right.svg" alt="" width="24" height="24"></button>
+    </div>
+    <nav class="menu" id="menu" aria-label="Menu" data-menu hidden>
+      <ul>
+        <li><a href="shop.html">Shop all</a></li>
+        <li><a href="shop.html?cat=sportswear">Sportswear</a></li>
+        <li><a href="shop.html?cat=supplements">Supplements</a></li>
+        <li><a href="shop.html?cat=accessories">Accessories</a></li>
+        <li><a href="shop.html?cat=bundles">Bundles</a></li>
+        <li><a href="cart.html">Your bag</a></li>
+        <li><a href="index.html#about">About us</a></li>
+        <li><a href="index.html#blog">Our blog</a></li>
+        <li><a href="contact.html">Contact us</a></li>
+      </ul>
+    </nav>
+  </header>
+  <!-- /@header -->
+
+  <main id="main">
+    <!-- Hero carousel (WebGL slide transition, image fallback) -->
+    <section class="hero" id="top" aria-roledescription="carousel" aria-label="Featured">
+      <div class="hero__slides" data-hero>
+        <figure class="hero__slide is-active" data-slide>
+          <img class="hero__img hero__img--1" src="./assets/img/hero-1.webp" alt="Alchemist athletes in the brand's oversized tees" width="1920" height="1280">
+        </figure>
+        <figure class="hero__slide" data-slide>
+          <img class="hero__img hero__img--2" src="./assets/img/hero-2.webp" alt="Alchemist supplements and merch line-up" width="1920" height="1080" loading="lazy">
+        </figure>
+        <canvas class="hero__gl" data-hero-gl aria-hidden="true"></canvas>
+      </div>
+      <div class="hero__shade" data-hero-shade></div>
+      <div class="hero__copy" data-hero-copy>
+        <h1 class="hero__title display" data-split-now>For the dreamers <br>and the doers</h1>
+        <p class="hero__sub">Shatter Your Limits with Alchemist</p>
+        <a class="btn btn--white hero__btn" href="#supplements" data-scroll>Shop now</a>
+      </div>
+      <button class="round-arrow round-arrow--left hero__prev" type="button" aria-label="Previous slide" data-hero-prev><img src="./assets/svg/arrow-left.svg" alt="" width="80" height="80"></button>
+      <button class="round-arrow hero__next" type="button" aria-label="Next slide" data-hero-next><img src="./assets/svg/arrow-right.svg" alt="" width="80" height="80"></button>
+      <div class="hero__dots" role="tablist" aria-label="Choose slide" data-hero-dots></div>
+    </section>
+
+    <!-- Perks, promos, categories -->
+    <section class="promos" aria-label="Offers">
+      <ul class="perks">
+        <li class="perk" data-stagger>
+          <img src="./assets/svg/perk-1.svg" alt="" width="63" height="57">
+          <p><strong>Delivery in 3 days</strong><button type="button" data-toast="Delivery details aren't part of this demo.">More details</button></p>
+        </li>
+        <li class="perk" data-stagger>
+          <img src="./assets/svg/perk-2.svg" alt="" width="69" height="71">
+          <p><strong>15 days return</strong><button type="button" data-toast="The returns page isn't part of this demo.">View more</button></p>
+        </li>
+        <li class="perk" data-stagger>
+          <img src="./assets/svg/perk-3.svg" alt="" width="59" height="63">
+          <p><strong>Delivery in 3 days</strong><button type="button" data-toast="Delivery details aren't part of this demo.">Learn more</button></p>
+        </li>
+        <li class="perk" data-stagger>
+          <img src="./assets/svg/perk-4.svg" alt="" width="60" height="55">
+          <p><strong>100% payment secure</strong><button type="button" data-toast="Payment details aren't part of this demo.">More info</button></p>
+        </li>
+      </ul>
+
+      <div class="promo-cards">
+        <a class="promo promo--sale" href="#supplements" data-scroll data-stagger>
+          <span class="promo__bar" aria-hidden="true"></span>
+          <span class="promo__onsale display">On<br>sale</span>
+          <img class="promo__nitro" src="./assets/img/promo-nitro.webp" alt="" width="574" height="574">
+          <img class="promo__rule1" src="./assets/img/promo-rule1.webp" alt="" width="326" height="485">
+          <span class="promo__vertical">Supplements</span>
+        </a>
+        <button class="promo promo--code" type="button" data-copy="ALCHEMIST" data-stagger>
+          <span class="promo__label">Use Promo Code</span>
+          <span class="promo__code">ALCHEMIST</span>
+          <span class="promo__note">Get Extra 30% off on 1st Order</span>
+          <span class="promo__hint" aria-hidden="true">Click to copy</span>
+        </button>
+        <div class="promo promo--brands" data-stagger>
+          <p class="promo__big">Up to 60% OFF!<br>ALL BRANDS</p>
+          <a class="btn btn--white btn--sm" href="#partners" data-scroll>Partner with us</a>
+        </div>
+      </div>
+
+      <ul class="chips">
+        <li><a class="chip" href="#supplements" data-scroll data-stagger><img src="./assets/img/chip-1.webp" alt="" width="118" height="176"><span><strong>Boost Immunity</strong>4 Products</span></a></li>
+        <li><a class="chip" href="#supplements" data-scroll data-stagger><img src="./assets/img/chip-2.webp" alt="" width="119" height="176"><span><strong>Gym</strong>4 Products</span></a></li>
+        <li><a class="chip" href="#supplements" data-scroll data-stagger><img src="./assets/img/chip-3.webp" alt="" width="118" height="176"><span><strong>Health Pack</strong>4 Products</span></a></li>
+        <li><a class="chip" href="#supplements" data-scroll data-stagger><img src="./assets/img/chip-4.webp" alt="" width="119" height="176"><span><strong>Jumbo Mass</strong>4 Products</span></a></li>
+        <li><a class="chip" href="#supplements" data-scroll data-stagger><img src="./assets/img/chip-5.webp" alt="" width="118" height="176"><span><strong>Magazine</strong>4 Products</span></a></li>
+      </ul>
+    </section>
+
+    <!-- About -->
+    <section class="about" id="about" aria-label="About Alchemist">
+      <div class="about__top">
+        <div class="about__copy">
+          <p class="about__text" data-fade>At Alchemist, we believe that fitness is more than just a lifestyle—it’s a commitment to becoming the best version of yourself. That’s why we provide high-quality, science-backed supplements designed to fuel your strength, endurance, and recovery.</p>
+          <button class="btn btn--white btn--wide" type="button" data-fade data-toast="The About page isn't part of this demo.">Learn more about us <img src="./assets/svg/chevrons-down.svg" alt="" width="24" height="24"></button>
+        </div>
+        <div class="accordion" data-accordion>
+          <div class="acc" data-stagger>
+            <h3><button type="button" aria-expanded="false" aria-controls="acc-vision" data-acc>
+              <span class="acc__icon"><img src="./assets/svg/icon-vision.svg" alt="" width="44" height="29"></span>
+              <span class="acc__label">Vision</span>
+              <img class="acc__chev" src="./assets/svg/chevrons-small.svg" alt="" width="12" height="14">
+            </button></h3>
+            <div class="acc__panel" id="acc-vision" hidden><p>Help every dreamer and doer train harder and recover better, with supplements and gear they can trust.</p></div>
+          </div>
+          <div class="acc" data-stagger>
+            <h3><button type="button" aria-expanded="false" aria-controls="acc-mission" data-acc>
+              <span class="acc__icon"><img src="./assets/svg/icon-mission.svg" alt="" width="43" height="43"></span>
+              <span class="acc__label">Mission</span>
+              <img class="acc__chev" src="./assets/svg/chevrons-small.svg" alt="" width="12" height="14">
+            </button></h3>
+            <div class="acc__panel" id="acc-mission" hidden><p>Bring science-backed supplements and sportswear to more athletes, with honest advice and fair prices.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="video" data-reveal-img>
+        <img src="./assets/img/video-frame.webp" alt="" width="1078" height="560" loading="lazy">
+        <button class="video__play" type="button" aria-label="Play the Alchemist brand video" data-toast="The brand video isn't included in this demo.">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Popular products -->
+    <section class="products" aria-labelledby="popular-title">
+      <h2 class="section-title display" id="popular-title" data-split>Popular Products</h2>
+
+      <div class="shelf" id="supplements">
+        <div class="shelf__head"><h3>Supplements</h3><a class="view-all" href="shop.html?cat=supplements">View All <img src="./assets/svg/arrow-small.svg" alt="" width="18" height="7"></a></div>
+        <ul class="grid">
+          <li class="card" data-card data-id="a1-creatine"><a class="card__media" href="product.html?id=a1-creatine" tabindex="-1" aria-hidden="true"><img src="./assets/img/sup-1.webp" alt="A1 Creatine Monohydrate box" width="817" height="817" loading="lazy"><span class="pill">Supplement</span></a><h4><a href="product.html?id=a1-creatine">A1 Creatine Monohydrate</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="a1-benchmark"><a class="card__media" href="product.html?id=a1-benchmark" tabindex="-1" aria-hidden="true"><img src="./assets/img/sup-2.webp" alt="A1 Benchmark Whey Protein Blend box" width="817" height="817" loading="lazy"><span class="pill">Supplement</span></a><h4><a href="product.html?id=a1-benchmark">A1 Benchmark Whey</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="a1-mass"><a class="card__media" href="product.html?id=a1-mass" tabindex="-1" aria-hidden="true"><img src="./assets/img/sup-3.webp" alt="A1 Mass Gainer box" width="817" height="817" loading="lazy"><span class="pill">Supplement</span></a><h4><a href="product.html?id=a1-mass">A1 Mass Gainer</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="a1-isolate"><a class="card__media" href="product.html?id=a1-isolate" tabindex="-1" aria-hidden="true"><img src="./assets/img/sup-4.webp" alt="A1 Whey Isolate box" width="817" height="817" loading="lazy"><span class="pill">Supplement</span></a><h4><a href="product.html?id=a1-isolate">A1 Whey Isolate</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+        </ul>
+      </div>
+
+      <div class="shelf" id="sportswear">
+        <div class="shelf__head"><h3>Sportswear</h3><a class="view-all" href="shop.html?cat=sportswear">View All <img src="./assets/svg/arrow-small.svg" alt="" width="18" height="7"></a></div>
+        <ul class="grid">
+          <li class="card" data-card data-id="brave-red"><a class="card__media card__media--shirt" href="product.html?id=brave-red" tabindex="-1" aria-hidden="true"><img src="./assets/img/shirt-red.webp" alt="Alchemist Brave Always tee in red, front and back" width="738" height="382" loading="lazy"><span class="pill">Sportswear</span></a><h4><a href="product.html?id=brave-red">Alchemist T-Shirt Brave Always</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price"><s>₱ 400.00</s> ₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="brave-green"><a class="card__media card__media--shirt" href="product.html?id=brave-green" tabindex="-1" aria-hidden="true"><img src="./assets/img/shirt-green.webp" alt="Alchemist Brave Always tee in green, front and back" width="738" height="382" loading="lazy"><span class="pill">Sportswear</span></a><h4><a href="product.html?id=brave-green">Alchemist T-Shirt Brave Always</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="shorts-tan"><a class="card__media card__media--shorts" href="product.html?id=shorts-tan" tabindex="-1" aria-hidden="true"><img src="./assets/img/shorts-1.webp" alt="Alchemist Dri Fit shorts in tan" width="550" height="432" loading="lazy"><span class="pill">Sportswear</span></a><h4><a href="product.html?id=shorts-tan">Alchemist Dri Fit Short</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="shorts-blush"><a class="card__media card__media--shorts" href="product.html?id=shorts-blush" tabindex="-1" aria-hidden="true"><img src="./assets/img/shorts-2.webp" alt="Alchemist Dri Fit shorts in blush pink" width="548" height="432" loading="lazy"><span class="pill">Sportswear</span></a><h4><a href="product.html?id=shorts-blush">Alchemist Dri Fit Short</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Promo banner -->
+    <section class="banner" aria-label="New: Alchemist trucker hat">
+      <img class="banner__right" src="./assets/img/promo-bg.webp" alt="Transform your world: the new Alchemist trucker hat" width="1600" height="800" loading="lazy" data-parallax-img>
+      <img class="banner__left" src="./assets/img/promo-left.webp" alt="" width="720" height="960" loading="lazy">
+      <span class="banner__fade" aria-hidden="true"></span>
+      <a class="btn btn--white banner__btn" href="#accessories" data-scroll>Shop now</a>
+    </section>
+
+    <!-- Accessories -->
+    <section class="products products--plain" aria-label="Accessories">
+      <div class="shelf" id="accessories">
+        <div class="shelf__head"><h3>Accessories</h3><a class="view-all" href="shop.html?cat=accessories">View All <img src="./assets/svg/arrow-small.svg" alt="" width="18" height="7"></a></div>
+        <ul class="grid">
+          <li class="card" data-card data-id="trucker-hat"><a class="card__media card__media--hat" href="product.html?id=trucker-hat" tabindex="-1" aria-hidden="true"><img src="./assets/img/acc-1.webp" alt="Alchemist trucker hat in charcoal" width="708" height="430" loading="lazy"><span class="pill">Accessory</span></a><h4><a href="product.html?id=trucker-hat">Alchemist Trucker Hat</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="shaker-gold"><a class="card__media card__media--tall" href="product.html?id=shaker-gold" tabindex="-1" aria-hidden="true"><img src="./assets/img/acc-2.webp" alt="A1 Protein shaker with a gold lid" width="306" height="738" loading="lazy"><span class="pill">Accessory</span></a><h4><a href="product.html?id=shaker-gold">A1 Protein Shaker, Gold</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="shaker-red"><a class="card__media card__media--tall" href="product.html?id=shaker-red" tabindex="-1" aria-hidden="true"><img src="./assets/img/acc-3.webp" alt="A1 Protein shaker with a red lid" width="300" height="736" loading="lazy"><span class="pill">Accessory</span></a><h4><a href="product.html?id=shaker-red">A1 Protein Shaker, Red</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+          <li class="card" data-card data-id="alchemist-shaker"><a class="card__media card__media--tall" href="product.html?id=alchemist-shaker" tabindex="-1" aria-hidden="true"><img src="./assets/img/acc-4.webp" alt="Black Alchemist shaker with a pink lid" width="276" height="700" loading="lazy"><span class="pill">Accessory</span></a><h4><a href="product.html?id=alchemist-shaker">Alchemist Shaker</a></h4><p class="card__meta"><span class="rating"><img src="./assets/svg/star.svg" alt="" width="20" height="20">4.4 (Reviews)</span><span class="price">₱ 320.00</span></p><div class="card__btns"><button class="btn-bag" type="button" data-add>Add to bag</button><button class="btn-buy" type="button" data-buy>Buy now</button></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Bundles -->
+    <section class="bundles" id="bundles" aria-labelledby="bundles-title">
+      <h2 class="section-title display" id="bundles-title" data-split>Bundles</h2>
+      <div class="shelf__head bundles__head"><h3>Special offers</h3><a class="view-all" href="shop.html?cat=bundles">View All <img src="./assets/svg/arrow-small.svg" alt="" width="18" height="7"></a></div>
+      <ul class="bundles__grid">
+        <li data-bundle><img src="./assets/img/bundle-1.webp" alt="Protein whey bundle with a free Alchemist shaker" width="960" height="960" loading="lazy"></li>
+        <li data-bundle><img src="./assets/img/bundle-2.webp" alt="Bundle deals: whey, creatine and pre-workout" width="960" height="960" loading="lazy"></li>
+        <li data-bundle><img src="./assets/img/bundle-3.webp" alt="Pre-workout and creatine bundle with a free shaker" width="960" height="960" loading="lazy"></li>
+        <li data-bundle><img src="./assets/img/bundle-4.webp" alt="Insane Labz whey bundle with a free shaker" width="960" height="960" loading="lazy"></li>
+      </ul>
+    </section>
+
+    <!-- Ticker -->
+    <div class="ticker" aria-hidden="true" data-ticker>
+      <div class="ticker__track" data-ticker-track>
+        <span>Merch</span><img src="./assets/svg/ticker-triangle.svg" alt="" width="12" height="12">
+        <span>Supplements</span><img src="./assets/svg/ticker-triangle.svg" alt="" width="12" height="12">
+        <span>Merch</span><img src="./assets/svg/ticker-triangle.svg" alt="" width="12" height="12">
+        <span>Supplements</span><img src="./assets/svg/ticker-triangle.svg" alt="" width="12" height="12">
+        <span>Merch</span><img src="./assets/svg/ticker-triangle.svg" alt="" width="12" height="12">
+        <span>Supplements</span><img src="./assets/svg/ticker-triangle.svg" alt="" width="12" height="12">
+      </div>
+    </div>
+
+    <!-- Partners -->
+    <section class="partners" id="partners" aria-labelledby="partners-title">
+      <h2 class="section-title display" id="partners-title" data-split>Our Partners</h2>
+      <ul class="partners__row">
+        <li data-stagger><img src="./assets/img/partner-1.webp" alt="AMS Fitness and Gym" width="219" height="219" loading="lazy"></li>
+        <li data-stagger><img src="./assets/img/partner-2.webp" alt="24 Fit Camp" width="364" height="226" loading="lazy"></li>
+        <li data-stagger><img src="./assets/img/partner-3.webp" alt="Kenko Fitness Center" width="362" height="226" loading="lazy"></li>
+        <li data-stagger><img src="./assets/img/partner-4.webp" alt="RCG Fitness Gym" width="227" height="227" loading="lazy"></li>
+        <li data-stagger><img src="./assets/img/partner-5.webp" alt="Elorde Davao" width="228" height="226" loading="lazy"></li>
+        <li data-stagger><img src="./assets/img/partner-6.webp" alt="KZA Fitness Gym" width="326" height="218" loading="lazy"></li>
+        <li data-stagger><img src="./assets/img/partner-7.webp" alt="WeFit Fitness Gym" width="226" height="226" loading="lazy"></li>
+      </ul>
+    </section>
+
+    <!-- Blog -->
+    <section class="blog" id="blog" aria-labelledby="blog-title">
+      <span class="dots" aria-hidden="true"></span>
+      <div class="blog__intro">
+        <p class="blog__eyebrow">Latest Blogs</p>
+        <h2 class="blog__title display" id="blog-title" data-split>Stay Fit,<br>Stay Informed</h2>
+        <button class="btn btn--black" type="button" data-toast="The blog isn't part of this demo.">Read more</button>
+      </div>
+      <div class="blog__viewport" data-blog>
+        <ul class="blog__track" data-blog-track>
+          <li class="post"><div class="post__img"><img src="./assets/img/blog-1.webp" alt="Alchemist team at the WeFit gym stall" width="800" height="1067" loading="lazy"></div><time datetime="2024-02-21">21 February 2024</time><h3>GYM Partner: Alchemist X WeFit</h3></li>
+          <li class="post"><div class="post__img"><img src="./assets/img/blog-2.webp" alt="Shelves of Rule 1 and MuscleTech tubs at an Alchemist booth" width="800" height="1376" loading="lazy"></div><time datetime="2024-02-21">21 February 2024</time><h3>International and local supplement brands available at Alchemist Supplements</h3></li>
+          <li class="post"><div class="post__img"><img src="./assets/img/blog-3.webp" alt="Runners at the Alchemist booth during the SPMC Fun Run" width="800" height="1067" loading="lazy"></div><time datetime="2024-02-21">21 February 2024</time><h3>SPMC Fun Run 2024</h3></li>
+        </ul>
+      </div>
+      <button class="round-arrow round-arrow--left blog__prev" type="button" aria-label="Previous posts" data-blog-prev><img src="./assets/svg/arrow-left.svg" alt="" width="80" height="80"></button>
+      <button class="round-arrow blog__next" type="button" aria-label="Next posts" data-blog-next><img src="./assets/svg/arrow-right.svg" alt="" width="80" height="80"></button>
+    </section>
+  </main>
+
+  <!-- @footer -->
+  <!-- Footer -->
+  <footer class="footer">
+    <span class="footer__pattern" aria-hidden="true"></span>
+    <img class="footer__logo" src="./assets/img/footer-logo.webp" alt="Alchemist" width="546" height="87" loading="lazy">
+    <div class="footer__cols" data-stagger-group>
+      <div class="footer__col" data-stagger>
+        <h2>Partnerships</h2>
+        <a class="btn btn--white btn--block" href="contact.html">Partner with us</a>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Follow us</h2>
+        <ul class="socials">
+          <li><img src="./assets/svg/social-1.svg" alt="Facebook" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-2.svg" alt="Telegram" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-3.svg" alt="Instagram" width="40" height="40"></li>
+          <li><img src="./assets/svg/social-4.svg" alt="TikTok" width="40" height="40"></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Shop now</h2>
+        <ul class="footer__links">
+          <li><a href="shop.html?cat=sportswear">Sportswear</a></li>
+          <li><a href="shop.html?cat=supplements">Supplements</a></li>
+          <li><a href="shop.html?cat=accessories">Accessories</a></li>
+          <li><a href="shop.html?cat=bundles">Bundles</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Community</h2>
+        <ul class="footer__links">
+          <li><a href="index.html#about">About us</a></li>
+          <li><a href="index.html#blog">Our blog</a></li>
+          <li><a href="contact.html">Contact us</a></li>
+        </ul>
+      </div>
+      <div class="footer__col" data-stagger>
+        <h2>Customer support</h2>
+        <ul class="footer__links">
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">FAQ</button></li>
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">Delivery information</button></li>
+          <li><button type="button" data-toast="Support pages aren't part of this demo.">Returns policy</button></li>
+          <li><a href="cart.html">Orders</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <ul class="footer__legal">
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Privacy Policy</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Terms of Use</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Sales and Refunds</button></li>
+        <li><button type="button" data-toast="Legal pages aren't part of this demo.">Legal</button></li>
+      </ul>
+      <p>© 2025 All Rights Reserved</p>
+    </div>
+    <p class="footer__demo">Store design by <a href="https://jysnalegarbes.github.io/work/alchemist/" target="_top">Jayson Alegarbes</a>, built as a live demo. This is not the official Alchemist store: nothing can be bought here, and the bag is saved only in your browser.</p>
+  </footer>
+
+  <div class="toast" role="status" aria-live="polite" data-toast-el></div>
+  <!-- /@footer -->
+
+  <script src="./vendor/gsap.min.js" defer></script>
+  <script src="./vendor/ScrollTrigger.min.js" defer></script>
+  <script src="./vendor/SplitText.min.js" defer></script>
+  <script src="./vendor/lenis.min.js" defer></script>
+  <script src="./js/catalog.js" defer></script>
+  <script src="./js/site.js" defer></script>
+  <script src="./js/hero-gl.js" defer></script>
+  <script src="./js/main.js" defer></script>
+</body>
+</html>

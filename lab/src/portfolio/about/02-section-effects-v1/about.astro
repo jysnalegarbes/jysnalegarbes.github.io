@@ -1,0 +1,456 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import portrait from '../assets/about/portrait-hero.png';
+import aquarium from '../assets/about/beyond-aquarium.png';
+import billiards from '../assets/about/beyond-billiards.png';
+import hiking from '../assets/about/beyond-hiking.jpg';
+
+const services = [
+  { title: 'Web & UI/UX', text: 'Websites, interfaces, responsive experiences, and prototypes.' },
+  { title: 'Visual Design', text: 'Digital visuals, editorial layouts, and creative direction.' },
+  { title: 'Brand & Digital', text: 'Visual identities, brand systems, and digital applications.' },
+];
+
+// Bottom to top, as stacked in Figma 1:711
+const photos = [
+  { src: aquarium, alt: 'A planted aquarium glowing under a lamp', rot: -4.62 },
+  { src: billiards, alt: 'Playing billiards in an open-air pool hall', rot: 0 },
+  { src: hiking, alt: 'Hiking a forest trail with friends', rot: -2.23 },
+];
+---
+
+<BaseLayout title="About — Jayson Alegarbes" current="about">
+  <!--
+    Opening sequence (Figma 66:95): the greeting splits, the portrait opens
+    between the halves and grows to fill the screen, then a noise wipe turns
+    it to black from the bottom up. Without JS it stays the static greeting
+    (1:142).
+  -->
+  <section class="about-intro" data-about-intro>
+    <div class="about-intro__stage" data-about-stage>
+      <div class="about-intro__media" data-about-media>
+        <Image
+          src={portrait}
+          alt="Illustrated portrait of Jayson at his desk"
+          widths={[480, 800, 1085]}
+          sizes="100vw"
+          loading="eager"
+          class="about-intro__img"
+        />
+      </div>
+      <h1 class="about-intro__greeting">
+        <span class="about-intro__half" data-about-half="left"><span class="serif-italic">hi!</span> NICE TO</span>{' '}<span class="about-intro__half" data-about-half="right">MEET YOU</span>
+      </h1>
+      <canvas class="about-intro__wipe" data-about-wipe aria-hidden="true"></canvas>
+      <div class="about-intro__black" data-about-black aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!--
+    Text sections (Figma 1:384 → 1:711): each pins its own screen while its
+    text condenses in, holds, and melts away (about-sections.ts). Desktop
+    places everything on the Figma coordinates of a 1920×1080 frame; mobile
+    stacks it.
+  -->
+  <section class="about-sec about-sec--hello" data-about-section>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <p class="about-hello" data-reveal="words">
+          Independent <span class="serif-italic">designer</span><br />based in the Philippines.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-sec about-sec--intro" data-about-section>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <p class="about-intro-text" data-reveal="words">
+          I design <span class="serif-italic">websites</span>, <span class="serif-italic">interfaces</span>, and <span
+            class="serif-italic">visual experiences</span
+          > that bring structure to ideas and make digital experiences easier to understand, use, and remember.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-sec about-sec--services" data-about-section>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <h2 class="about-heading" data-reveal="chars"><span class="serif-italic">what</span> I DO</h2>
+        <ul class="about-services">
+          {
+            services.map((s, i) => (
+              <li class="about-service">
+                <h3 class="about-service__title" data-reveal="words" data-reveal-delay={0.08 + i * 0.08}>
+                  {s.title}
+                </h3>
+                <p class="about-service__text" data-reveal="words" data-reveal-delay={0.12 + i * 0.08}>
+                  {s.text}
+                </p>
+              </li>
+            ))
+          }
+        </ul>
+        <p class="about-body about-services__note" data-reveal="words" data-reveal-delay="0.36">
+          A little bit of everything. Mostly the things that look good on a screen.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-sec about-sec--approach" data-about-section>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <h2 class="about-heading" data-reveal="chars"><span class="serif-italic">my</span> APPROACH</h2>
+        <div class="about-approach">
+          <p class="about-body" data-reveal="words" data-reveal-delay="0.12">
+            I start by understanding what needs to be communicated before worrying about how it should look. Because
+            making something <span class="serif-italic">pretty is easy</span>. Making something <span class="serif-italic"
+              >make sense is a little more interesting</span
+            >.
+          </p>
+          <p class="about-body" data-reveal="words" data-reveal-delay="0.3">
+            I balance thoughtful UX with intentional visual design, creating experiences that feel <span
+              class="serif-italic">purposeful</span
+            >, <span class="serif-italic">distinct</span>, and <span class="serif-italic">right</span> for the project.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="about-sec about-sec--beyond" data-about-section data-no-exit>
+    <div class="about-sec__stage">
+      <div class="about-sec__frame">
+        <h2 class="visually-hidden">Beyond design</h2>
+        <div class="about-photos">
+          {
+            photos.map((p) => (
+              <div class="about-photo" data-reveal-photo={p.rot} style={`--rot: ${p.rot}deg`}>
+                <Image
+                  src={p.src}
+                  alt={p.alt}
+                  widths={[420, 864]}
+                  sizes="(min-width: 1024px) 22.5vw, 46vw"
+                  class="about-photo__img"
+                />
+              </div>
+            ))
+          }
+        </div>
+        <p class="about-body about-beyond__text" data-reveal="words" data-reveal-delay="0.2">
+          Outside design, I enjoy hiking, playing billiards whenever I get the chance, and spending an unreasonable
+          amount of time looking at aquariums on Reels. I don't have an aquarium yet, but apparently watching other
+          people's tanks counts as research.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  import { mountAboutIntro } from '../scripts/about-intro';
+  import { mountAboutSections } from '../scripts/about-sections';
+
+  const intro = document.querySelector<HTMLElement>('[data-about-intro]');
+  if (intro) mountAboutIntro(intro);
+  mountAboutSections();
+</script>
+
+<style>
+  /* ---------- Opening ---------- */
+
+  .about-intro {
+    position: relative;
+    height: 100svh;
+  }
+
+  /* Pinned for the length of the sequence (set by the script) */
+  .about-intro.is-scrub {
+    height: 450svh;
+  }
+
+  .about-intro__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  .about-intro__greeting {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-weight: 700;
+    font-size: calc(40 * var(--px));
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+  }
+
+  .about-intro__half {
+    display: inline-block;
+    will-change: transform;
+  }
+
+  .about-intro__media {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    will-change: transform, width, height;
+  }
+
+  .about-intro__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    object-fit: cover;
+  }
+
+  .about-intro__wipe,
+  .about-intro__black {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .about-intro__black {
+    background: var(--black);
+  }
+
+  /* ---------- Text sections ---------- */
+
+  .about-sec {
+    --len: 220svh;
+    position: relative;
+    height: var(--len);
+    background: var(--black);
+    color: var(--white);
+  }
+
+  .about-sec--hello {
+    --len: 200svh;
+  }
+
+  .about-sec--beyond {
+    --len: 200svh;
+  }
+
+  .about-sec__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  /* Mobile: content stacked and centred under the header */
+  .about-sec__frame {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(32 * var(--px));
+    height: 100%;
+    padding: calc(110 * var(--px)) var(--gutter) calc(48 * var(--px));
+  }
+
+  .about-hello,
+  .about-intro-text,
+  .about-body,
+  .about-service__text {
+    font-weight: 400;
+  }
+
+  .about-hello {
+    font-size: calc(32 * var(--px));
+    text-align: center;
+  }
+
+  .about-intro-text {
+    font-size: calc(26 * var(--px));
+    text-indent: 3.76em;
+  }
+
+  /* Split pieces are inline-blocks: they'd each inherit the paragraph indent */
+  .about-sec :global(.split-word),
+  .about-sec :global(.split-char) {
+    text-indent: 0;
+  }
+
+  .about-heading {
+    font-weight: 700;
+    font-size: calc(48 * var(--px));
+    white-space: nowrap;
+  }
+
+  .about-body {
+    font-size: calc(20 * var(--px));
+    text-indent: 3.76em;
+  }
+
+  .about-services {
+    display: flex;
+    flex-direction: column;
+    gap: calc(28 * var(--px));
+  }
+
+  .about-service {
+    display: flex;
+    flex-direction: column;
+    gap: calc(12 * var(--px));
+  }
+
+  .about-service__title {
+    font-weight: 700;
+    font-size: calc(22 * var(--px));
+    text-transform: uppercase;
+  }
+
+  .about-service__text {
+    font-size: calc(14 * var(--px));
+  }
+
+  .about-approach {
+    display: flex;
+    flex-direction: column;
+    gap: calc(32 * var(--px));
+  }
+
+  .about-photos {
+    position: relative;
+    flex: none;
+    width: calc(200 * var(--px));
+    height: calc(235 * var(--px));
+    margin-inline: auto;
+  }
+
+  .about-photo {
+    position: absolute;
+    inset: 0;
+    transform: rotate(var(--rot));
+  }
+
+  .about-photo__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Desktop: Figma coordinates on a 1920×1080 frame, top-aligned with the
+     header so the columns line up with the nav (e.g. services at 213) */
+  @media (min-width: 1024px) {
+    .about-intro__greeting {
+      top: calc(50% + 72 * var(--px));
+      font-size: calc(110 * var(--px));
+    }
+
+    .about-sec__frame {
+      display: block;
+      position: relative;
+      height: calc(1080 * var(--px));
+      padding: 0;
+    }
+
+    .about-sec__frame > * {
+      position: absolute;
+    }
+
+    /* 1:384 — bottom edge at 50% + 87 */
+    .about-hello {
+      top: calc(627 * var(--px));
+      left: 50%;
+      font-size: calc(80 * var(--px));
+      white-space: nowrap;
+      transform: translate(-50%, -100%);
+    }
+
+    /* 1:556 */
+    .about-intro-text {
+      top: 50%;
+      left: calc(307 * var(--px));
+      width: calc(1306 * var(--px));
+      font-size: calc(70 * var(--px));
+      transform: translateY(-50%);
+    }
+
+    /* 1:603 / 1:661 — centred on y 286.5 */
+    .about-heading {
+      top: calc(286.5 * var(--px));
+      left: var(--gutter);
+      font-size: calc(110 * var(--px));
+      transform: translateY(-50%);
+    }
+
+    .about-body {
+      font-size: calc(40 * var(--px));
+    }
+
+    .about-services {
+      top: calc(213 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(860 * var(--px));
+      padding-block: calc(10 * var(--px));
+      gap: calc(80 * var(--px));
+    }
+
+    .about-service {
+      gap: calc(40 * var(--px));
+    }
+
+    .about-service__title {
+      font-size: calc(40 * var(--px));
+    }
+
+    .about-service__text {
+      font-size: var(--fs-body);
+    }
+
+    /* bottom edge at 75% + 150 */
+    .about-services__note {
+      top: calc(960 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+      transform: translateY(-100%);
+    }
+
+    .about-approach {
+      top: calc(382 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+      gap: calc(120 * var(--px));
+    }
+
+    /* 1:711 — all three photos share one 432×508 box at (80, 313) */
+    .about-photos {
+      top: calc(313 * var(--px));
+      left: calc(80 * var(--px));
+      width: calc(432 * var(--px));
+      height: calc(508 * var(--px));
+      margin: 0;
+    }
+
+    .about-beyond__text {
+      top: calc(408 * var(--px));
+      left: calc(820 * var(--px));
+      width: calc(888 * var(--px));
+    }
+  }
+</style>

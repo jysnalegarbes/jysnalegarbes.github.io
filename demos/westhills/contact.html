@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact Us — Westhills Group LLC (website design demo)</title>
+  <meta name="description" content="Contact page of the Westhills Group LLC website design demo by Jayson Alegarbes. The form never sends anything.">
+  <!-- A portfolio demo, not the company's site: keep it out of search results -->
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700;800&family=Inter:wght@700&family=Merriweather:wght@400;700;900&display=swap">
+  <link rel="stylesheet" href="./vendor/lenis.css">
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="./css/pages.css">
+  <script>
+    document.documentElement.classList.replace('no-js', 'js');
+    // Safety: never leave the page hidden if a script fails
+    setTimeout(function () { document.documentElement.classList.add('is-ready'); }, 2500);
+  </script>
+</head>
+
+<body data-page="contact">
+  <!-- @header -->
+  <a class="skip" href="#main">Skip to content</a>
+
+  <!-- Navigation -->
+  <header class="nav" data-nav>
+    <div class="nav__inner container">
+      <a class="nav__logo" href="index.html" aria-label="Westhills Group LLC, home">
+        <img src="./assets/svg/logo.svg" alt="" width="149" height="100">
+      </a>
+      <nav class="nav__menu" aria-label="Primary">
+        <ul>
+          <li><a href="index.html" data-nav-link="home">Home</a></li>
+          <li><a href="about.html" data-nav-link="about">About Us</a></li>
+          <li><a href="services.html" data-nav-link="services">Services</a></li>
+          <li><a href="blogs.html" data-nav-link="blogs">Blogs</a></li>
+          <li><a href="contact.html" data-nav-link="contact">Contact Us</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn--green nav__cta" href="contact.html">Start your free consultation</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mobile-menu" data-burger>
+        <span class="visually-hidden" data-burger-label>Open menu</span>
+        <span class="burger__lines" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" data-menu hidden>
+      <ul>
+        <li><a href="index.html" data-nav-link="home">Home</a></li>
+        <li><a href="about.html" data-nav-link="about">About Us</a></li>
+        <li><a href="services.html" data-nav-link="services">Services</a></li>
+        <li><a href="blogs.html" data-nav-link="blogs">Blogs</a></li>
+        <li><a href="contact.html" data-nav-link="contact">Contact Us</a></li>
+      </ul>
+      <a class="btn btn--green" href="contact.html">Start your free consultation</a>
+    </div>
+  </header>
+  <!-- /@header -->
+
+  <main id="main">
+    <section class="page-hero" data-intro aria-labelledby="page-title">
+      <div class="lines" aria-hidden="true">
+        <img class="lines__img" src="./assets/img/hero-bg.webp" alt="" width="1839" height="1004">
+        <canvas class="lines__gl" data-lines-gl="./assets/img/hero-bg.webp"></canvas>
+      </div>
+      <div class="page-hero__inner container">
+        <nav class="page-hero__crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a> / <span aria-current="page">Contact Us</span></nav>
+        <h1 class="page-hero__title" id="page-title">We Want to Hear From You!</h1>
+      </div>
+    </section>
+
+    <section class="deco" aria-label="Get in touch">
+      <div class="lines" aria-hidden="true">
+        <img class="lines__img" src="./assets/img/hero-bg.webp" alt="" width="1839" height="1004" loading="lazy">
+        <canvas class="lines__gl" data-lines-gl="./assets/img/hero-bg.webp"></canvas>
+      </div>
+      <div class="container">
+        <p class="detail__intro lede" data-reveal="up">At Westhills Group LLC, we’re committed to providing responsive, knowledgeable, and personalized financial support for your business. Whether you’re seeking expert guidance on compliance, auditing, or strategic financial planning — our team is here to help.</p>
+        <div class="wide-img" data-reveal="right"><img src="./assets/img/contact-hero.webp" alt="A smiling support specialist with a headset waving on a video call"></div>
+        <div class="contact-grid">
+          <form class="cform" novalidate data-contact data-reveal="left">
+            <h2 class="h-small">Contact Form</h2>
+            <p>Fill out the form below and we’ll get back to you within one business day.</p>
+            <div class="cform__fields">
+              <div class="ffield"><input id="c-name" name="c-name" type="text" placeholder=" " autocomplete="name"><label for="c-name">Full Name</label><span class="ffield__error" id="c-name-err"></span></div>
+              <div class="ffield"><input id="c-phone" name="c-phone" type="tel" placeholder=" " autocomplete="tel"><label for="c-phone">Phone Number</label><span class="ffield__error" id="c-phone-err"></span></div>
+              <div class="ffield"><input id="c-email" name="c-email" type="email" placeholder=" " autocomplete="email"><label for="c-email">Email</label><span class="ffield__error" id="c-email-err"></span></div>
+              <div class="ffield"><textarea id="c-msg" name="c-msg" placeholder=" " required></textarea><label for="c-msg">Your Message</label><span class="ffield__error" id="c-msg-err"></span></div>
+            </div>
+            <button class="btn btn--green" type="submit">Send message</button>
+          </form>
+          <div class="reach" data-reveal="right">
+            <h2 class="h-small">Let’s Start a Conversation</h2>
+            <p>Do you have questions about our services or want to schedule a consultation? Reach out to us and one of our specialists will respond promptly.</p>
+            <ul class="reach__cards">
+              <li class="reach__card"><span class="reach__icon"><img src="./assets/svg/contact-location.svg" alt="" width="36" height="50"></span><div><h3>Office Address</h3><p>100 Example Street, San Jose, CA (placeholder)</p></div></li>
+              <li class="reach__card"><span class="reach__icon"><img src="./assets/svg/contact-phone.svg" alt="" width="50" height="50"></span><div><h3>Phone Number</h3><p>408-555-0100</p></div></li>
+              <li class="reach__card"><span class="reach__icon"><img src="./assets/svg/contact-email.svg" alt="" width="50" height="50"></span><div><h3>Email Address</h3><p>hello@westhills.example</p></div></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Illustrated stand-in for the design's map screenshot -->
+    <section class="map" aria-label="Office location (illustration)">
+      <svg viewBox="0 0 1920 451" preserveAspectRatio="xMidYMid slice" aria-hidden="true" data-map>
+        <rect width="1920" height="451" fill="#eef0ee"/>
+        <path d="M1200 0h720v451h-560c30-60-20-110 20-170 40-58 120-60 130-130 8-58-60-90-50-151z" fill="#dff3e4"/>
+        <path d="M1520 0c-20 60 30 110 10 170-18 56-90 70-100 130-8 52 40 100 30 151" fill="none" stroke="#9fd2ea" stroke-width="6" stroke-linecap="round" data-draw/>
+        <g fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round">
+          <path d="M0 120c260 30 520-20 760 20s420 120 700 90" data-draw/>
+          <path d="M420 451c40-120 120-200 160-320S640-10 700 0" data-draw/>
+          <path d="M980 451c-20-90 40-160 20-260S940 40 990 0" data-draw/>
+          <path d="M0 330c300-20 560 30 820 0s420-80 640-40" data-draw/>
+        </g>
+        <g fill="none" stroke="#c9ced6" stroke-width="5" stroke-linecap="round">
+          <path d="M0 120c260 30 520-20 760 20s420 120 700 90" data-draw/>
+          <path d="M420 451c40-120 120-200 160-320S640-10 700 0" data-draw/>
+        </g>
+        <g fill="none" stroke="#e1e4e8" stroke-width="2">
+          <path d="M120 0v451M240 0v451M360 0v451M540 0v451M660 0v451M820 0v451M900 0v451M1080 0v451"/>
+          <path d="M0 60h1180M0 200h1180M0 260h1180M0 400h1180"/>
+        </g>
+      </svg>
+      <div class="map__pin" data-pin>
+        <svg viewBox="0 0 34 44" aria-hidden="true"><path d="M17 43s16-14.6 16-26.4C33 7.4 25.8 1 17 1S1 7.4 1 16.6C1 28.4 17 43 17 43z" fill="#e8433a" stroke="#b72a22" stroke-width="1.5"/><circle cx="17" cy="16.5" r="6" fill="#8e1c16"/></svg>
+        <span class="map__ring" data-ring></span>
+      </div>
+      <p class="map__label" data-map-label><strong>Westhills Group LLC</strong><br>San Jose, CA</p>
+    </section>
+
+    <div class="thanks" role="dialog" aria-modal="true" aria-labelledby="thanks-title" data-thanks hidden>
+      <div class="thanks__panel" tabindex="-1">
+        <button class="thanks__close" type="button" aria-label="Close" data-thanks-close>
+          <svg viewBox="0 0 14 14" width="14" height="14" aria-hidden="true"><path d="M1 1l12 12M13 1 1 13" stroke="#000" stroke-width="1.6"/></svg>
+        </button>
+        <img src="./assets/svg/success-illustration.svg" alt="" width="337" height="225">
+        <h2 id="thanks-title">Thanks for reaching out!</h2>
+        <p>We’ll get back to you shortly.</p>
+        <small>This is a design demo: your message wasn’t sent anywhere.</small>
+      </div>
+    </div>
+  </main>
+
+  <!-- @footer -->
+  <!-- CTA -->
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="container cta__inner">
+      <h2 class="cta__title" id="cta-title" data-split>Let's Talk About Your Business Growth</h2>
+      <p class="cta__text" data-fade><span aria-hidden="true">📈</span> Strategic Financial Solutions for Long-Term Success</p>
+      <a class="btn btn--white" href="contact.html" data-fade>Get a free consultation</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid" data-stagger-group>
+        <a class="footer__logo" href="index.html" aria-label="Westhills Group LLC, home" data-stagger>
+          <img src="./assets/svg/logo.svg" alt="" width="149" height="100">
+        </a>
+        <div class="footer__col" data-stagger>
+          <h2>Get In Touch</h2>
+          <ul class="contact-list">
+            <li><img src="./assets/svg/icon-phone.svg" alt="" width="18" height="18"><span>Tel: 408-555-0100</span></li>
+            <li><img src="./assets/svg/icon-fax.svg" alt="" width="18" height="18"><span>Fax: 408-555-0101</span></li>
+            <li><img src="./assets/svg/icon-mail.svg" alt="" width="18" height="15"><span>hello@westhills.example</span></li>
+            <li><img src="./assets/svg/icon-pin.svg" alt="" width="18" height="22"><span>100 Example Street<br>San Jose, CA</span></li>
+          </ul>
+        </div>
+        <div class="footer__col" data-stagger>
+          <h2>Company</h2>
+          <ul class="link-list">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="services.html">Services</a></li>
+            <li><a href="blogs.html">Blogs</a></li>
+            <li><a href="contact.html">Contact Us</a></li>
+          </ul>
+        </div>
+        <div class="footer__col" data-stagger>
+          <h2>Legal</h2>
+          <ul class="link-list">
+            <li><button type="button" data-toast="Legal pages aren't part of this demo.">Privacy Policy</button></li>
+            <li><button type="button" data-toast="Legal pages aren't part of this demo.">Terms and Conditions</button></li>
+          </ul>
+        </div>
+        <div class="footer__col" data-stagger>
+          <h2>Stay Connected</h2>
+          <p>Follow us for financial insights and updates</p>
+          <ul class="socials">
+            <li><img src="./assets/svg/social-facebook.svg" alt="Facebook" width="35" height="36"></li>
+            <li><img src="./assets/svg/social-twitter.svg" alt="Twitter" width="36" height="36"></li>
+            <li><img src="./assets/svg/social-instagram.svg" alt="Instagram" width="36" height="36"></li>
+            <li><img src="./assets/svg/social-linkedin.svg" alt="LinkedIn" width="36" height="36"></li>
+            <li><img src="./assets/svg/social-whatsapp.svg" alt="WhatsApp" width="35" height="36"></li>
+          </ul>
+        </div>
+        <div class="footer__col footer__news" data-stagger>
+          <h2>Newsletter</h2>
+          <p>Get expert financial tips, industry updates, and business growth strategies delivered straight to your inbox.</p>
+          <form class="newsletter" data-newsletter novalidate>
+            <label class="visually-hidden" for="nl-email">Email address</label>
+            <input id="nl-email" name="email" type="email" placeholder="Enter your email" autocomplete="email" required>
+            <button type="submit" aria-label="Subscribe"><img src="./assets/svg/send-button.svg" alt="" width="50" height="50"></button>
+          </form>
+          <p class="newsletter__status" role="status" data-newsletter-status></p>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <p>© 2025 Westhills Group LLC. All Rights Reserved.</p>
+        <p class="footer__demo">Website design demo by <a href="https://jysnalegarbes.github.io/work/westhills-group/" target="_top">Jayson Alegarbes</a>. Contact details are placeholders and no form sends anything; this is not the official site.</p>
+      </div>
+    </div>
+  </footer>
+
+  <div class="toast" role="status" aria-live="polite" data-toast-el></div>
+  <!-- /@footer -->
+
+  <script src="./vendor/gsap.min.js" defer></script>
+  <script src="./vendor/ScrollTrigger.min.js" defer></script>
+  <script src="./vendor/SplitText.min.js" defer></script>
+  <script src="./vendor/lenis.min.js" defer></script>
+  <script src="./js/lines-gl.js" defer></script>
+  <script src="./js/site.js" defer></script>
+  <script src="./js/contact.js" defer></script>
+</body>
+</html>
